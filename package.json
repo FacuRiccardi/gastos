@@ -1,0 +1,36 @@
+{
+  "name": "gastos",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/FacuRiccardi/gastos#readme",
+  "bugs": {
+    "url": "https://github.com/FacuRiccardi/gastos/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FacuRiccardi/gastos.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc -p tsconfig.json",
+    "start": "node index.js",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
+  "dependencies": {
+    "fastify": "^5.8.5"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^25.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
+    "eslint": "^10.4.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}
