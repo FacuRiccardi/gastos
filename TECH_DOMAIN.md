@@ -4,6 +4,18 @@ Maps every concept in `DOMAIN.md` to its concrete code location, class type, and
 
 ---
 
+## Infrastructure Decisions
+
+| Concern | Choice | Notes |
+|---|---|---|
+| Backend runtime | Node.js + Fastify | Already in place |
+| Database | PostgreSQL | Hosted on Railway |
+| Backend hosting | Railway | Includes Postgres, deploys from GitHub |
+| Frontend hosting | Vercel | React SPA, free tier |
+| ORM / query layer | Drizzle | TypeScript-first, lightweight, handles migrations |
+
+---
+
 ## Layer Overview
 
 ```
@@ -30,6 +42,8 @@ src/domain/
   shared/
     Money.ts
     Currency.ts
+    Pagination.ts
+    Page.ts
 
   identity/
     household/
@@ -152,6 +166,8 @@ BudgetLimit.forGroup(id, householdId, money, period)
 | `ExpenseId` | `expense/ExpenseId.ts` | class | Value Object |
 | `Money` | `shared/Money.ts` | class | Value Object |
 | `Currency` | `shared/Currency.ts` | enum + VO wrapper | Value Object |
+| `Pagination` | `shared/Pagination.ts` | class | Value Object (limit + offset for paginated queries) |
+| `Page<T>` | `shared/Page.ts` | class | Value Object (items + total for paginated results) |
 | `PaymentMethod` | `expense/PaymentMethod.ts` | discriminated union | Value Object |
 | `InstallmentPlan` | `expense/InstallmentPlan.ts` | class | Value Object |
 | `ExpenseDate` | `expense/ExpenseDate.ts` | class | Value Object |
