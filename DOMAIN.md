@@ -160,7 +160,9 @@ _Avoid_: "budget" (too vague), "spending rule."
 - A soft-deleted `PaymentInstrument` MUST NOT appear as a selectable option when logging a new Expense, but MUST remain resolvable for existing Expenses that reference it.
 - A `Category` belongs to exactly one `Group`. Reassigning it changes the `GroupId` reference on the Category aggregate.
 - `Group` and `Category` are scoped to a `Household`. A `HouseholdId` is always required.
-- A soft-deleted `Group` or `Category` MUST NOT appear as a selectable option when logging a new Expense, but MUST remain resolvable for existing Expenses that reference it.
+- A soft-deleted `Group`, `Category`, or `PaymentInstrument` MUST NOT appear as a selectable option when logging a new Expense, but MUST remain resolvable for existing Expenses that reference it.
+- A soft-deleted aggregate cannot be mutated. Calling `rename()`, `moveTo()`, or `softDelete()` on an already-deleted aggregate is an error.
+- A `User` can only be a member of a `Household` once. Adding the same `UserId` twice is an error.
 - A `BudgetLimit` targets either a `CategoryId` or a `GroupId` — never both, never neither.
 - A `BudgetLimit` is scoped to a `Household`.
 - Only `Currency.ARS` is supported in the initial build. All `Money` values are in the same currency for budget balance calculations to be valid.

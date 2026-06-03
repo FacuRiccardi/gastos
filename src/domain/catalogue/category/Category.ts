@@ -18,14 +18,17 @@ export class Category {
   }
 
   rename(newName: string): Category {
+    if (this.isDeleted) throw new Error('Cannot rename a deleted Category');
     return new Category(this.id, this.householdId, this.groupId, newName, this.deletedAt);
   }
 
   moveTo(newGroupId: GroupId): Category {
+    if (this.isDeleted) throw new Error('Cannot move a deleted Category');
     return new Category(this.id, this.householdId, newGroupId, this.name, this.deletedAt);
   }
 
   softDelete(): Category {
+    if (this.isDeleted) throw new Error('Category is already deleted');
     return new Category(this.id, this.householdId, this.groupId, this.name, new Date());
   }
 }

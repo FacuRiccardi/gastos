@@ -18,6 +18,10 @@ describe('Money', () => {
     expect(() => new Money(-50, ARS)).toThrow();
   });
 
+  it('rejects NaN as amount', () => {
+    expect(() => new Money(NaN, ARS)).toThrow();
+  });
+
   it('two Money instances with the same amount and currency are equal', () => {
     expect(new Money(100, ARS).equals(new Money(100, ARS))).toBe(true);
   });

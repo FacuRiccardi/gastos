@@ -16,6 +16,7 @@ export class Household {
   }
 
   addMember(userId: UserId): Household {
+    if (this.members.includes(userId)) throw new Error('User is already a member of this Household');
     return new Household(this.id, this.name, [...this.members, userId]);
   }
 }

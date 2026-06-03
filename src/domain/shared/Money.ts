@@ -5,7 +5,7 @@ export class Money {
     readonly amount: number,
     readonly currency: Currency,
   ) {
-    if (amount <= 0) throw new Error('Money amount must be positive');
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error('Money amount must be positive');
   }
 
   equals(other: Money): boolean {

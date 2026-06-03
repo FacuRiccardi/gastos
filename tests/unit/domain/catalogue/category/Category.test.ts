@@ -69,4 +69,19 @@ describe('Category', () => {
     const category = new Category(id, householdId, groupId, 'Food');
     expect(category.softDelete().isDeleted).toBe(true);
   });
+
+  it('rename() throws on a deleted category', () => {
+    const deleted = new Category(id, householdId, groupId, 'Food').softDelete();
+    expect(() => deleted.rename('New Name')).toThrow();
+  });
+
+  it('moveTo() throws on a deleted category', () => {
+    const deleted = new Category(id, householdId, groupId, 'Food').softDelete();
+    expect(() => deleted.moveTo(GroupId.generate())).toThrow();
+  });
+
+  it('softDelete() throws on an already deleted category', () => {
+    const deleted = new Category(id, householdId, groupId, 'Food').softDelete();
+    expect(() => deleted.softDelete()).toThrow();
+  });
 });

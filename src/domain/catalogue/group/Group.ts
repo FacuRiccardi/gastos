@@ -16,10 +16,12 @@ export class Group {
   }
 
   rename(newName: string): Group {
+    if (this.isDeleted) throw new Error('Cannot rename a deleted Group');
     return new Group(this.id, this.householdId, newName, this.deletedAt);
   }
 
   softDelete(): Group {
+    if (this.isDeleted) throw new Error('Group is already deleted');
     return new Group(this.id, this.householdId, this.name, new Date());
   }
 }

@@ -60,4 +60,14 @@ describe('PaymentInstrument', () => {
     const instrument = new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'My Visa');
     expect(instrument.softDelete().isDeleted).toBe(true);
   });
+
+  it('rename() throws on a deleted instrument', () => {
+    const deleted = new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'My Visa').softDelete();
+    expect(() => deleted.rename('New Name')).toThrow();
+  });
+
+  it('softDelete() throws on an already deleted instrument', () => {
+    const deleted = new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'My Visa').softDelete();
+    expect(() => deleted.softDelete()).toThrow();
+  });
 });

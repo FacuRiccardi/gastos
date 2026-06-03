@@ -54,4 +54,14 @@ describe('Group', () => {
     const group = new Group(id, householdId, 'Fixed Expenses');
     expect(group.softDelete().isDeleted).toBe(true);
   });
+
+  it('rename() throws on a deleted group', () => {
+    const deleted = new Group(id, householdId, 'Fixed Expenses').softDelete();
+    expect(() => deleted.rename('New Name')).toThrow();
+  });
+
+  it('softDelete() throws on an already deleted group', () => {
+    const deleted = new Group(id, householdId, 'Fixed Expenses').softDelete();
+    expect(() => deleted.softDelete()).toThrow();
+  });
 });

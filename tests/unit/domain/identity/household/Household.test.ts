@@ -46,4 +46,9 @@ describe('Household', () => {
     household.addMember(newMember);
     expect(household.members).toHaveLength(1);
   });
+
+  it('addMember() throws when the user is already a member', () => {
+    const household = new Household(id, 'Home', [memberId]);
+    expect(() => household.addMember(memberId)).toThrow();
+  });
 });

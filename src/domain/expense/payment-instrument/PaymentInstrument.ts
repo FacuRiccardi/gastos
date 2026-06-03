@@ -18,10 +18,12 @@ export class PaymentInstrument {
   }
 
   rename(newName: string): PaymentInstrument {
+    if (this.isDeleted) throw new Error('Cannot rename a deleted PaymentInstrument');
     return new PaymentInstrument(this.id, this.userId, this.type, newName, this.deletedAt);
   }
 
   softDelete(): PaymentInstrument {
+    if (this.isDeleted) throw new Error('PaymentInstrument is already deleted');
     return new PaymentInstrument(this.id, this.userId, this.type, this.name, new Date());
   }
 }
