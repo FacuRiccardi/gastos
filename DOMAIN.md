@@ -114,7 +114,7 @@ _Avoid_: "card," "account" (use PaymentInstrument).
 **Use Cases:**
 - `LogExpense` — record a new Expense for the current user within the Household
 - `DeleteExpense` — permanently remove an Expense
-- `ListExpenses` — return Expenses for a Household, filterable by date range, Category, Group, and PaymentInstrument
+- `ListExpenses` — return Expenses for a Household, filterable by date range, Category, and PaymentInstrument. When filtering by Group, the application layer resolves the GroupId to its CategoryIds via the Catalogue and filters by those instead. `Expense` never stores a GroupId directly.
 - `CreatePaymentInstrument` — save a new credit card or bank account for the current user
 - `RenamePaymentInstrument` — change the name of a saved instrument
 - `SoftDeletePaymentInstrument` — mark an instrument as deleted; it disappears from new-expense selection but remains resolvable on existing Expenses
@@ -160,7 +160,9 @@ _Avoid_: "budget" (too vague), "spending rule."
 - A soft-deleted `PaymentInstrument` MUST NOT appear as a selectable option when logging a new Expense, but MUST remain resolvable for existing Expenses that reference it.
 - A `Category` belongs to exactly one `Group`. Reassigning it changes the `GroupId` reference on the Category aggregate.
 - `Group` and `Category` are scoped to a `Household`. A `HouseholdId` is always required.
-- A soft-deleted `Group` or `Category` MUST NOT appear as a selectable option when logging a new Expense, but MUST remain resolvable for existing Expenses that reference it.
+- A soft-deleted `Group`, `Category`, or `PaymentInstrument` MUST NOT appear as a selectable option when logging a new Expense, but MUST remain resolvable for existing Expenses that reference it.
+- A soft-deleted aggregate cannot be mutated. Calling `rename()`, `moveTo()`, or `softDelete()` on an already-deleted aggregate is an error.
+- A `User` can only be a member of a `Household` once. Adding the same `UserId` twice is an error.
 - A `BudgetLimit` targets either a `CategoryId` or a `GroupId` — never both, never neither.
 - A `BudgetLimit` is scoped to a `Household`.
 - Only `Currency.ARS` is supported in the initial build. All `Money` values are in the same currency for budget balance calculations to be valid.
@@ -178,6 +180,9 @@ Expenses, the Catalogue, and Budget Limits are all scoped to a Household — not
 
 ### Budget Limit period is per-limit, not global
 Each `BudgetLimit` configures its own `BudgetPeriod`. This allows mixing monthly limits (e.g., food) with rolling limits (e.g., entertainment) without a global setting that would force one model on all limits.
+
+### Expense does not store GroupId
+`Expense` only stores `CategoryId`. Filtering by Group is resolved in the application layer by fetching the Group's CategoryIds from the Catalogue and passing them as a category filter to the Expense repository. This avoids stale GroupId data on historical expenses when a Category is moved to a different Group — the grouping always reflects the Category's current Group, not its Group at log time.
 
 ### Expenses are append-only except for deletion
 Expenses can be deleted but not edited. This preserves the integrity of historical spending data and simplifies the audit trail.
