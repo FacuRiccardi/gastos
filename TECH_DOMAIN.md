@@ -28,6 +28,8 @@ src/
 tests/
   unit/
     domain/       ← mirrors src/domain/ folder-for-folder
+    application/  ← mirrors src/application/ folder-for-folder
+  helpers/        ← in-memory repository implementations shared across application tests
   integration/    ← tests that span infrastructure adapters
 ```
 
@@ -88,6 +90,136 @@ src/domain/
 
 ---
 
+## Folder Structure — `src/application/`
+
+One class per use case, organized by bounded context. Each file exports the use case class, its input type, and its output type.
+
+```
+src/application/
+  identity/
+    CreateUser.ts
+    CreateHousehold.ts
+    JoinHousehold.ts
+  catalogue/
+    CreateGroup.ts
+    RenameGroup.ts
+    SoftDeleteGroup.ts
+    ListGroups.ts
+    CreateCategory.ts
+    RenameCategory.ts
+    MoveCategory.ts
+    SoftDeleteCategory.ts
+    ListCategories.ts
+  expense/
+    LogExpense.ts
+    DeleteExpense.ts
+    ListExpenses.ts
+    payment-instrument/
+      CreatePaymentInstrument.ts
+      RenamePaymentInstrument.ts
+      SoftDeletePaymentInstrument.ts
+      ListPaymentInstruments.ts
+  budget/
+    CreateBudgetLimit.ts
+    EditBudgetLimit.ts
+    DeleteBudgetLimit.ts
+    GetBudgetLimitBalance.ts
+    ListBudgetLimits.ts
+```
+
+### Use Case Shape
+
+Every use case follows this pattern:
+
+```typescript
+export interface LogExpenseInput {
+  householdId: HouseholdId;
+  userId: UserId;
+  // ... all required inputs using domain types
+}
+
+export type LogExpenseOutput = { id: ExpenseId };
+
+export class LogExpense {
+  constructor(
+    private readonly expenses: ExpenseRepository,
+    private readonly categories: CategoryRepository,
+  ) {}
+
+  async execute(input: LogExpenseInput): Promise<LogExpenseOutput> {
+    // 1. load / validate via repositories
+    // 2. call domain methods
+    // 3. persist via repositories
+    // 4. return output
+  }
+}
+```
+
+**Rules:**
+- Input and output types use domain types (branded IDs, VOs) — no raw strings
+- The constructor declares only the repository interfaces it actually needs
+- `execute()` is always `async` and returns a `Promise`
+- Use cases do not call other use cases — they call repositories and domain methods directly
+- Cross-context queries (e.g. resolving GroupId → CategoryIds for ListExpenses) are orchestrated here
+
+---
+
+## Folder Structure — `tests/unit/application/`
+
+Mirrors `src/application/`. Each use case has one test file.
+
+```
+tests/unit/application/
+  identity/
+    CreateUser.test.ts
+    CreateHousehold.test.ts
+    JoinHousehold.test.ts
+  catalogue/
+    CreateGroup.test.ts
+    RenameGroup.test.ts
+    SoftDeleteGroup.test.ts
+    ListGroups.test.ts
+    CreateCategory.test.ts
+    RenameCategory.test.ts
+    MoveCategory.test.ts
+    SoftDeleteCategory.test.ts
+    ListCategories.test.ts
+  expense/
+    LogExpense.test.ts
+    DeleteExpense.test.ts
+    ListExpenses.test.ts
+    payment-instrument/
+      CreatePaymentInstrument.test.ts
+      RenamePaymentInstrument.test.ts
+      SoftDeletePaymentInstrument.test.ts
+      ListPaymentInstruments.test.ts
+  budget/
+    CreateBudgetLimit.test.ts
+    EditBudgetLimit.test.ts
+    DeleteBudgetLimit.test.ts
+    GetBudgetLimitBalance.test.ts
+    ListBudgetLimits.test.ts
+```
+
+### In-Memory Repositories
+
+Application tests never hit a real database. Each repository interface has an in-memory implementation in `tests/helpers/`, shared across all use case tests.
+
+```
+tests/helpers/
+  InMemoryHouseholdRepository.ts
+  InMemoryUserRepository.ts
+  InMemoryGroupRepository.ts
+  InMemoryCategoryRepository.ts
+  InMemoryExpenseRepository.ts
+  InMemoryPaymentInstrumentRepository.ts
+  InMemoryBudgetLimitRepository.ts
+```
+
+Each in-memory implementation stores aggregates in a plain `Map` and implements the full repository interface. They are the only place in the test suite that holds mutable state.
+
+---
+
 ## Folder Structure — `tests/unit/domain/`
 
 Mirrors `src/domain/` exactly. Each file under `src/domain/` that contains non-trivial logic has a corresponding `.test.ts` file.
@@ -143,7 +275,6 @@ tests/unit/domain/
 BudgetLimit.forCategory(id, householdId, money, period)
 BudgetLimit.forGroup(id, householdId, money, period)
 ```
-
 ---
 
 ## Concept-to-Code Table
