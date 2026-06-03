@@ -3,17 +3,14 @@ import { BudgetLimitRepository } from '../../domain/budget/BudgetLimitRepository
 import { CategoryRepository } from '../../domain/catalogue/category/CategoryRepository.js';
 import { ExpenseFilters } from '../../domain/expense/ExpenseFilters.js';
 import { ExpenseRepository } from '../../domain/expense/ExpenseRepository.js';
-import { Money } from '../../domain/shared/Money.js';
-import { Pagination } from '../../domain/shared/Pagination.js';
+import { Balance } from '../../domain/shared/Balance.js';
 
 export interface GetBudgetLimitBalanceInput {
   id: BudgetLimitId;
   asOf?: Date;
 }
 
-export type GetBudgetLimitBalanceOutput = { remaining: Money };
-
-const ALL_EXPENSES_PAGINATION = new Pagination(100_000, 0);
+export type GetBudgetLimitBalanceOutput = { remaining: Balance };
 
 export class GetBudgetLimitBalance {
   constructor(
@@ -37,10 +34,8 @@ export class GetBudgetLimitBalance {
     }
 
     const filters = new ExpenseFilters(from, to, categoryIds);
-    const page = await this.expenses.findByHousehold(limit.householdId, filters, ALL_EXPENSES_PAGINATION);
-
-    const spent = page.items.reduce((sum, e) => sum + e.money.amount, 0);
-    const remaining = new Money(limit.money.amount - spent, limit.money.currency);
+    const spent = await this.expenses.sumAmountByHousehold(limit.householdId, filters);
+    const remaining = new Balance(limit.money.amount - spent, limit.money.currency);
 
     return { remaining };
   }

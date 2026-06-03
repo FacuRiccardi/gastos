@@ -21,6 +21,9 @@ export class CreateBudgetLimit {
   constructor(private readonly limits: BudgetLimitRepository) {}
 
   async execute(input: CreateBudgetLimitInput): Promise<CreateBudgetLimitOutput> {
+    if (!input.categoryId && !input.groupId) {
+      throw new Error('Either categoryId or groupId must be provided');
+    }
     const id = BudgetLimitId.generate();
     const limit = input.categoryId !== undefined
       ? BudgetLimit.forCategory(id, input.householdId, input.money, input.period, input.categoryId)

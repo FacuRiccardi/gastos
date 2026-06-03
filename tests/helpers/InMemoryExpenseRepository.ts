@@ -18,6 +18,28 @@ export class InMemoryExpenseRepository implements ExpenseRepository {
     filters: ExpenseFilters,
     pagination: Pagination,
   ): Promise<Page<Expense>> {
+    const items = this.applyFilters(householdId, filters);
+    const total = items.length;
+    const paged = items.slice(pagination.offset, pagination.offset + pagination.limit);
+    return new Page(paged, total);
+  }
+
+  async sumAmountByHousehold(
+    householdId: HouseholdId,
+    filters: ExpenseFilters,
+  ): Promise<number> {
+    return this.applyFilters(householdId, filters).reduce((sum, e) => sum + e.money.amount, 0);
+  }
+
+  async save(expense: Expense): Promise<void> {
+    this.store.set(expense.id, expense);
+  }
+
+  async delete(id: ExpenseId): Promise<void> {
+    this.store.delete(id);
+  }
+
+  private applyFilters(householdId: HouseholdId, filters: ExpenseFilters): Expense[] {
     let items = [...this.store.values()].filter((e) => e.householdId === householdId);
 
     if (filters.from !== undefined) {
@@ -41,16 +63,6 @@ export class InMemoryExpenseRepository implements ExpenseRepository {
       );
     }
 
-    const total = items.length;
-    const paged = items.slice(pagination.offset, pagination.offset + pagination.limit);
-    return new Page(paged, total);
-  }
-
-  async save(expense: Expense): Promise<void> {
-    this.store.set(expense.id, expense);
-  }
-
-  async delete(id: ExpenseId): Promise<void> {
-    this.store.delete(id);
+    return items;
   }
 }

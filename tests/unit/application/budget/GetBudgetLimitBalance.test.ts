@@ -85,6 +85,18 @@ describe('Budget / GetBudgetLimitBalance', () => {
     expect(result.remaining.amount).toBe(750);
   });
 
+  it('returns a negative remaining balance when expenses exceed the cap', async () => {
+    const id = BudgetLimitId.generate();
+    const categoryId = CategoryId.generate();
+    await limits.save(BudgetLimit.forCategory(id, householdId, cap, period, categoryId));
+    await expenses.save(makeExpense(categoryId, 1200, 2024, 1, 10));
+
+    const result = await useCase.execute({ id });
+
+    expect(result.remaining.amount).toBe(-200);
+    expect(result.remaining.isOverBudget()).toBe(true);
+  });
+
   it('throws when the budget limit does not exist', async () => {
     await expect(
       useCase.execute({ id: BudgetLimitId.generate() }),

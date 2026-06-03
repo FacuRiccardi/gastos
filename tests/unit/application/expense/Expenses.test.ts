@@ -116,6 +116,20 @@ describe('Expense / ListExpenses', () => {
     expect(result.page.items[0].date.toDate().getMonth()).toBe(2); // March
   });
 
+  it('throws when both groupId and filters.categoryIds are provided', async () => {
+    const useCase = new ListExpenses(expenses, categories);
+    const categoryId = CategoryId.generate();
+
+    await expect(
+      useCase.execute({
+        householdId,
+        filters: new ExpenseFilters(undefined, undefined, [categoryId]),
+        groupId,
+        pagination,
+      }),
+    ).rejects.toThrow();
+  });
+
   it('resolves a groupId filter to its category ids and returns only matching expenses', async () => {
     const useCase = new ListExpenses(expenses, categories);
     const catInGroup = CategoryId.generate();

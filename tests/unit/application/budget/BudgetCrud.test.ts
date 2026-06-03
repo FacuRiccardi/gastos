@@ -47,6 +47,14 @@ describe('Budget / CRUD', () => {
       expect(saved!.groupId).toBe(groupId);
       expect(saved!.categoryId).toBeUndefined();
     });
+
+    it('throws a clear error when neither categoryId nor groupId is provided', async () => {
+      const useCase = new CreateBudgetLimit(limits);
+
+      await expect(
+        useCase.execute({ householdId, money, period }),
+      ).rejects.toThrow('Either categoryId or groupId must be provided');
+    });
   });
 
   describe('EditBudgetLimit', () => {

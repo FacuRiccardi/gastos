@@ -100,6 +100,31 @@ describe('Catalogue / Categories', () => {
         useCase.execute({ id, targetGroupId: GroupId.generate() }),
       ).rejects.toThrow();
     });
+
+    it('throws when the target group belongs to a different household', async () => {
+      const useCase = new MoveCategory(categories, groups);
+      const id = CategoryId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      const targetGroupId = GroupId.generate();
+      await categories.save(new Category(id, householdId, groupId, 'Food'));
+      await groups.save(new Group(targetGroupId, otherHouseholdId, 'Other Household Group'));
+
+      await expect(
+        useCase.execute({ id, targetGroupId }),
+      ).rejects.toThrow();
+    });
+
+    it('throws when the target group is soft-deleted', async () => {
+      const useCase = new MoveCategory(categories, groups);
+      const id = CategoryId.generate();
+      const targetGroupId = GroupId.generate();
+      await categories.save(new Category(id, householdId, groupId, 'Food'));
+      await groups.save(new Group(targetGroupId, householdId, 'Deleted Group', new Date()));
+
+      await expect(
+        useCase.execute({ id, targetGroupId }),
+      ).rejects.toThrow();
+    });
   });
 
   describe('SoftDeleteCategory', () => {

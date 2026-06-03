@@ -142,4 +142,44 @@ describe('Expense / LogExpense', () => {
       }),
     ).rejects.toThrow();
   });
+
+  it('throws when the category is soft-deleted', async () => {
+    await categories.save(new Category(categoryId, householdId, groupId, 'Food', new Date()));
+
+    await expect(
+      useCase.execute({ householdId, userId, categoryId, money, paymentMethod: { kind: 'Cash' }, date }),
+    ).rejects.toThrow();
+  });
+
+  it('throws when a bank-account payment references an instrument that does not exist', async () => {
+    await categories.save(new Category(categoryId, householdId, groupId, 'Food'));
+
+    await expect(
+      useCase.execute({
+        householdId,
+        userId,
+        categoryId,
+        money,
+        paymentMethod: { kind: 'BankAccount', instrumentId: PaymentInstrumentId.generate() },
+        date,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('throws when a bank-account payment references an instrument that is not of type BankAccount', async () => {
+    await categories.save(new Category(categoryId, householdId, groupId, 'Food'));
+    const instrumentId = PaymentInstrumentId.generate();
+    await instruments.save(new PaymentInstrument(instrumentId, userId, PaymentInstrumentType.CreditCard, 'Visa'));
+
+    await expect(
+      useCase.execute({
+        householdId,
+        userId,
+        categoryId,
+        money,
+        paymentMethod: { kind: 'BankAccount', instrumentId },
+        date,
+      }),
+    ).rejects.toThrow();
+  });
 });

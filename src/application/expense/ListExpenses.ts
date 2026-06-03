@@ -23,6 +23,10 @@ export class ListExpenses {
   ) {}
 
   async execute(input: ListExpensesInput): Promise<ListExpensesOutput> {
+    if (input.groupId !== undefined && input.filters.categoryIds !== undefined && input.filters.categoryIds.length > 0) {
+      throw new Error('Cannot filter by both groupId and categoryIds simultaneously');
+    }
+
     let filters = input.filters;
 
     if (input.groupId !== undefined) {
