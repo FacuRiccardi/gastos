@@ -1,3 +1,5 @@
+import { ExpenseDate } from '../expense/ExpenseDate.js';
+
 type PeriodVariant =
   | { kind: 'Monthly' }
   | { kind: 'Rolling30Days' }
@@ -21,6 +23,23 @@ export class BudgetPeriod {
 
   get kind(): PeriodVariant['kind'] {
     return this.variant.kind;
+  }
+
+  getDateRange(asOf: Date): { from: ExpenseDate; to: ExpenseDate } {
+    if (this.variant.kind === 'Monthly') {
+      const from = new Date(asOf.getFullYear(), asOf.getMonth(), 1);
+      const to = new Date(asOf.getFullYear(), asOf.getMonth() + 1, 0);
+      return { from: new ExpenseDate(from), to: new ExpenseDate(to) };
+    }
+    if (this.variant.kind === 'Rolling30Days') {
+      const to = new Date(asOf.getFullYear(), asOf.getMonth(), asOf.getDate());
+      const from = new Date(to.getFullYear(), to.getMonth(), to.getDate() - 30);
+      return { from: new ExpenseDate(from), to: new ExpenseDate(to) };
+    }
+    return {
+      from: new ExpenseDate(this.variant.startDate),
+      to: new ExpenseDate(this.variant.endDate),
+    };
   }
 
   equals(other: BudgetPeriod): boolean {

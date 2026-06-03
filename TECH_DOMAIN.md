@@ -275,7 +275,6 @@ tests/unit/domain/
 BudgetLimit.forCategory(id, householdId, money, period)
 BudgetLimit.forGroup(id, householdId, money, period)
 ```
-
 ---
 
 ## Concept-to-Code Table

@@ -1,0 +1,60 @@
+import { ExpenseId } from '../../domain/expense/ExpenseId.js';
+import { Expense } from '../../domain/expense/Expense.js';
+import { ExpenseDate } from '../../domain/expense/ExpenseDate.js';
+import { InstallmentPlan } from '../../domain/expense/InstallmentPlan.js';
+import { PaymentMethod } from '../../domain/expense/PaymentMethod.js';
+import { ExpenseRepository } from '../../domain/expense/ExpenseRepository.js';
+import { CategoryId } from '../../domain/catalogue/category/CategoryId.js';
+import { CategoryRepository } from '../../domain/catalogue/category/CategoryRepository.js';
+import { PaymentInstrumentRepository } from '../../domain/expense/payment-instrument/PaymentInstrumentRepository.js';
+import { PaymentInstrumentType } from '../../domain/expense/payment-instrument/PaymentInstrumentType.js';
+import { HouseholdId } from '../../domain/identity/household/HouseholdId.js';
+import { UserId } from '../../domain/identity/user/UserId.js';
+import { Money } from '../../domain/shared/Money.js';
+
+export interface LogExpenseInput {
+  householdId: HouseholdId;
+  userId: UserId;
+  categoryId: CategoryId;
+  money: Money;
+  paymentMethod: PaymentMethod;
+  date: ExpenseDate;
+  installmentPlan?: InstallmentPlan;
+}
+
+export type LogExpenseOutput = { id: ExpenseId };
+
+export class LogExpense {
+  constructor(
+    private readonly expenses: ExpenseRepository,
+    private readonly categories: CategoryRepository,
+    private readonly instruments: PaymentInstrumentRepository,
+  ) {}
+
+  async execute(input: LogExpenseInput): Promise<LogExpenseOutput> {
+    const category = await this.categories.findById(input.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    if (input.paymentMethod.kind === 'CreditCard') {
+      const instrument = await this.instruments.findById(input.paymentMethod.instrumentId);
+      if (!instrument) throw new Error('PaymentInstrument not found');
+      if (instrument.type !== PaymentInstrumentType.CreditCard) {
+        throw new Error('PaymentInstrument must be of type CreditCard for CreditCard payments');
+      }
+    }
+
+    const id = ExpenseId.generate();
+    const expense = new Expense(
+      id,
+      input.householdId,
+      input.userId,
+      input.categoryId,
+      input.money,
+      input.paymentMethod,
+      input.date,
+      input.installmentPlan,
+    );
+    await this.expenses.save(expense);
+    return { id };
+  }
+}
