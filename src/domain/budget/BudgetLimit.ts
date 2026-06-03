@@ -13,7 +13,9 @@ export class BudgetLimit {
     readonly period: BudgetPeriod,
     readonly categoryId?: CategoryId,
     readonly groupId?: GroupId,
-  ) {}
+  ) {
+    if (!!categoryId === !!groupId) throw new Error('BudgetLimit must target exactly one of categoryId or groupId');
+  }
 
   static forCategory(
     id: BudgetLimitId,

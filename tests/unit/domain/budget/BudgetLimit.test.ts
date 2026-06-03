@@ -48,4 +48,16 @@ describe('BudgetLimit', () => {
     expect(limit.money).toBe(money);
     expect(limit.period).toBe(period);
   });
+
+  it('BudgetPeriod.kind returns the correct literal for Monthly', () => {
+    expect(BudgetPeriod.monthly().kind).toBe('Monthly');
+  });
+
+  it('BudgetPeriod.kind returns the correct literal for Rolling30Days', () => {
+    expect(BudgetPeriod.rolling30Days().kind).toBe('Rolling30Days');
+  });
+
+  it('BudgetPeriod.kind returns the correct literal for Custom', () => {
+    expect(BudgetPeriod.custom(new Date('2025-01-01'), new Date('2025-02-01')).kind).toBe('Custom');
+  });
 });

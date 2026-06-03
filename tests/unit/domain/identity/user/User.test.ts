@@ -7,6 +7,14 @@ const userId = UserId.generate();
 const householdId = HouseholdId.generate();
 
 describe('User', () => {
+  it('rejects an empty name on construction', () => {
+    expect(() => new User(userId, '')).toThrow();
+  });
+
+  it('rejects a whitespace-only name on construction', () => {
+    expect(() => new User(userId, '   ')).toThrow();
+  });
+
   it('constructs with a valid UserId and name (no Household)', () => {
     const user = new User(userId, 'Alice');
     expect(user).toBeDefined();

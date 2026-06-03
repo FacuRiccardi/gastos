@@ -19,7 +19,7 @@ export class BudgetPeriod {
     return new BudgetPeriod({ kind: 'Custom', startDate, endDate });
   }
 
-  get kind(): string {
+  get kind(): PeriodVariant['kind'] {
     return this.variant.kind;
   }
 

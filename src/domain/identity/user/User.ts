@@ -6,7 +6,9 @@ export class User {
     readonly id: UserId,
     readonly name: string,
     readonly householdId?: HouseholdId,
-  ) {}
+  ) {
+    if (!name.trim()) throw new Error('User name must not be empty');
+  }
 
   joinHousehold(householdId: HouseholdId): User {
     if (this.householdId !== undefined) {
