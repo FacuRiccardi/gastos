@@ -53,7 +53,7 @@ describe('Budget / CRUD', () => {
 
       await expect(
         useCase.execute({ householdId, money, period }),
-      ).rejects.toThrow('Either categoryId or groupId must be provided');
+      ).rejects.toMatchObject({ type: 'Application', message: 'Either categoryId or groupId must be provided' });
     });
   });
 
@@ -78,7 +78,7 @@ describe('Budget / CRUD', () => {
 
       await expect(
         useCase.execute({ id: BudgetLimitId.generate(), money, period }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
 
@@ -98,7 +98,7 @@ describe('Budget / CRUD', () => {
     it('throws when the budget limit does not exist', async () => {
       const useCase = new DeleteBudgetLimit(limits);
 
-      await expect(useCase.execute({ id: BudgetLimitId.generate() })).rejects.toThrow();
+      await expect(useCase.execute({ id: BudgetLimitId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
 

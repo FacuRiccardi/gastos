@@ -46,7 +46,7 @@ describe('Catalogue / Groups', () => {
 
       await expect(
         useCase.execute({ id: GroupId.generate(), newName: 'X' }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 
@@ -65,7 +65,7 @@ describe('Catalogue / Groups', () => {
     it('throws when the group does not exist', async () => {
       const useCase = new SoftDeleteGroup(groups);
 
-      await expect(useCase.execute({ id: GroupId.generate() })).rejects.toThrow();
+      await expect(useCase.execute({ id: GroupId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 

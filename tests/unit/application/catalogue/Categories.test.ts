@@ -42,7 +42,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ householdId, groupId: GroupId.generate(), name: 'Rent' }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 
@@ -63,7 +63,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate(), newName: 'X' }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
 
@@ -88,7 +88,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate(), targetGroupId }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
 
     it('throws when the target group does not exist', async () => {
@@ -98,7 +98,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId: GroupId.generate() }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Target group not found' });
     });
 
     it('throws when the target group belongs to a different household', async () => {
@@ -111,7 +111,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Cannot move category across households' });
     });
 
     it('throws when the target group is soft-deleted', async () => {
@@ -123,7 +123,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Target group is deleted' });
     });
   });
 
@@ -144,7 +144,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate() }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
 

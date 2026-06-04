@@ -100,6 +100,6 @@ describe('Budget / GetBudgetLimitBalance', () => {
   it('throws when the budget limit does not exist', async () => {
     await expect(
       useCase.execute({ id: BudgetLimitId.generate() }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
   });
 });

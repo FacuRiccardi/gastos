@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Group } from '../../../../../src/domain/catalogue/group/Group.js';
 import { GroupId } from '../../../../../src/domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../../../../src/domain/identity/household/HouseholdId.js';
+import { DomainError } from '../../../../../src/domain/shared/DomainError.js';
 
 const id = GroupId.generate();
 const householdId = HouseholdId.generate();
@@ -13,7 +14,7 @@ describe('Group', () => {
   });
 
   it('rejects an empty name on construction', () => {
-    expect(() => new Group(id, householdId, '')).toThrow();
+    expect(() => new Group(id, householdId, '')).toThrow(DomainError);
   });
 
   it('rename() returns a new Group with the updated name', () => {
@@ -24,7 +25,7 @@ describe('Group', () => {
 
   it('rename() with an empty string throws', () => {
     const group = new Group(id, householdId, 'Fixed Expenses');
-    expect(() => group.rename('')).toThrow();
+    expect(() => group.rename('')).toThrow(DomainError);
   });
 
   it('rename() leaves the original unchanged', () => {
@@ -57,11 +58,11 @@ describe('Group', () => {
 
   it('rename() throws on a deleted group', () => {
     const deleted = new Group(id, householdId, 'Fixed Expenses').softDelete();
-    expect(() => deleted.rename('New Name')).toThrow();
+    expect(() => deleted.rename('New Name')).toThrow(DomainError);
   });
 
   it('softDelete() throws on an already deleted group', () => {
     const deleted = new Group(id, householdId, 'Fixed Expenses').softDelete();
-    expect(() => deleted.softDelete()).toThrow();
+    expect(() => deleted.softDelete()).toThrow(DomainError);
   });
 });

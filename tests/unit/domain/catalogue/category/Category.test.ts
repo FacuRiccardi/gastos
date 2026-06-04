@@ -3,6 +3,7 @@ import { Category } from '../../../../../src/domain/catalogue/category/Category.
 import { CategoryId } from '../../../../../src/domain/catalogue/category/CategoryId.js';
 import { GroupId } from '../../../../../src/domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../../../../src/domain/identity/household/HouseholdId.js';
+import { DomainError } from '../../../../../src/domain/shared/DomainError.js';
 
 const id = CategoryId.generate();
 const householdId = HouseholdId.generate();
@@ -15,7 +16,7 @@ describe('Category', () => {
   });
 
   it('rejects an empty name on construction', () => {
-    expect(() => new Category(id, householdId, groupId, '')).toThrow();
+    expect(() => new Category(id, householdId, groupId, '')).toThrow(DomainError);
   });
 
   it('rename() returns a new Category with the updated name', () => {
@@ -26,7 +27,7 @@ describe('Category', () => {
 
   it('rename() with an empty string throws', () => {
     const category = new Category(id, householdId, groupId, 'Food');
-    expect(() => category.rename('')).toThrow();
+    expect(() => category.rename('')).toThrow(DomainError);
   });
 
   it('rename() leaves the original unchanged', () => {
@@ -72,16 +73,16 @@ describe('Category', () => {
 
   it('rename() throws on a deleted category', () => {
     const deleted = new Category(id, householdId, groupId, 'Food').softDelete();
-    expect(() => deleted.rename('New Name')).toThrow();
+    expect(() => deleted.rename('New Name')).toThrow(DomainError);
   });
 
   it('moveTo() throws on a deleted category', () => {
     const deleted = new Category(id, householdId, groupId, 'Food').softDelete();
-    expect(() => deleted.moveTo(GroupId.generate())).toThrow();
+    expect(() => deleted.moveTo(GroupId.generate())).toThrow(DomainError);
   });
 
   it('softDelete() throws on an already deleted category', () => {
     const deleted = new Category(id, householdId, groupId, 'Food').softDelete();
-    expect(() => deleted.softDelete()).toThrow();
+    expect(() => deleted.softDelete()).toThrow(DomainError);
   });
 });

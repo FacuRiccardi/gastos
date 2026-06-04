@@ -1,5 +1,6 @@
 import { PaymentInstrumentId } from '../../../domain/expense/payment-instrument/PaymentInstrumentId.js';
 import { PaymentInstrumentRepository } from '../../../domain/expense/payment-instrument/PaymentInstrumentRepository.js';
+import { ApplicationError } from '../../ApplicationError.js';
 
 export interface SoftDeletePaymentInstrumentInput {
   id: PaymentInstrumentId;
@@ -10,7 +11,7 @@ export class SoftDeletePaymentInstrument {
 
   async execute(input: SoftDeletePaymentInstrumentInput): Promise<void> {
     const instrument = await this.instruments.findById(input.id);
-    if (!instrument) throw new Error('PaymentInstrument not found');
+    if (!instrument) throw new ApplicationError('PaymentInstrument not found');
 
     await this.instruments.save(instrument.softDelete());
   }

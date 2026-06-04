@@ -48,7 +48,7 @@ describe('Expense / DeleteExpense', () => {
   it('throws when the expense does not exist', async () => {
     const useCase = new DeleteExpense(expenses);
 
-    await expect(useCase.execute({ id: ExpenseId.generate() })).rejects.toThrow();
+    await expect(useCase.execute({ id: ExpenseId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'Expense not found' });
   });
 });
 
@@ -127,7 +127,7 @@ describe('Expense / ListExpenses', () => {
         groupId,
         pagination,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ type: 'Application', message: 'Cannot filter by both groupId and categoryIds simultaneously' });
   });
 
   it('resolves a groupId filter to its category ids and returns only matching expenses', async () => {

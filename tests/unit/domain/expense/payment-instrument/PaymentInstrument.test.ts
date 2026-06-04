@@ -3,6 +3,7 @@ import { PaymentInstrument } from '../../../../../src/domain/expense/payment-ins
 import { PaymentInstrumentId } from '../../../../../src/domain/expense/payment-instrument/PaymentInstrumentId.js';
 import { PaymentInstrumentType } from '../../../../../src/domain/expense/payment-instrument/PaymentInstrumentType.js';
 import { UserId } from '../../../../../src/domain/identity/user/UserId.js';
+import { DomainError } from '../../../../../src/domain/shared/DomainError.js';
 
 const id = PaymentInstrumentId.generate();
 const userId = UserId.generate();
@@ -19,7 +20,7 @@ describe('PaymentInstrument', () => {
   });
 
   it('rejects an empty name on construction', () => {
-    expect(() => new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, '')).toThrow();
+    expect(() => new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, '')).toThrow(DomainError);
   });
 
   it('rename() returns a new PaymentInstrument with the updated name', () => {
@@ -30,7 +31,7 @@ describe('PaymentInstrument', () => {
 
   it('rename() with an empty string throws', () => {
     const instrument = new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'My Visa');
-    expect(() => instrument.rename('')).toThrow();
+    expect(() => instrument.rename('')).toThrow(DomainError);
   });
 
   it('rename() leaves the original unchanged', () => {
@@ -63,11 +64,11 @@ describe('PaymentInstrument', () => {
 
   it('rename() throws on a deleted instrument', () => {
     const deleted = new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'My Visa').softDelete();
-    expect(() => deleted.rename('New Name')).toThrow();
+    expect(() => deleted.rename('New Name')).toThrow(DomainError);
   });
 
   it('softDelete() throws on an already deleted instrument', () => {
     const deleted = new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'My Visa').softDelete();
-    expect(() => deleted.softDelete()).toThrow();
+    expect(() => deleted.softDelete()).toThrow(DomainError);
   });
 });

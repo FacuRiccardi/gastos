@@ -4,6 +4,7 @@ import { CategoryRepository } from '../../domain/catalogue/category/CategoryRepo
 import { ExpenseFilters } from '../../domain/expense/ExpenseFilters.js';
 import { ExpenseRepository } from '../../domain/expense/ExpenseRepository.js';
 import { Balance } from '../../domain/shared/Balance.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface GetBudgetLimitBalanceInput {
   id: BudgetLimitId;
@@ -21,7 +22,7 @@ export class GetBudgetLimitBalance {
 
   async execute(input: GetBudgetLimitBalanceInput): Promise<GetBudgetLimitBalanceOutput> {
     const limit = await this.limits.findById(input.id);
-    if (!limit) throw new Error('BudgetLimit not found');
+    if (!limit) throw new ApplicationError('BudgetLimit not found');
 
     const asOf = input.asOf ?? new Date();
     const { from, to } = limit.period.getDateRange(asOf);

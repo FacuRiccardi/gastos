@@ -1,4 +1,5 @@
 import { ExpenseDate } from '../expense/ExpenseDate.js';
+import { DomainError } from '../shared/DomainError.js';
 
 type PeriodVariant =
   | { kind: 'Monthly' }
@@ -17,7 +18,7 @@ export class BudgetPeriod {
   }
 
   static custom(startDate: Date, endDate: Date): BudgetPeriod {
-    if (endDate <= startDate) throw new Error('Custom period end date must be after start date');
+    if (endDate <= startDate) throw new DomainError('Custom period end date must be after start date');
     return new BudgetPeriod({ kind: 'Custom', startDate, endDate });
   }
 

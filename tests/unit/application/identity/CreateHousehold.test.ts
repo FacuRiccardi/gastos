@@ -33,6 +33,6 @@ describe('CreateHousehold', () => {
 
     await expect(
       useCase.execute({ name: 'Casa', creatorId: userId }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ type: 'Application', message: 'User not found' });
   });
 });

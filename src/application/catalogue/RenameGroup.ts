@@ -1,5 +1,6 @@
 import { GroupId } from '../../domain/catalogue/group/GroupId.js';
 import { GroupRepository } from '../../domain/catalogue/group/GroupRepository.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface RenameGroupInput {
   id: GroupId;
@@ -11,7 +12,7 @@ export class RenameGroup {
 
   async execute(input: RenameGroupInput): Promise<void> {
     const group = await this.groups.findById(input.id);
-    if (!group) throw new Error('Group not found');
+    if (!group) throw new ApplicationError('Group not found');
 
     await this.groups.save(group.rename(input.newName));
   }

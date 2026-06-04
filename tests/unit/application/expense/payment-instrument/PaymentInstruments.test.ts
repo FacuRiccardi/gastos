@@ -52,7 +52,7 @@ describe('Expense / PaymentInstruments', () => {
 
       await expect(
         useCase.execute({ id: PaymentInstrumentId.generate(), newName: 'X' }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });
 
@@ -73,7 +73,7 @@ describe('Expense / PaymentInstruments', () => {
 
       await expect(
         useCase.execute({ id: PaymentInstrumentId.generate() }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });
 

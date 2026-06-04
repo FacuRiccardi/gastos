@@ -1,6 +1,7 @@
 import { CategoryId } from './CategoryId.js';
 import { GroupId } from '../group/GroupId.js';
 import { HouseholdId } from '../../identity/household/HouseholdId.js';
+import { DomainError } from '../../shared/DomainError.js';
 
 export class Category {
   constructor(
@@ -10,7 +11,7 @@ export class Category {
     readonly name: string,
     readonly deletedAt?: Date,
   ) {
-    if (!name.trim()) throw new Error('Category name must not be empty');
+    if (!name.trim()) throw new DomainError('Category name must not be empty');
   }
 
   get isDeleted(): boolean {
@@ -18,17 +19,17 @@ export class Category {
   }
 
   rename(newName: string): Category {
-    if (this.isDeleted) throw new Error('Cannot rename a deleted Category');
+    if (this.isDeleted) throw new DomainError('Cannot rename a deleted Category');
     return new Category(this.id, this.householdId, this.groupId, newName, this.deletedAt);
   }
 
   moveTo(newGroupId: GroupId): Category {
-    if (this.isDeleted) throw new Error('Cannot move a deleted Category');
+    if (this.isDeleted) throw new DomainError('Cannot move a deleted Category');
     return new Category(this.id, this.householdId, newGroupId, this.name, this.deletedAt);
   }
 
   softDelete(): Category {
-    if (this.isDeleted) throw new Error('Category is already deleted');
+    if (this.isDeleted) throw new DomainError('Category is already deleted');
     return new Category(this.id, this.householdId, this.groupId, this.name, new Date());
   }
 }

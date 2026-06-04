@@ -44,7 +44,7 @@ describe('JoinHousehold', () => {
 
     await expect(
       useCase.execute({ userId: UserId.generate(), householdId }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ type: 'Application', message: 'User not found' });
   });
 
   it('throws when the household does not exist', async () => {
@@ -53,6 +53,6 @@ describe('JoinHousehold', () => {
 
     await expect(
       useCase.execute({ userId, householdId: HouseholdId.generate() }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ type: 'Application', message: 'Household not found' });
   });
 });

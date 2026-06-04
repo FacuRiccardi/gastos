@@ -6,6 +6,7 @@ import { GroupId } from '../../domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../domain/identity/household/HouseholdId.js';
 import { Page } from '../../domain/shared/Page.js';
 import { Pagination } from '../../domain/shared/Pagination.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface ListExpensesInput {
   householdId: HouseholdId;
@@ -24,7 +25,7 @@ export class ListExpenses {
 
   async execute(input: ListExpensesInput): Promise<ListExpensesOutput> {
     if (input.groupId !== undefined && input.filters.categoryIds !== undefined && input.filters.categoryIds.length > 0) {
-      throw new Error('Cannot filter by both groupId and categoryIds simultaneously');
+      throw new ApplicationError('Cannot filter by both groupId and categoryIds simultaneously');
     }
 
     let filters = input.filters;

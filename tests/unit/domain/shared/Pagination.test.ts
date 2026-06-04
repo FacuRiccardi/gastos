@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Pagination } from '../../../../src/domain/shared/Pagination.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 describe('Pagination', () => {
   describe('valid construction', () => {
@@ -18,23 +19,23 @@ describe('Pagination', () => {
 
   describe('invariants', () => {
     it('rejects a zero limit', () => {
-      expect(() => new Pagination(0, 0)).toThrow();
+      expect(() => new Pagination(0, 0)).toThrow(DomainError);
     });
 
     it('rejects a negative limit', () => {
-      expect(() => new Pagination(-1, 0)).toThrow();
+      expect(() => new Pagination(-1, 0)).toThrow(DomainError);
     });
 
     it('rejects a fractional limit', () => {
-      expect(() => new Pagination(1.5, 0)).toThrow();
+      expect(() => new Pagination(1.5, 0)).toThrow(DomainError);
     });
 
     it('rejects a negative offset', () => {
-      expect(() => new Pagination(10, -1)).toThrow();
+      expect(() => new Pagination(10, -1)).toThrow(DomainError);
     });
 
     it('rejects a fractional offset', () => {
-      expect(() => new Pagination(10, 0.5)).toThrow();
+      expect(() => new Pagination(10, 0.5)).toThrow(DomainError);
     });
   });
 });
