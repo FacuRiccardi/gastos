@@ -25,21 +25,23 @@ export class DrizzleHouseholdRepository implements HouseholdRepository {
     const row = this.toRow(household);
     const now = new Date();
 
-    await this.db
-      .insert(households)
-      .values({ ...row, createdAt: now, updatedAt: now })
-      .onConflictDoUpdate({ target: households.id, set: { name: row.name, updatedAt: now } });
+    await this.db.transaction(async (tx) => {
+      await tx
+        .insert(households)
+        .values({ ...row, createdAt: now, updatedAt: now })
+        .onConflictDoUpdate({ target: households.id, set: { name: row.name, updatedAt: now } });
 
-    await this.db.delete(householdMembers).where(eq(householdMembers.householdId, household.id));
-    if (household.members.length > 0) {
-      await this.db.insert(householdMembers).values(
-        household.members.map((userId) => ({
-          householdId: household.id,
-          userId,
-          createdAt: now,
-        })),
-      );
-    }
+      await tx.delete(householdMembers).where(eq(householdMembers.householdId, household.id));
+      if (household.members.length > 0) {
+        await tx.insert(householdMembers).values(
+          household.members.map((userId) => ({
+            householdId: household.id,
+            userId,
+            createdAt: now,
+          })),
+        );
+      }
+    });
   }
 
   private toDomain(

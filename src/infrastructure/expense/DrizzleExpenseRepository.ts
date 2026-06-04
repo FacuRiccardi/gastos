@@ -53,7 +53,7 @@ export class DrizzleExpenseRepository implements ExpenseRepository {
   async sumAmountByHousehold(householdId: HouseholdId, filters: ExpenseFilters): Promise<number> {
     const conditions = this.buildConditions(householdId, filters);
     const rows = await this.db
-      .select({ total: sql<string>`coalesce(sum(money_amount), 0)` })
+      .select({ total: sql<string>`coalesce(sum(${expenses.moneyAmount}), 0)` })
       .from(expenses)
       .where(and(...conditions));
     return parseFloat(rows[0]?.total ?? '0');
