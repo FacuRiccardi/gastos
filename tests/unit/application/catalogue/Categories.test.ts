@@ -11,7 +11,6 @@ import { CategoryId } from '../../../../src/domain/catalogue/category/CategoryId
 import { Group } from '../../../../src/domain/catalogue/group/Group.js';
 import { GroupId } from '../../../../src/domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../../../src/domain/identity/household/HouseholdId.js';
-import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('Catalogue / Categories', () => {
   let categories: InMemoryCategoryRepository;
@@ -43,7 +42,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ householdId, groupId: GroupId.generate(), name: 'Rent' }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 
@@ -64,7 +63,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate(), newName: 'X' }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
 
@@ -89,7 +88,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate(), targetGroupId }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
 
     it('throws when the target group does not exist', async () => {
@@ -99,7 +98,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId: GroupId.generate() }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Target group not found' });
     });
 
     it('throws when the target group belongs to a different household', async () => {
@@ -112,7 +111,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Cannot move category across households' });
     });
 
     it('throws when the target group is soft-deleted', async () => {
@@ -124,7 +123,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Target group is deleted' });
     });
   });
 
@@ -145,7 +144,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate() }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
 

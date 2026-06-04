@@ -12,7 +12,6 @@ import { GroupId } from '../../../../src/domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../../../src/domain/identity/household/HouseholdId.js';
 import { Money } from '../../../../src/domain/shared/Money.js';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
-import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('Budget / CRUD', () => {
   let limits: InMemoryBudgetLimitRepository;
@@ -79,7 +78,7 @@ describe('Budget / CRUD', () => {
 
       await expect(
         useCase.execute({ id: BudgetLimitId.generate(), money, period }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
 
@@ -99,7 +98,7 @@ describe('Budget / CRUD', () => {
     it('throws when the budget limit does not exist', async () => {
       const useCase = new DeleteBudgetLimit(limits);
 
-      await expect(useCase.execute({ id: BudgetLimitId.generate() })).rejects.toThrow(ApplicationError);
+      await expect(useCase.execute({ id: BudgetLimitId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
 

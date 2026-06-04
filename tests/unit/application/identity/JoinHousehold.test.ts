@@ -6,7 +6,6 @@ import { Household } from '../../../../src/domain/identity/household/Household.j
 import { HouseholdId } from '../../../../src/domain/identity/household/HouseholdId.js';
 import { User } from '../../../../src/domain/identity/user/User.js';
 import { UserId } from '../../../../src/domain/identity/user/UserId.js';
-import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('JoinHousehold', () => {
   let households: InMemoryHouseholdRepository;
@@ -45,7 +44,7 @@ describe('JoinHousehold', () => {
 
     await expect(
       useCase.execute({ userId: UserId.generate(), householdId }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'User not found' });
   });
 
   it('throws when the household does not exist', async () => {
@@ -54,6 +53,6 @@ describe('JoinHousehold', () => {
 
     await expect(
       useCase.execute({ userId, householdId: HouseholdId.generate() }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'Household not found' });
   });
 });

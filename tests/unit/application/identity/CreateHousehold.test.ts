@@ -4,7 +4,6 @@ import { InMemoryHouseholdRepository } from '../../../helpers/InMemoryHouseholdR
 import { InMemoryUserRepository } from '../../../helpers/InMemoryUserRepository.js';
 import { User } from '../../../../src/domain/identity/user/User.js';
 import { UserId } from '../../../../src/domain/identity/user/UserId.js';
-import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('CreateHousehold', () => {
   let households: InMemoryHouseholdRepository;
@@ -34,6 +33,6 @@ describe('CreateHousehold', () => {
 
     await expect(
       useCase.execute({ name: 'Casa', creatorId: userId }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'User not found' });
   });
 });

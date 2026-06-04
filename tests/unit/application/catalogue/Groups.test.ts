@@ -7,7 +7,6 @@ import { InMemoryGroupRepository } from '../../../helpers/InMemoryGroupRepositor
 import { Group } from '../../../../src/domain/catalogue/group/Group.js';
 import { GroupId } from '../../../../src/domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../../../src/domain/identity/household/HouseholdId.js';
-import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('Catalogue / Groups', () => {
   let groups: InMemoryGroupRepository;
@@ -47,7 +46,7 @@ describe('Catalogue / Groups', () => {
 
       await expect(
         useCase.execute({ id: GroupId.generate(), newName: 'X' }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 
@@ -66,7 +65,7 @@ describe('Catalogue / Groups', () => {
     it('throws when the group does not exist', async () => {
       const useCase = new SoftDeleteGroup(groups);
 
-      await expect(useCase.execute({ id: GroupId.generate() })).rejects.toThrow(ApplicationError);
+      await expect(useCase.execute({ id: GroupId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 

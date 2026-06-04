@@ -8,7 +8,6 @@ import { PaymentInstrument } from '../../../../../src/domain/expense/payment-ins
 import { PaymentInstrumentId } from '../../../../../src/domain/expense/payment-instrument/PaymentInstrumentId.js';
 import { PaymentInstrumentType } from '../../../../../src/domain/expense/payment-instrument/PaymentInstrumentType.js';
 import { UserId } from '../../../../../src/domain/identity/user/UserId.js';
-import { ApplicationError } from '../../../../../src/application/ApplicationError.js';
 
 describe('Expense / PaymentInstruments', () => {
   let instruments: InMemoryPaymentInstrumentRepository;
@@ -53,7 +52,7 @@ describe('Expense / PaymentInstruments', () => {
 
       await expect(
         useCase.execute({ id: PaymentInstrumentId.generate(), newName: 'X' }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });
 
@@ -74,7 +73,7 @@ describe('Expense / PaymentInstruments', () => {
 
       await expect(
         useCase.execute({ id: PaymentInstrumentId.generate() }),
-      ).rejects.toThrow(ApplicationError);
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });
 

@@ -15,7 +15,6 @@ import { Money } from '../../../../src/domain/shared/Money.js';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
 import { ExpenseDate } from '../../../../src/domain/expense/ExpenseDate.js';
 import { InstallmentPlan } from '../../../../src/domain/expense/InstallmentPlan.js';
-import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('Expense / LogExpense', () => {
   let expenses: InMemoryExpenseRepository;
@@ -107,7 +106,7 @@ describe('Expense / LogExpense', () => {
         paymentMethod: { kind: 'Cash' },
         date,
       }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
   });
 
   it('throws when a credit-card payment references an instrument that does not exist', async () => {
@@ -123,7 +122,7 @@ describe('Expense / LogExpense', () => {
         date,
         installmentPlan: new InstallmentPlan(1),
       }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
   });
 
   it('throws when a credit-card payment references an instrument that is not of type CreditCard', async () => {
@@ -141,7 +140,7 @@ describe('Expense / LogExpense', () => {
         date,
         installmentPlan: new InstallmentPlan(1),
       }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument must be of type CreditCard' });
   });
 
   it('throws when the category is soft-deleted', async () => {
@@ -149,7 +148,7 @@ describe('Expense / LogExpense', () => {
 
     await expect(
       useCase.execute({ householdId, userId, categoryId, money, paymentMethod: { kind: 'Cash' }, date }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'Category is deleted' });
   });
 
   it('throws when a bank-account payment references an instrument that does not exist', async () => {
@@ -164,7 +163,7 @@ describe('Expense / LogExpense', () => {
         paymentMethod: { kind: 'BankAccount', instrumentId: PaymentInstrumentId.generate() },
         date,
       }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
   });
 
   it('throws when a bank-account payment references an instrument that is not of type BankAccount', async () => {
@@ -181,6 +180,6 @@ describe('Expense / LogExpense', () => {
         paymentMethod: { kind: 'BankAccount', instrumentId },
         date,
       }),
-    ).rejects.toThrow(ApplicationError);
+    ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument must be of type BankAccount' });
   });
 });
