@@ -9,6 +9,7 @@ import { BudgetPeriod } from '../../domain/budget/BudgetPeriod.js';
 import { Money } from '../../domain/shared/Money.js';
 import { Currency } from '../../domain/shared/Currency.js';
 import type { BudgetLimit } from '../../domain/budget/BudgetLimit.js';
+import { ApplicationError } from '../../application/ApplicationError.js';
 import { CreateBudgetLimit } from '../../application/budget/CreateBudgetLimit.js';
 import { EditBudgetLimit } from '../../application/budget/EditBudgetLimit.js';
 import { DeleteBudgetLimit } from '../../application/budget/DeleteBudgetLimit.js';
@@ -21,7 +22,7 @@ function parsePeriod(p: { kind: string; startDate?: string; endDate?: string }):
   if (p.kind === 'Custom' && p.startDate && p.endDate) {
     return BudgetPeriod.custom(new Date(p.startDate), new Date(p.endDate));
   }
-  throw new Error(`Invalid period kind: ${p.kind}`);
+  throw new ApplicationError(`Invalid period kind: ${p.kind}`);
 }
 
 function mapPeriod(period: BudgetPeriod): object {

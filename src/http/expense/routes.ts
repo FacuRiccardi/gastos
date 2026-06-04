@@ -17,6 +17,7 @@ import { Pagination } from '../../domain/shared/Pagination.js';
 import type { PaymentMethod } from '../../domain/expense/PaymentMethod.js';
 import type { Expense } from '../../domain/expense/Expense.js';
 import type { PaymentInstrument } from '../../domain/expense/payment-instrument/PaymentInstrument.js';
+import { ApplicationError } from '../../application/ApplicationError.js';
 import { LogExpense } from '../../application/expense/LogExpense.js';
 import { DeleteExpense } from '../../application/expense/DeleteExpense.js';
 import { ListExpenses } from '../../application/expense/ListExpenses.js';
@@ -35,7 +36,7 @@ function parsePaymentMethod(pm: { kind: string; instrumentId?: string }): Paymen
   if (pm.kind === 'BankAccount' && pm.instrumentId) {
     return { kind: 'BankAccount', instrumentId: PaymentInstrumentId.from(pm.instrumentId) };
   }
-  throw new Error(`Invalid payment method: ${pm.kind}`);
+  throw new ApplicationError(`Invalid payment method: ${pm.kind}`);
 }
 
 function mapExpense(e: Expense) {
@@ -126,6 +127,20 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.get('/expenses', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: {
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: { type: 'integer', minimum: 1 },
+            offset: { type: 'integer', minimum: 0 },
+            from: { type: 'string' },
+            to: { type: 'string' },
+            categoryId: { oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }] },
+            paymentInstrumentId: { type: 'string' },
+            groupId: { type: 'string' },
+          },
+        },
+      },
     }, async (request, reply) => {
       const req = request as typeof request & RequestWithAuth;
       const query = request.query as {
@@ -134,8 +149,8 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
         categoryId?: string | string[];
         paymentInstrumentId?: string;
         groupId?: string;
-        limit?: string;
-        offset?: string;
+        limit?: number;
+        offset?: number;
       };
 
       const categoryIds = query.categoryId
@@ -154,10 +169,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
         householdId: HouseholdId.from(req.householdId),
         filters,
         groupId: query.groupId ? GroupId.from(query.groupId) : undefined,
-        pagination: new Pagination(
-          query.limit ? parseInt(query.limit, 10) : 20,
-          query.offset ? parseInt(query.offset, 10) : 0,
-        ),
+        pagination: new Pagination(query.limit ?? 20, query.offset ?? 0),
       });
 
       return reply.code(200).send({ items: page.items.map(mapExpense), total: page.total });

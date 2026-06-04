@@ -172,6 +172,15 @@ describe('GET /api/expenses', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  it('returns 400 when limit is not a valid integer', async () => {
+    const response = await makeApp().inject({
+      method: 'GET',
+      url: '/api/expenses?limit=abc',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(400);
+  });
 });
 
 // ─── POST /api/payment-instruments ───────────────────────────────────────────

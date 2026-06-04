@@ -7,7 +7,7 @@ import { expenseRoutes } from './expense/routes.js';
 import { budgetRoutes } from './budget/routes.js';
 
 export function buildApp(repos: Repositories) {
-  const app = Fastify();
+  const app = Fastify({ logger: true });
   registerErrorHandler(app);
   app.register(identityRoutes(repos), { prefix: '/api' });
   app.register(catalogueRoutes(repos), { prefix: '/api' });
