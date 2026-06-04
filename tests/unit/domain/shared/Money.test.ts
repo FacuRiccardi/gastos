@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
 import { Money } from '../../../../src/domain/shared/Money.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 const ARS = Currency.ARS;
 
@@ -11,15 +12,15 @@ describe('Money', () => {
   });
 
   it('rejects a zero amount', () => {
-    expect(() => new Money(0, ARS)).toThrow();
+    expect(() => new Money(0, ARS)).toThrow(DomainError);
   });
 
   it('rejects a negative amount', () => {
-    expect(() => new Money(-50, ARS)).toThrow();
+    expect(() => new Money(-50, ARS)).toThrow(DomainError);
   });
 
   it('rejects NaN as amount', () => {
-    expect(() => new Money(NaN, ARS)).toThrow();
+    expect(() => new Money(NaN, ARS)).toThrow(DomainError);
   });
 
   it('two Money instances with the same amount and currency are equal', () => {

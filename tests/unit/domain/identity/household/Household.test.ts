@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Household } from '../../../../../src/domain/identity/household/Household.js';
 import { HouseholdId } from '../../../../../src/domain/identity/household/HouseholdId.js';
 import { UserId } from '../../../../../src/domain/identity/user/UserId.js';
+import { DomainError } from '../../../../../src/domain/shared/DomainError.js';
 
 const id = HouseholdId.generate();
 const memberId = UserId.generate();
@@ -13,7 +14,7 @@ describe('Household', () => {
   });
 
   it('rejects an empty name on construction', () => {
-    expect(() => new Household(id, '', [memberId])).toThrow();
+    expect(() => new Household(id, '', [memberId])).toThrow(DomainError);
   });
 
   it('rename() returns a new Household with the updated name', () => {
@@ -24,7 +25,7 @@ describe('Household', () => {
 
   it('rename() with an empty string throws', () => {
     const household = new Household(id, 'Home', [memberId]);
-    expect(() => household.rename('')).toThrow();
+    expect(() => household.rename('')).toThrow(DomainError);
   });
 
   it('rename() leaves the original unchanged', () => {
@@ -49,6 +50,6 @@ describe('Household', () => {
 
   it('addMember() throws when the user is already a member', () => {
     const household = new Household(id, 'Home', [memberId]);
-    expect(() => household.addMember(memberId)).toThrow();
+    expect(() => household.addMember(memberId)).toThrow(DomainError);
   });
 });

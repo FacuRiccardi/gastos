@@ -1,5 +1,6 @@
 import { HouseholdId } from './HouseholdId.js';
 import { UserId } from '../user/UserId.js';
+import { DomainError } from '../../shared/DomainError.js';
 
 export class Household {
   constructor(
@@ -7,8 +8,8 @@ export class Household {
     readonly name: string,
     readonly members: ReadonlyArray<UserId>,
   ) {
-    if (!name.trim()) throw new Error('Household name must not be empty');
-    if (members.length === 0) throw new Error('Household must have at least one member');
+    if (!name.trim()) throw new DomainError('Household name must not be empty');
+    if (members.length === 0) throw new DomainError('Household must have at least one member');
   }
 
   rename(newName: string): Household {
@@ -16,7 +17,7 @@ export class Household {
   }
 
   addMember(userId: UserId): Household {
-    if (this.members.includes(userId)) throw new Error('User is already a member of this Household');
+    if (this.members.includes(userId)) throw new DomainError('User is already a member of this Household');
     return new Household(this.id, this.name, [...this.members, userId]);
   }
 }

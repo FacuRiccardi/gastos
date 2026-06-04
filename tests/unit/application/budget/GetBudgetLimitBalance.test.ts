@@ -16,6 +16,7 @@ import { HouseholdId } from '../../../../src/domain/identity/household/Household
 import { UserId } from '../../../../src/domain/identity/user/UserId.js';
 import { Money } from '../../../../src/domain/shared/Money.js';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
+import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 const householdId = HouseholdId.generate();
 const userId = UserId.generate();
@@ -100,6 +101,6 @@ describe('Budget / GetBudgetLimitBalance', () => {
   it('throws when the budget limit does not exist', async () => {
     await expect(
       useCase.execute({ id: BudgetLimitId.generate() }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(ApplicationError);
   });
 });

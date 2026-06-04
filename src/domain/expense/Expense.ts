@@ -6,6 +6,7 @@ import { Money } from '../shared/Money.js';
 import { HouseholdId } from '../identity/household/HouseholdId.js';
 import { UserId } from '../identity/user/UserId.js';
 import { CategoryId } from '../catalogue/category/CategoryId.js';
+import { DomainError } from '../shared/DomainError.js';
 
 export class Expense {
   constructor(
@@ -20,10 +21,10 @@ export class Expense {
   ) {
     const isCreditCard = paymentMethod.kind === 'CreditCard';
     if (isCreditCard && installmentPlan === undefined) {
-      throw new Error('CreditCard payment requires an InstallmentPlan');
+      throw new DomainError('CreditCard payment requires an InstallmentPlan');
     }
     if (!isCreditCard && installmentPlan !== undefined) {
-      throw new Error('InstallmentPlan is only valid for CreditCard payments');
+      throw new DomainError('InstallmentPlan is only valid for CreditCard payments');
     }
   }
 }

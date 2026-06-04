@@ -2,6 +2,7 @@ import { HouseholdId } from '../../domain/identity/household/HouseholdId.js';
 import { HouseholdRepository } from '../../domain/identity/household/HouseholdRepository.js';
 import { UserId } from '../../domain/identity/user/UserId.js';
 import { UserRepository } from '../../domain/identity/user/UserRepository.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface JoinHouseholdInput {
   userId: UserId;
@@ -16,10 +17,10 @@ export class JoinHousehold {
 
   async execute(input: JoinHouseholdInput): Promise<void> {
     const user = await this.users.findById(input.userId);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new ApplicationError('User not found');
 
     const household = await this.households.findById(input.householdId);
-    if (!household) throw new Error('Household not found');
+    if (!household) throw new ApplicationError('Household not found');
 
     const updatedHousehold = household.addMember(input.userId);
     const updatedUser = user.joinHousehold(input.householdId);

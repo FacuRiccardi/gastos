@@ -1,6 +1,7 @@
 import { PaymentInstrumentId } from './PaymentInstrumentId.js';
 import { PaymentInstrumentType } from './PaymentInstrumentType.js';
 import { UserId } from '../../identity/user/UserId.js';
+import { DomainError } from '../../shared/DomainError.js';
 
 export class PaymentInstrument {
   constructor(
@@ -10,7 +11,7 @@ export class PaymentInstrument {
     readonly name: string,
     readonly deletedAt?: Date,
   ) {
-    if (!name.trim()) throw new Error('PaymentInstrument name must not be empty');
+    if (!name.trim()) throw new DomainError('PaymentInstrument name must not be empty');
   }
 
   get isDeleted(): boolean {
@@ -18,12 +19,12 @@ export class PaymentInstrument {
   }
 
   rename(newName: string): PaymentInstrument {
-    if (this.isDeleted) throw new Error('Cannot rename a deleted PaymentInstrument');
+    if (this.isDeleted) throw new DomainError('Cannot rename a deleted PaymentInstrument');
     return new PaymentInstrument(this.id, this.userId, this.type, newName, this.deletedAt);
   }
 
   softDelete(): PaymentInstrument {
-    if (this.isDeleted) throw new Error('PaymentInstrument is already deleted');
+    if (this.isDeleted) throw new DomainError('PaymentInstrument is already deleted');
     return new PaymentInstrument(this.id, this.userId, this.type, this.name, new Date());
   }
 }

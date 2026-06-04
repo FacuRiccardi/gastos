@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Page } from '../../../../src/domain/shared/Page.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 describe('Page', () => {
   describe('valid construction', () => {
@@ -18,11 +19,11 @@ describe('Page', () => {
 
   describe('invariants', () => {
     it('rejects a negative total', () => {
-      expect(() => new Page([], -1)).toThrow();
+      expect(() => new Page([], -1)).toThrow(DomainError);
     });
 
     it('rejects a fractional total', () => {
-      expect(() => new Page([], 1.5)).toThrow();
+      expect(() => new Page([], 1.5)).toThrow(DomainError);
     });
   });
 });

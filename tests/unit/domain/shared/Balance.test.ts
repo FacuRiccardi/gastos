@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Balance } from '../../../../src/domain/shared/Balance.js';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 describe('Balance', () => {
   it('constructs with a positive amount', () => {
@@ -19,8 +20,8 @@ describe('Balance', () => {
   });
 
   it('rejects non-finite values', () => {
-    expect(() => new Balance(Infinity, Currency.ARS)).toThrow();
-    expect(() => new Balance(NaN, Currency.ARS)).toThrow();
+    expect(() => new Balance(Infinity, Currency.ARS)).toThrow(DomainError);
+    expect(() => new Balance(NaN, Currency.ARS)).toThrow(DomainError);
   });
 
   it('isOverBudget returns true when amount is negative', () => {

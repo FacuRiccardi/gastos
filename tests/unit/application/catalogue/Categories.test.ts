@@ -11,6 +11,7 @@ import { CategoryId } from '../../../../src/domain/catalogue/category/CategoryId
 import { Group } from '../../../../src/domain/catalogue/group/Group.js';
 import { GroupId } from '../../../../src/domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../../../src/domain/identity/household/HouseholdId.js';
+import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 describe('Catalogue / Categories', () => {
   let categories: InMemoryCategoryRepository;
@@ -42,7 +43,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ householdId, groupId: GroupId.generate(), name: 'Rent' }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
   });
 
@@ -63,7 +64,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate(), newName: 'X' }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
   });
 
@@ -88,7 +89,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate(), targetGroupId }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
 
     it('throws when the target group does not exist', async () => {
@@ -98,7 +99,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId: GroupId.generate() }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
 
     it('throws when the target group belongs to a different household', async () => {
@@ -111,7 +112,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
 
     it('throws when the target group is soft-deleted', async () => {
@@ -123,7 +124,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
   });
 
@@ -144,7 +145,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id: CategoryId.generate() }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ApplicationError);
     });
   });
 

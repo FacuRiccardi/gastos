@@ -6,6 +6,7 @@ import { CategoryId } from '../../domain/catalogue/category/CategoryId.js';
 import { GroupId } from '../../domain/catalogue/group/GroupId.js';
 import { HouseholdId } from '../../domain/identity/household/HouseholdId.js';
 import { Money } from '../../domain/shared/Money.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface CreateBudgetLimitInput {
   householdId: HouseholdId;
@@ -22,7 +23,7 @@ export class CreateBudgetLimit {
 
   async execute(input: CreateBudgetLimitInput): Promise<CreateBudgetLimitOutput> {
     if (!input.categoryId && !input.groupId) {
-      throw new Error('Either categoryId or groupId must be provided');
+      throw new ApplicationError('Either categoryId or groupId must be provided');
     }
     const id = BudgetLimitId.generate();
     const limit = input.categoryId !== undefined

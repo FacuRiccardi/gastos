@@ -4,6 +4,7 @@ import { Money } from '../shared/Money.js';
 import { HouseholdId } from '../identity/household/HouseholdId.js';
 import { CategoryId } from '../catalogue/category/CategoryId.js';
 import { GroupId } from '../catalogue/group/GroupId.js';
+import { DomainError } from '../shared/DomainError.js';
 
 export class BudgetLimit {
   private constructor(
@@ -14,7 +15,7 @@ export class BudgetLimit {
     readonly categoryId?: CategoryId,
     readonly groupId?: GroupId,
   ) {
-    if (!!categoryId === !!groupId) throw new Error('BudgetLimit must target exactly one of categoryId or groupId');
+    if (!!categoryId === !!groupId) throw new DomainError('BudgetLimit must target exactly one of categoryId or groupId');
   }
 
   static forCategory(

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 describe('Currency', () => {
   it('constructs from a supported currency code', () => {
@@ -8,7 +9,7 @@ describe('Currency', () => {
   });
 
   it('throws for an unsupported currency code', () => {
-    expect(() => Currency.from('USD')).toThrow();
+    expect(() => Currency.from('USD')).toThrow(DomainError);
   });
 
   it('two Currency values with the same code are equal', () => {

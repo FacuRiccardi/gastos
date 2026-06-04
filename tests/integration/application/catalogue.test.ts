@@ -46,7 +46,7 @@ describe('Catalogue use cases (integration)', () => {
     it('throws when group does not exist', async () => {
       await expect(
         new RenameGroup(repos.groups).execute({ id: GroupId.generate(), newName: 'X' }),
-      ).rejects.toThrow('Group not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 
@@ -100,7 +100,7 @@ describe('Catalogue use cases (integration)', () => {
           groupId: GroupId.generate(),
           name: 'Food',
         }),
-      ).rejects.toThrow('Group not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 

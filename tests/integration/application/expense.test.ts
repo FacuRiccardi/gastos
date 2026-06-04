@@ -141,7 +141,7 @@ describe('Expense use cases (integration)', () => {
           householdId, userId, categoryId: CategoryId.generate(), money,
           paymentMethod: { kind: 'Cash' }, date,
         }),
-      ).rejects.toThrow('Category not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
 
     it('throws when credit card instrument does not exist', async () => {
@@ -153,7 +153,7 @@ describe('Expense use cases (integration)', () => {
           paymentMethod: { kind: 'CreditCard', instrumentId: PaymentInstrumentId.generate() },
           date,
         }),
-      ).rejects.toThrow('PaymentInstrument not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });
 

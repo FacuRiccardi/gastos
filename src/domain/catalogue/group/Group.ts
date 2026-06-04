@@ -1,5 +1,6 @@
 import { GroupId } from './GroupId.js';
 import { HouseholdId } from '../../identity/household/HouseholdId.js';
+import { DomainError } from '../../shared/DomainError.js';
 
 export class Group {
   constructor(
@@ -8,7 +9,7 @@ export class Group {
     readonly name: string,
     readonly deletedAt?: Date,
   ) {
-    if (!name.trim()) throw new Error('Group name must not be empty');
+    if (!name.trim()) throw new DomainError('Group name must not be empty');
   }
 
   get isDeleted(): boolean {
@@ -16,12 +17,12 @@ export class Group {
   }
 
   rename(newName: string): Group {
-    if (this.isDeleted) throw new Error('Cannot rename a deleted Group');
+    if (this.isDeleted) throw new DomainError('Cannot rename a deleted Group');
     return new Group(this.id, this.householdId, newName, this.deletedAt);
   }
 
   softDelete(): Group {
-    if (this.isDeleted) throw new Error('Group is already deleted');
+    if (this.isDeleted) throw new DomainError('Group is already deleted');
     return new Group(this.id, this.householdId, this.name, new Date());
   }
 }

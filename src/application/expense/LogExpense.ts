@@ -11,6 +11,7 @@ import { PaymentInstrumentType } from '../../domain/expense/payment-instrument/P
 import { HouseholdId } from '../../domain/identity/household/HouseholdId.js';
 import { UserId } from '../../domain/identity/user/UserId.js';
 import { Money } from '../../domain/shared/Money.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface LogExpenseInput {
   householdId: HouseholdId;
@@ -33,16 +34,16 @@ export class LogExpense {
 
   async execute(input: LogExpenseInput): Promise<LogExpenseOutput> {
     const category = await this.categories.findById(input.categoryId);
-    if (!category) throw new Error('Category not found');
-    if (category.isDeleted) throw new Error('Category is deleted');
+    if (!category) throw new ApplicationError('Category not found');
+    if (category.isDeleted) throw new ApplicationError('Category is deleted');
 
     const kind = input.paymentMethod.kind;
     if (kind === 'CreditCard' || kind === 'BankAccount') {
       const instrument = await this.instruments.findById(input.paymentMethod.instrumentId);
-      if (!instrument) throw new Error('PaymentInstrument not found');
-      if (instrument.isDeleted) throw new Error('PaymentInstrument has been deleted');
+      if (!instrument) throw new ApplicationError('PaymentInstrument not found');
+      if (instrument.isDeleted) throw new ApplicationError('PaymentInstrument has been deleted');
       if (instrument.type !== PaymentInstrumentType[kind]) {
-        throw new Error(`PaymentInstrument must be of type ${kind}`);
+        throw new ApplicationError(`PaymentInstrument must be of type ${kind}`);
       }
     }
 

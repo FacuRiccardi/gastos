@@ -2,17 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { User } from '../../../../../src/domain/identity/user/User.js';
 import { UserId } from '../../../../../src/domain/identity/user/UserId.js';
 import { HouseholdId } from '../../../../../src/domain/identity/household/HouseholdId.js';
+import { DomainError } from '../../../../../src/domain/shared/DomainError.js';
 
 const userId = UserId.generate();
 const householdId = HouseholdId.generate();
 
 describe('User', () => {
   it('rejects an empty name on construction', () => {
-    expect(() => new User(userId, '')).toThrow();
+    expect(() => new User(userId, '')).toThrow(DomainError);
   });
 
   it('rejects a whitespace-only name on construction', () => {
-    expect(() => new User(userId, '   ')).toThrow();
+    expect(() => new User(userId, '   ')).toThrow(DomainError);
   });
 
   it('constructs with a valid UserId and name (no Household)', () => {
@@ -39,6 +40,6 @@ describe('User', () => {
 
   it('joinHousehold() throws when the User already belongs to a Household', () => {
     const user = new User(userId, 'Alice', householdId);
-    expect(() => user.joinHousehold(HouseholdId.generate())).toThrow();
+    expect(() => user.joinHousehold(HouseholdId.generate())).toThrow(DomainError);
   });
 });

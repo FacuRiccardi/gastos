@@ -3,6 +3,7 @@ import { Household } from '../../domain/identity/household/Household.js';
 import { HouseholdRepository } from '../../domain/identity/household/HouseholdRepository.js';
 import { UserId } from '../../domain/identity/user/UserId.js';
 import { UserRepository } from '../../domain/identity/user/UserRepository.js';
+import { ApplicationError } from '../ApplicationError.js';
 
 export interface CreateHouseholdInput {
   name: string;
@@ -19,7 +20,7 @@ export class CreateHousehold {
 
   async execute(input: CreateHouseholdInput): Promise<CreateHouseholdOutput> {
     const creator = await this.users.findById(input.creatorId);
-    if (!creator) throw new Error('User not found');
+    if (!creator) throw new ApplicationError('User not found');
 
     const id = HouseholdId.generate();
     const household = new Household(id, input.name, [input.creatorId]);

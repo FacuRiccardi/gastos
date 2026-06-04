@@ -9,6 +9,7 @@ import { HouseholdId } from '../../../../src/domain/identity/household/Household
 import { UserId } from '../../../../src/domain/identity/user/UserId.js';
 import { CategoryId } from '../../../../src/domain/catalogue/category/CategoryId.js';
 import { PaymentInstrumentId } from '../../../../src/domain/expense/payment-instrument/PaymentInstrumentId.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 const id = ExpenseId.generate();
 const householdId = HouseholdId.generate();
@@ -47,13 +48,13 @@ describe('Expense', () => {
   it('rejects a CreditCard payment without an InstallmentPlan', () => {
     expect(() =>
       new Expense(id, householdId, userId, categoryId, money, { kind: 'CreditCard', instrumentId }, date),
-    ).toThrow();
+    ).toThrow(DomainError);
   });
 
   it('rejects a Cash payment with an InstallmentPlan', () => {
     expect(() =>
       new Expense(id, householdId, userId, categoryId, money, { kind: 'Cash' }, date, new InstallmentPlan(3)),
-    ).toThrow();
+    ).toThrow(DomainError);
   });
 
   it('rejects a BankAccount payment with an InstallmentPlan', () => {
@@ -64,6 +65,6 @@ describe('Expense', () => {
         date,
         new InstallmentPlan(3),
       ),
-    ).toThrow();
+    ).toThrow(DomainError);
   });
 });

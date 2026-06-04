@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { InstallmentPlan } from '../../../../src/domain/expense/InstallmentPlan.js';
+import { DomainError } from '../../../../src/domain/shared/DomainError.js';
 
 describe('InstallmentPlan', () => {
   it('constructs with a valid positive integer count', () => {
@@ -8,15 +9,15 @@ describe('InstallmentPlan', () => {
   });
 
   it('rejects a zero count', () => {
-    expect(() => new InstallmentPlan(0)).toThrow();
+    expect(() => new InstallmentPlan(0)).toThrow(DomainError);
   });
 
   it('rejects a negative count', () => {
-    expect(() => new InstallmentPlan(-1)).toThrow();
+    expect(() => new InstallmentPlan(-1)).toThrow(DomainError);
   });
 
   it('rejects a fractional count', () => {
-    expect(() => new InstallmentPlan(1.5)).toThrow();
+    expect(() => new InstallmentPlan(1.5)).toThrow(DomainError);
   });
 
   it('two InstallmentPlans with the same count are equal', () => {

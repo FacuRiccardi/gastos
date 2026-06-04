@@ -101,7 +101,7 @@ describe('Budget use cases (integration)', () => {
           money: new Money(1000, Currency.ARS),
           period: BudgetPeriod.monthly(),
         }),
-      ).rejects.toThrow('BudgetLimit not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
 

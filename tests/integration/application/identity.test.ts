@@ -49,7 +49,7 @@ describe('Identity use cases (integration)', () => {
           name: 'Ghost House',
           creatorId: UserId.generate(),
         }),
-      ).rejects.toThrow('User not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'User not found' });
     });
   });
 
@@ -84,7 +84,7 @@ describe('Identity use cases (integration)', () => {
           userId: UserId.generate(),
           householdId: HouseholdId.generate(),
         }),
-      ).rejects.toThrow('User not found');
+      ).rejects.toMatchObject({ type: 'Application', message: 'User not found' });
     });
   });
 });

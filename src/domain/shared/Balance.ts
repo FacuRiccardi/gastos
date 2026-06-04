@@ -1,11 +1,12 @@
 import { Currency } from './Currency.js';
+import { DomainError } from './DomainError.js';
 
 export class Balance {
   constructor(
     readonly amount: number,
     readonly currency: Currency,
   ) {
-    if (!Number.isFinite(amount)) throw new Error('Balance amount must be finite');
+    if (!Number.isFinite(amount)) throw new DomainError('Balance amount must be finite');
   }
 
   isOverBudget(): boolean {

@@ -15,6 +15,7 @@ import { UserId } from '../../../../src/domain/identity/user/UserId.js';
 import { Money } from '../../../../src/domain/shared/Money.js';
 import { Currency } from '../../../../src/domain/shared/Currency.js';
 import { Pagination } from '../../../../src/domain/shared/Pagination.js';
+import { ApplicationError } from '../../../../src/application/ApplicationError.js';
 
 const householdId = HouseholdId.generate();
 const userId = UserId.generate();
@@ -48,7 +49,7 @@ describe('Expense / DeleteExpense', () => {
   it('throws when the expense does not exist', async () => {
     const useCase = new DeleteExpense(expenses);
 
-    await expect(useCase.execute({ id: ExpenseId.generate() })).rejects.toThrow();
+    await expect(useCase.execute({ id: ExpenseId.generate() })).rejects.toThrow(ApplicationError);
   });
 });
 
@@ -127,7 +128,7 @@ describe('Expense / ListExpenses', () => {
         groupId,
         pagination,
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(ApplicationError);
   });
 
   it('resolves a groupId filter to its category ids and returns only matching expenses', async () => {
