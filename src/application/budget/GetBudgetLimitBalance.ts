@@ -30,6 +30,9 @@ export class GetBudgetLimitBalance {
 
     if (limit.groupId !== undefined) {
       const groupCategories = await this.categories.findAllByGroup(limit.groupId);
+      if (groupCategories.length === 0) {
+        return { remaining: new Balance(limit.money.amount, limit.money.currency) };
+      }
       categoryIds = groupCategories.map((c) => c.id);
     }
 

@@ -40,6 +40,7 @@ export class LogExpense {
     if (kind === 'CreditCard' || kind === 'BankAccount') {
       const instrument = await this.instruments.findById(input.paymentMethod.instrumentId);
       if (!instrument) throw new Error('PaymentInstrument not found');
+      if (instrument.isDeleted) throw new Error('PaymentInstrument has been deleted');
       if (instrument.type !== PaymentInstrumentType[kind]) {
         throw new Error(`PaymentInstrument must be of type ${kind}`);
       }
