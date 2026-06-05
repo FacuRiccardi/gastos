@@ -69,7 +69,7 @@ describe('Expense use cases (integration)', () => {
         userId, type: PaymentInstrumentType.CreditCard, name: 'Old',
       });
 
-      await new RenamePaymentInstrument(repos.paymentInstruments).execute({ id, newName: 'New' });
+      await new RenamePaymentInstrument(repos.paymentInstruments).execute({ id, newName: 'New', userId });
 
       const found = await repos.paymentInstruments.findById(id);
       expect(found!.name).toBe('New');
@@ -82,7 +82,7 @@ describe('Expense use cases (integration)', () => {
         userId, type: PaymentInstrumentType.CreditCard, name: 'Card',
       });
 
-      await new SoftDeletePaymentInstrument(repos.paymentInstruments).execute({ id });
+      await new SoftDeletePaymentInstrument(repos.paymentInstruments).execute({ id, userId });
 
       const { instruments } = await new ListPaymentInstruments(repos.paymentInstruments).execute({ userId });
       expect(instruments).toHaveLength(0);
@@ -97,7 +97,7 @@ describe('Expense use cases (integration)', () => {
       await new CreatePaymentInstrument(repos.paymentInstruments).execute({ userId, type: PaymentInstrumentType.CreditCard, name: 'Mine' });
       await new CreatePaymentInstrument(repos.paymentInstruments).execute({ userId: otherId, type: PaymentInstrumentType.CreditCard, name: 'Theirs' });
       const { id: deletedId } = await new CreatePaymentInstrument(repos.paymentInstruments).execute({ userId, type: PaymentInstrumentType.BankAccount, name: 'Deleted' });
-      await new SoftDeletePaymentInstrument(repos.paymentInstruments).execute({ id: deletedId });
+      await new SoftDeletePaymentInstrument(repos.paymentInstruments).execute({ id: deletedId, userId });
 
       const { instruments } = await new ListPaymentInstruments(repos.paymentInstruments).execute({ userId });
 
