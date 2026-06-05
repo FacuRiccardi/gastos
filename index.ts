@@ -1,17 +1,12 @@
-import fastify from 'fastify';
+import { buildApp } from './src/http/app.js';
+import { makeRepos } from './src/infrastructure/repositories.js';
 
-const server = fastify();
+const app = buildApp(makeRepos());
 
-server.get('/ping', async () => {
-  return 'pong\n';
-});
-
-server.listen({ port: 8080 }, (err, address) => {
+app.listen({ port: Number(process.env['PORT']) || 3000, host: '0.0.0.0' }, (err, address) => {
   if (err) {
-    // eslint-disable-next-line no-console
     console.error(err);
     process.exit(1);
   }
-  // eslint-disable-next-line no-console
   console.log(`Server listening at ${address}`);
 });

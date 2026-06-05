@@ -169,6 +169,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
     app.post('/payment-instruments', {
       preHandler: requireUserId,
       schema: {
+        security: [{ userId: [] }],
         body: {
           type: 'object',
           required: ['type', 'name'],
@@ -193,6 +194,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
     app.patch('/payment-instruments/:id/name', {
       preHandler: requireUserId,
       schema: {
+        security: [{ userId: [] }],
         body: {
           type: 'object',
           required: ['name'],
@@ -210,6 +212,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.delete('/payment-instruments/:id', {
       preHandler: requireUserId,
+      schema: { security: [{ userId: [] }] },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
       const { id } = request.params as { id: string };
@@ -220,6 +223,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.get('/payment-instruments', {
       preHandler: requireUserId,
+      schema: { security: [{ userId: [] }] },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
       const useCase = new ListPaymentInstruments(repos.paymentInstruments);
