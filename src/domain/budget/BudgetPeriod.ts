@@ -3,7 +3,9 @@ import { DomainError } from '../shared/DomainError.js';
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
+  const result = new Date(year, month - 1, day);
+  if (isNaN(result.getTime())) throw new DomainError(`Invalid date: ${dateStr}`);
+  return result;
 }
 
 type PeriodVariant =
