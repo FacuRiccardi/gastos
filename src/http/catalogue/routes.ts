@@ -110,10 +110,11 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
         },
       },
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const { name } = request.body as { name: string };
       const useCase = new RenameCategory(repos.categories);
-      await useCase.execute({ id: CategoryId.from(id), newName: name });
+      await useCase.execute({ id: CategoryId.from(id), newName: name, householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 
@@ -127,19 +128,21 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
         },
       },
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const { groupId } = request.body as { groupId: string };
       const useCase = new MoveCategory(repos.categories, repos.groups);
-      await useCase.execute({ id: CategoryId.from(id), targetGroupId: GroupId.from(groupId) });
+      await useCase.execute({ id: CategoryId.from(id), targetGroupId: GroupId.from(groupId), householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 
     app.delete('/categories/:id', {
       preHandler: [requireUserId, requireHouseholdId],
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const useCase = new SoftDeleteCategory(repos.categories);
-      await useCase.execute({ id: CategoryId.from(id) });
+      await useCase.execute({ id: CategoryId.from(id), householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 

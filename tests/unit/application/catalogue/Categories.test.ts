@@ -52,7 +52,7 @@ describe('Catalogue / Categories', () => {
       const id = CategoryId.generate();
       await categories.save(new Category(id, householdId, groupId, 'Old'));
 
-      await useCase.execute({ id, newName: 'New' });
+      await useCase.execute({ id, newName: 'New', householdId });
 
       const saved = await categories.findById(id);
       expect(saved!.name).toBe('New');
@@ -62,7 +62,18 @@ describe('Catalogue / Categories', () => {
       const useCase = new RenameCategory(categories);
 
       await expect(
-        useCase.execute({ id: CategoryId.generate(), newName: 'X' }),
+        useCase.execute({ id: CategoryId.generate(), newName: 'X', householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
+    });
+
+    it('throws when the category belongs to a different household', async () => {
+      const useCase = new RenameCategory(categories);
+      const id = CategoryId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      await categories.save(new Category(id, otherHouseholdId, groupId, 'Some Category'));
+
+      await expect(
+        useCase.execute({ id, newName: 'New', householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
@@ -75,7 +86,7 @@ describe('Catalogue / Categories', () => {
       await categories.save(new Category(id, householdId, groupId, 'Food'));
       await groups.save(new Group(targetGroupId, householdId, 'Variable'));
 
-      await useCase.execute({ id, targetGroupId });
+      await useCase.execute({ id, targetGroupId, householdId });
 
       const saved = await categories.findById(id);
       expect(saved!.groupId).toBe(targetGroupId);
@@ -87,7 +98,7 @@ describe('Catalogue / Categories', () => {
       await groups.save(new Group(targetGroupId, householdId, 'Variable'));
 
       await expect(
-        useCase.execute({ id: CategoryId.generate(), targetGroupId }),
+        useCase.execute({ id: CategoryId.generate(), targetGroupId, householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
 
@@ -97,7 +108,7 @@ describe('Catalogue / Categories', () => {
       await categories.save(new Category(id, householdId, groupId, 'Food'));
 
       await expect(
-        useCase.execute({ id, targetGroupId: GroupId.generate() }),
+        useCase.execute({ id, targetGroupId: GroupId.generate(), householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Target group not found' });
     });
 
@@ -110,7 +121,7 @@ describe('Catalogue / Categories', () => {
       await groups.save(new Group(targetGroupId, otherHouseholdId, 'Other Household Group'));
 
       await expect(
-        useCase.execute({ id, targetGroupId }),
+        useCase.execute({ id, targetGroupId, householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Cannot move category across households' });
     });
 
@@ -122,8 +133,21 @@ describe('Catalogue / Categories', () => {
       await groups.save(new Group(targetGroupId, householdId, 'Deleted Group', new Date()));
 
       await expect(
-        useCase.execute({ id, targetGroupId }),
+        useCase.execute({ id, targetGroupId, householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Target group is deleted' });
+    });
+
+    it('throws when the category belongs to a different household', async () => {
+      const useCase = new MoveCategory(categories, groups);
+      const id = CategoryId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      const targetGroupId = GroupId.generate();
+      await categories.save(new Category(id, otherHouseholdId, groupId, 'Food'));
+      await groups.save(new Group(targetGroupId, householdId, 'Variable'));
+
+      await expect(
+        useCase.execute({ id, targetGroupId, householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
 
@@ -133,7 +157,7 @@ describe('Catalogue / Categories', () => {
       const id = CategoryId.generate();
       await categories.save(new Category(id, householdId, groupId, 'Food'));
 
-      await useCase.execute({ id });
+      await useCase.execute({ id, householdId });
 
       const saved = await categories.findById(id);
       expect(saved!.isDeleted).toBe(true);
@@ -143,7 +167,18 @@ describe('Catalogue / Categories', () => {
       const useCase = new SoftDeleteCategory(categories);
 
       await expect(
-        useCase.execute({ id: CategoryId.generate() }),
+        useCase.execute({ id: CategoryId.generate(), householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
+    });
+
+    it('throws when the category belongs to a different household', async () => {
+      const useCase = new SoftDeleteCategory(categories);
+      const id = CategoryId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      await categories.save(new Category(id, otherHouseholdId, groupId, 'Some Category'));
+
+      await expect(
+        useCase.execute({ id, householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
     });
   });
