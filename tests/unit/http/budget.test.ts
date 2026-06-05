@@ -117,6 +117,20 @@ describe('PATCH /api/budget-limits/:id', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when budget limit belongs to a different household', async () => {
+    const limits = new InMemoryBudgetLimitRepository();
+    const limitId = BudgetLimitId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await limits.save(BudgetLimit.forCategory(limitId, otherHouseholdId, new Money(500, Currency.ARS), BudgetPeriod.monthly(), CategoryId.generate()));
+    const response = await makeApp(limits).inject({
+      method: 'PATCH',
+      url: `/api/budget-limits/${limitId}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: { money: validMoney, period: monthlyPeriod },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── DELETE /api/budget-limits/:id ───────────────────────────────────────────
@@ -151,6 +165,19 @@ describe('DELETE /api/budget-limits/:id', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when budget limit belongs to a different household', async () => {
+    const limits = new InMemoryBudgetLimitRepository();
+    const limitId = BudgetLimitId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await limits.save(BudgetLimit.forCategory(limitId, otherHouseholdId, new Money(500, Currency.ARS), BudgetPeriod.monthly(), CategoryId.generate()));
+    const response = await makeApp(limits).inject({
+      method: 'DELETE',
+      url: `/api/budget-limits/${limitId}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── GET /api/budget-limits/:id/balance ──────────────────────────────────────
@@ -175,6 +202,19 @@ describe('GET /api/budget-limits/:id/balance', () => {
     const response = await makeApp().inject({
       method: 'GET',
       url: `/api/budget-limits/${BudgetLimitId.generate()}/balance`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('returns 404 when budget limit belongs to a different household', async () => {
+    const limits = new InMemoryBudgetLimitRepository();
+    const limitId = BudgetLimitId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await limits.save(BudgetLimit.forCategory(limitId, otherHouseholdId, new Money(500, Currency.ARS), BudgetPeriod.monthly(), CategoryId.generate()));
+    const response = await makeApp(limits).inject({
+      method: 'GET',
+      url: `/api/budget-limits/${limitId}/balance`,
       headers: { 'x-user-id': userId, 'x-household-id': householdId },
     });
     expect(response.statusCode).toBe(404);
