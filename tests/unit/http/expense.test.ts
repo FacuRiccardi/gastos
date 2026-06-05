@@ -147,6 +147,24 @@ describe('DELETE /api/expenses/:id', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when expense belongs to a different household', async () => {
+    const expenses = new InMemoryExpenseRepository();
+    const expenseId = ExpenseId.generate();
+    const categoryId = CategoryId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    expenses.save(new Expense(
+      expenseId, otherHouseholdId, userId, categoryId,
+      new Money(100, Currency.ARS), { kind: 'Cash' },
+      new ExpenseDate(new Date('2024-06-01')),
+    ));
+    const response = await makeApp(expenses).inject({
+      method: 'DELETE',
+      url: `/api/expenses/${expenseId}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── GET /api/expenses ────────────────────────────────────────────────────────
@@ -252,6 +270,20 @@ describe('PATCH /api/payment-instruments/:id/name', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when instrument belongs to a different user', async () => {
+    const instruments = new InMemoryPaymentInstrumentRepository();
+    const instrumentId = PaymentInstrumentId.generate();
+    const otherUserId = UserId.generate();
+    await instruments.save(new PaymentInstrument(instrumentId, otherUserId, PaymentInstrumentType.CreditCard, 'Other Card'));
+    const response = await makeApp(undefined, undefined, instruments).inject({
+      method: 'PATCH',
+      url: `/api/payment-instruments/${instrumentId}/name`,
+      headers: { 'x-user-id': userId },
+      payload: { name: 'New Name' },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── DELETE /api/payment-instruments/:id ─────────────────────────────────────
@@ -288,6 +320,19 @@ describe('DELETE /api/payment-instruments/:id', () => {
       headers: { 'x-user-id': userId },
     });
     expect(response.statusCode).toBe(422);
+  });
+
+  it('returns 404 when instrument belongs to a different user', async () => {
+    const instruments = new InMemoryPaymentInstrumentRepository();
+    const instrumentId = PaymentInstrumentId.generate();
+    const otherUserId = UserId.generate();
+    await instruments.save(new PaymentInstrument(instrumentId, otherUserId, PaymentInstrumentType.BankAccount, 'Other Savings'));
+    const response = await makeApp(undefined, undefined, instruments).inject({
+      method: 'DELETE',
+      url: `/api/payment-instruments/${instrumentId}`,
+      headers: { 'x-user-id': userId },
+    });
+    expect(response.statusCode).toBe(404);
   });
 });
 
