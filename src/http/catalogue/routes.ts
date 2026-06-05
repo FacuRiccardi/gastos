@@ -156,9 +156,10 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
         },
       },
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { groupId } = request.query as { groupId: string };
       const useCase = new ListCategories(repos.categories);
-      const { categories } = await useCase.execute({ groupId: GroupId.from(groupId) });
+      const { categories } = await useCase.execute({ groupId: GroupId.from(groupId), householdId: HouseholdId.from(req.householdId) });
       return reply.code(200).send({
         categories: categories.map((c) => ({ id: c.id, name: c.name, groupId: c.groupId })),
       });

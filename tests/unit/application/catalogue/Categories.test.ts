@@ -201,10 +201,21 @@ describe('Catalogue / Categories', () => {
       await categories.save(new Category(activeId, householdId, groupId, 'Active'));
       await categories.save(new Category(deletedId, householdId, groupId, 'Deleted', new Date()));
 
-      const result = await useCase.execute({ groupId });
+      const result = await useCase.execute({ groupId, householdId });
 
       expect(result.categories).toHaveLength(1);
       expect(result.categories[0].id).toBe(activeId);
+    });
+
+    it('returns no categories when the group belongs to a different household', async () => {
+      const useCase = new ListCategories(categories);
+      const otherHouseholdId = HouseholdId.generate();
+      const categoryId = CategoryId.generate();
+      await categories.save(new Category(categoryId, otherHouseholdId, groupId, 'Other'));
+
+      const result = await useCase.execute({ groupId, householdId });
+
+      expect(result.categories).toHaveLength(0);
     });
   });
 });
