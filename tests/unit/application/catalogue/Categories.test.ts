@@ -44,6 +44,16 @@ describe('Catalogue / Categories', () => {
         useCase.execute({ householdId, groupId: GroupId.generate(), name: 'Rent' }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
+
+    it('throws when the group belongs to a different household', async () => {
+      const otherHouseholdId = HouseholdId.generate();
+      await groups.save(new Group(groupId, otherHouseholdId, 'Fixed'));
+      const useCase = new CreateCategory(categories, groups);
+
+      await expect(
+        useCase.execute({ householdId, groupId, name: 'Rent' }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
+    });
   });
 
   describe('RenameCategory', () => {
