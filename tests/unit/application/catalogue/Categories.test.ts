@@ -122,7 +122,7 @@ describe('Catalogue / Categories', () => {
 
       await expect(
         useCase.execute({ id, targetGroupId, householdId }),
-      ).rejects.toMatchObject({ type: 'Application', message: 'Cannot move category across households' });
+      ).rejects.toMatchObject({ type: 'Application', message: 'Target group not found' });
     });
 
     it('throws when the target group is soft-deleted', async () => {

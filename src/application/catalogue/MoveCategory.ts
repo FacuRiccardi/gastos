@@ -24,9 +24,8 @@ export class MoveCategory {
     }
 
     const targetGroup = await this.groups.findById(input.targetGroupId);
-    if (!targetGroup) throw new ApplicationError('Target group not found');
+    if (!targetGroup || targetGroup.householdId !== input.householdId) throw new ApplicationError('Target group not found');
     if (targetGroup.isDeleted) throw new ApplicationError('Target group is deleted');
-    if (targetGroup.householdId !== category.householdId) throw new ApplicationError('Cannot move category across households');
 
     await this.categories.save(category.moveTo(input.targetGroupId));
   }
