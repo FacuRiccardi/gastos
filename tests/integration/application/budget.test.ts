@@ -87,6 +87,7 @@ describe('Budget use cases (integration)', () => {
         id,
         money: new Money(8000, Currency.ARS),
         period: BudgetPeriod.rolling30Days(),
+        householdId,
       });
 
       const found = await repos.budgetLimits.findById(id);
@@ -100,6 +101,7 @@ describe('Budget use cases (integration)', () => {
           id: BudgetLimitId.generate(),
           money: new Money(1000, Currency.ARS),
           period: BudgetPeriod.monthly(),
+          householdId,
         }),
       ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
@@ -112,7 +114,7 @@ describe('Budget use cases (integration)', () => {
         householdId, money: new Money(5000, Currency.ARS), period: BudgetPeriod.monthly(), categoryId,
       });
 
-      await new DeleteBudgetLimit(repos.budgetLimits).execute({ id });
+      await new DeleteBudgetLimit(repos.budgetLimits).execute({ id, householdId });
 
       const { limits } = await new ListBudgetLimits(repos.budgetLimits).execute({ householdId });
       expect(limits).toHaveLength(0);
@@ -140,7 +142,7 @@ describe('Budget use cases (integration)', () => {
         householdId, money: new Money(5000, Currency.ARS), period: BudgetPeriod.monthly(), categoryId,
       });
 
-      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, asOf: new Date() });
+      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, householdId, asOf: new Date() });
 
       expect(remaining.amount).toBe(5000);
     });
@@ -153,7 +155,7 @@ describe('Budget use cases (integration)', () => {
       await logExpense(categoryId, 1500);
       await logExpense(categoryId, 500);
 
-      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, asOf: new Date() });
+      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, householdId, asOf: new Date() });
 
       expect(remaining.amount).toBe(3000);
     });
@@ -169,7 +171,7 @@ describe('Budget use cases (integration)', () => {
       await logExpense(cat2, 3000);
       await logExpense(otherCat, 9999);
 
-      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, asOf: new Date() });
+      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, householdId, asOf: new Date() });
 
       expect(remaining.amount).toBe(5000);
       expect(remaining.isOverBudget()).toBe(false);
@@ -182,7 +184,7 @@ describe('Budget use cases (integration)', () => {
       });
       await logExpense(categoryId, 1500);
 
-      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, asOf: new Date() });
+      const { remaining } = await new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories).execute({ id, householdId, asOf: new Date() });
 
       expect(remaining.amount).toBe(-500);
       expect(remaining.isOverBudget()).toBe(true);

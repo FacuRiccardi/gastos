@@ -66,7 +66,7 @@ describe('Budget / CRUD', () => {
 
       const newMoney = new Money(1000, Currency.ARS);
       const newPeriod = BudgetPeriod.rolling30Days();
-      await useCase.execute({ id, money: newMoney, period: newPeriod });
+      await useCase.execute({ id, money: newMoney, period: newPeriod, householdId });
 
       const saved = await limits.findById(id);
       expect(saved!.money).toEqual(newMoney);
@@ -77,7 +77,19 @@ describe('Budget / CRUD', () => {
       const useCase = new EditBudgetLimit(limits);
 
       await expect(
-        useCase.execute({ id: BudgetLimitId.generate(), money, period }),
+        useCase.execute({ id: BudgetLimitId.generate(), money, period, householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
+    });
+
+    it('throws when the budget limit belongs to a different household', async () => {
+      const useCase = new EditBudgetLimit(limits);
+      const id = BudgetLimitId.generate();
+      const categoryId = CategoryId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      await limits.save(BudgetLimit.forCategory(id, otherHouseholdId, money, period, categoryId));
+
+      await expect(
+        useCase.execute({ id, money: new Money(1000, Currency.ARS), period, householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
@@ -89,7 +101,7 @@ describe('Budget / CRUD', () => {
       const categoryId = CategoryId.generate();
       await limits.save(BudgetLimit.forCategory(id, householdId, money, period, categoryId));
 
-      await useCase.execute({ id });
+      await useCase.execute({ id, householdId });
 
       const found = await limits.findById(id);
       expect(found).toBeNull();
@@ -98,7 +110,19 @@ describe('Budget / CRUD', () => {
     it('throws when the budget limit does not exist', async () => {
       const useCase = new DeleteBudgetLimit(limits);
 
-      await expect(useCase.execute({ id: BudgetLimitId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
+      await expect(useCase.execute({ id: BudgetLimitId.generate(), householdId })).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
+    });
+
+    it('throws when the budget limit belongs to a different household', async () => {
+      const useCase = new DeleteBudgetLimit(limits);
+      const id = BudgetLimitId.generate();
+      const categoryId = CategoryId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      await limits.save(BudgetLimit.forCategory(id, otherHouseholdId, money, period, categoryId));
+
+      await expect(
+        useCase.execute({ id, householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
     });
   });
 

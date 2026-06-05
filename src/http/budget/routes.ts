@@ -118,6 +118,7 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
         },
       },
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const body = request.body as {
         money: { amount: number; currency: string };
@@ -128,6 +129,7 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
         id: BudgetLimitId.from(id),
         money: new Money(body.money.amount, Currency.from(body.money.currency)),
         period: parsePeriod(body.period),
+        householdId: HouseholdId.from(req.householdId),
       });
       return reply.code(204).send();
     });
@@ -135,18 +137,20 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
     app.delete('/budget-limits/:id', {
       preHandler: [requireUserId, requireHouseholdId],
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const useCase = new DeleteBudgetLimit(repos.budgetLimits);
-      await useCase.execute({ id: BudgetLimitId.from(id) });
+      await useCase.execute({ id: BudgetLimitId.from(id), householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 
     app.get('/budget-limits/:id/balance', {
       preHandler: [requireUserId, requireHouseholdId],
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const useCase = new GetBudgetLimitBalance(repos.budgetLimits, repos.expenses, repos.categories);
-      const { remaining } = await useCase.execute({ id: BudgetLimitId.from(id) });
+      const { remaining } = await useCase.execute({ id: BudgetLimitId.from(id), householdId: HouseholdId.from(req.householdId) });
       return reply.code(200).send({
         remaining: { amount: remaining.amount, currency: remaining.currency.code },
       });
