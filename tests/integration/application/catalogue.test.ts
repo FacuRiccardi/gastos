@@ -37,7 +37,7 @@ describe('Catalogue use cases (integration)', () => {
     it('persists the renamed group name', async () => {
       const { id } = await new CreateGroup(repos.groups).execute({ householdId, name: 'Old' });
 
-      await new RenameGroup(repos.groups).execute({ id, newName: 'New' });
+      await new RenameGroup(repos.groups).execute({ householdId, id, newName: 'New' });
 
       const found = await repos.groups.findById(id);
       expect(found!.name).toBe('New');
@@ -45,7 +45,7 @@ describe('Catalogue use cases (integration)', () => {
 
     it('throws when group does not exist', async () => {
       await expect(
-        new RenameGroup(repos.groups).execute({ id: GroupId.generate(), newName: 'X' }),
+        new RenameGroup(repos.groups).execute({ householdId, id: GroupId.generate(), newName: 'X' }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
@@ -54,7 +54,7 @@ describe('Catalogue use cases (integration)', () => {
     it('soft-deleted group disappears from findActiveByHousehold', async () => {
       const { id } = await new CreateGroup(repos.groups).execute({ householdId, name: 'Temp' });
 
-      await new SoftDeleteGroup(repos.groups).execute({ id });
+      await new SoftDeleteGroup(repos.groups).execute({ householdId, id });
 
       const active = await repos.groups.findActiveByHousehold(householdId);
       expect(active).toHaveLength(0);
@@ -69,7 +69,7 @@ describe('Catalogue use cases (integration)', () => {
       await new CreateGroup(repos.groups).execute({ householdId, name: 'Mine' });
       await new CreateGroup(repos.groups).execute({ householdId: otherHousehold, name: 'Theirs' });
       const { id: deletedId } = await new CreateGroup(repos.groups).execute({ householdId, name: 'Deleted' });
-      await new SoftDeleteGroup(repos.groups).execute({ id: deletedId });
+      await new SoftDeleteGroup(repos.groups).execute({ householdId, id: deletedId });
 
       const { groups } = await new ListGroups(repos.groups).execute({ householdId });
 
