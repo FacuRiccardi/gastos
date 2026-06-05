@@ -164,7 +164,7 @@ describe('Expense use cases (integration)', () => {
         householdId, userId, categoryId, money, paymentMethod: { kind: 'Cash' }, date,
       });
 
-      await new DeleteExpense(repos.expenses).execute({ id });
+      await new DeleteExpense(repos.expenses).execute({ id, householdId });
 
       const found = await repos.expenses.findById(id);
       expect(found).toBeNull();

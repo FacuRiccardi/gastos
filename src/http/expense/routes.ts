@@ -119,9 +119,10 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
     app.delete('/expenses/:id', {
       preHandler: [requireUserId, requireHouseholdId],
     }, async (request, reply) => {
+      const req = request as typeof request & RequestWithAuth;
       const { id } = request.params as { id: string };
       const useCase = new DeleteExpense(repos.expenses);
-      await useCase.execute({ id: ExpenseId.from(id) });
+      await useCase.execute({ id: ExpenseId.from(id), householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 
