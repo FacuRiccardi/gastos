@@ -117,7 +117,7 @@ describe('DELETE /api/expenses/:id', () => {
     const expenses = new InMemoryExpenseRepository();
     const expenseId = ExpenseId.generate();
     const categoryId = CategoryId.generate();
-    expenses.save(new Expense(
+    await expenses.save(new Expense(
       expenseId, householdId, userId, categoryId,
       new Money(100, Currency.ARS), { kind: 'Cash' },
       new ExpenseDate(new Date('2024-06-01')),
@@ -153,7 +153,7 @@ describe('DELETE /api/expenses/:id', () => {
     const expenseId = ExpenseId.generate();
     const categoryId = CategoryId.generate();
     const otherHouseholdId = HouseholdId.generate();
-    expenses.save(new Expense(
+    await expenses.save(new Expense(
       expenseId, otherHouseholdId, userId, categoryId,
       new Money(100, Currency.ARS), { kind: 'Cash' },
       new ExpenseDate(new Date('2024-06-01')),
