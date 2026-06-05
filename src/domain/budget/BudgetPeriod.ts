@@ -1,6 +1,13 @@
 import { ExpenseDate } from '../expense/ExpenseDate.js';
 import { DomainError } from '../shared/DomainError.js';
 
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const result = new Date(year, month - 1, day);
+  if (isNaN(result.getTime())) throw new DomainError(`Invalid date: ${dateStr}`);
+  return result;
+}
+
 type PeriodVariant =
   | { kind: 'Monthly' }
   | { kind: 'Rolling30Days' }
@@ -20,6 +27,18 @@ export class BudgetPeriod {
   static custom(startDate: Date, endDate: Date): BudgetPeriod {
     if (endDate <= startDate) throw new DomainError('Custom period end date must be after start date');
     return new BudgetPeriod({ kind: 'Custom', startDate, endDate });
+  }
+
+  static from(raw: { kind: string; startDate?: string; endDate?: string }): BudgetPeriod {
+    if (raw.kind === 'Monthly') return BudgetPeriod.monthly();
+    if (raw.kind === 'Rolling30Days') return BudgetPeriod.rolling30Days();
+    if (raw.kind === 'Custom') {
+      if (!raw.startDate || !raw.endDate) {
+        throw new DomainError('Custom period requires startDate and endDate');
+      }
+      return BudgetPeriod.custom(parseLocalDate(raw.startDate), parseLocalDate(raw.endDate));
+    }
+    throw new DomainError(`Invalid period kind: ${raw.kind}`);
   }
 
   get kind(): PeriodVariant['kind'] {

@@ -14,10 +14,9 @@ import { PaymentInstrumentId } from '../../domain/expense/payment-instrument/Pay
 import { PaymentInstrumentType } from '../../domain/expense/payment-instrument/PaymentInstrumentType.js';
 import { ExpenseFilters } from '../../domain/expense/ExpenseFilters.js';
 import { Pagination } from '../../domain/shared/Pagination.js';
-import type { PaymentMethod } from '../../domain/expense/PaymentMethod.js';
+import { PaymentMethod } from '../../domain/expense/PaymentMethod.js';
 import type { Expense } from '../../domain/expense/Expense.js';
 import type { PaymentInstrument } from '../../domain/expense/payment-instrument/PaymentInstrument.js';
-import { ApplicationError } from '../../application/ApplicationError.js';
 import { LogExpense } from '../../application/expense/LogExpense.js';
 import { DeleteExpense } from '../../application/expense/DeleteExpense.js';
 import { ListExpenses } from '../../application/expense/ListExpenses.js';
@@ -27,17 +26,6 @@ import { SoftDeletePaymentInstrument } from '../../application/expense/payment-i
 import { ListPaymentInstruments } from '../../application/expense/payment-instrument/ListPaymentInstruments.js';
 
 type RequestWithAuth = { userId: string; householdId: string };
-
-function parsePaymentMethod(pm: { kind: string; instrumentId?: string }): PaymentMethod {
-  if (pm.kind === 'Cash') return { kind: 'Cash' };
-  if (pm.kind === 'CreditCard' && pm.instrumentId) {
-    return { kind: 'CreditCard', instrumentId: PaymentInstrumentId.from(pm.instrumentId) };
-  }
-  if (pm.kind === 'BankAccount' && pm.instrumentId) {
-    return { kind: 'BankAccount', instrumentId: PaymentInstrumentId.from(pm.instrumentId) };
-  }
-  throw new ApplicationError(`Invalid payment method: ${pm.kind}`);
-}
 
 function mapExpense(e: Expense) {
   const base = {
@@ -109,7 +97,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
         userId: UserId.from(req.userId),
         categoryId: CategoryId.from(body.categoryId),
         money: new Money(body.money.amount, Currency.from(body.money.currency)),
-        paymentMethod: parsePaymentMethod(body.paymentMethod),
+        paymentMethod: PaymentMethod.from(body.paymentMethod),
         date: new ExpenseDate(new Date(body.date)),
         installmentPlan: body.installmentPlan ? new InstallmentPlan(body.installmentPlan.count) : undefined,
       });

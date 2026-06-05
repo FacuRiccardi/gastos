@@ -57,3 +57,37 @@ describe('BudgetPeriod', () => {
     });
   });
 });
+
+describe('BudgetPeriod.from()', () => {
+  it('parses Monthly', () => {
+    const period = BudgetPeriod.from({ kind: 'Monthly' });
+    expect(period.kind).toBe('Monthly');
+  });
+
+  it('parses Rolling30Days', () => {
+    const period = BudgetPeriod.from({ kind: 'Rolling30Days' });
+    expect(period.kind).toBe('Rolling30Days');
+  });
+
+  it('parses Custom with startDate and endDate', () => {
+    const period = BudgetPeriod.from({ kind: 'Custom', startDate: '2025-01-01', endDate: '2025-01-31' });
+    expect(period.kind).toBe('Custom');
+    const { from, to } = period.getDateRange(new Date());
+    const toLocalDateStr = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    expect(toLocalDateStr(from.toDate())).toBe('2025-01-01');
+    expect(toLocalDateStr(to.toDate())).toBe('2025-01-31');
+  });
+
+  it('throws DomainError for Custom without startDate', () => {
+    expect(() => BudgetPeriod.from({ kind: 'Custom', endDate: '2025-01-31' })).toThrow(DomainError);
+  });
+
+  it('throws DomainError for Custom without endDate', () => {
+    expect(() => BudgetPeriod.from({ kind: 'Custom', startDate: '2025-01-01' })).toThrow(DomainError);
+  });
+
+  it('throws DomainError for an unknown kind', () => {
+    expect(() => BudgetPeriod.from({ kind: 'Quarterly' })).toThrow(DomainError);
+  });
+});

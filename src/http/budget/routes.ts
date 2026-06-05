@@ -9,21 +9,11 @@ import { BudgetPeriod } from '../../domain/budget/BudgetPeriod.js';
 import { Money } from '../../domain/shared/Money.js';
 import { Currency } from '../../domain/shared/Currency.js';
 import type { BudgetLimit } from '../../domain/budget/BudgetLimit.js';
-import { ApplicationError } from '../../application/ApplicationError.js';
 import { CreateBudgetLimit } from '../../application/budget/CreateBudgetLimit.js';
 import { EditBudgetLimit } from '../../application/budget/EditBudgetLimit.js';
 import { DeleteBudgetLimit } from '../../application/budget/DeleteBudgetLimit.js';
 import { GetBudgetLimitBalance } from '../../application/budget/GetBudgetLimitBalance.js';
 import { ListBudgetLimits } from '../../application/budget/ListBudgetLimits.js';
-
-function parsePeriod(p: { kind: string; startDate?: string; endDate?: string }): BudgetPeriod {
-  if (p.kind === 'Monthly') return BudgetPeriod.monthly();
-  if (p.kind === 'Rolling30Days') return BudgetPeriod.rolling30Days();
-  if (p.kind === 'Custom' && p.startDate && p.endDate) {
-    return BudgetPeriod.custom(new Date(p.startDate), new Date(p.endDate));
-  }
-  throw new ApplicationError(`Invalid period kind: ${p.kind}`);
-}
 
 function mapPeriod(period: BudgetPeriod): object {
   if (period.kind === 'Monthly') return { kind: 'Monthly' };
@@ -86,7 +76,7 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
       const { id } = await useCase.execute({
         householdId: HouseholdId.from(req.householdId),
         money: new Money(body.money.amount, Currency.from(body.money.currency)),
-        period: parsePeriod(body.period),
+        period: BudgetPeriod.from(body.period),
         categoryId: body.categoryId ? CategoryId.from(body.categoryId) : undefined,
         groupId: body.groupId ? GroupId.from(body.groupId) : undefined,
       });
@@ -128,7 +118,7 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
       await useCase.execute({
         id: BudgetLimitId.from(id),
         money: new Money(body.money.amount, Currency.from(body.money.currency)),
-        period: parsePeriod(body.period),
+        period: BudgetPeriod.from(body.period),
         householdId: HouseholdId.from(req.householdId),
       });
       return reply.code(204).send();
