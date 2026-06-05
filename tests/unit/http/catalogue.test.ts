@@ -124,6 +124,20 @@ describe('PATCH /api/groups/:id/name', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when group belongs to a different household', async () => {
+    const groups = new InMemoryGroupRepository();
+    const groupId = GroupId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await groups.save(new Group(groupId, otherHouseholdId, 'Some Group'));
+    const response = await makeApp(groups).inject({
+      method: 'PATCH',
+      url: `/api/groups/${groupId}/name`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: { name: 'New Name' },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── DELETE /api/groups/:id ───────────────────────────────────────────────────
@@ -170,6 +184,19 @@ describe('DELETE /api/groups/:id', () => {
       headers: { 'x-user-id': userId, 'x-household-id': householdId },
     });
     expect(response.statusCode).toBe(422);
+  });
+
+  it('returns 404 when group belongs to a different household', async () => {
+    const groups = new InMemoryGroupRepository();
+    const groupId = GroupId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await groups.save(new Group(groupId, otherHouseholdId, 'Some Group'));
+    const response = await makeApp(groups).inject({
+      method: 'DELETE',
+      url: `/api/groups/${groupId}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(404);
   });
 });
 
@@ -295,6 +322,20 @@ describe('PATCH /api/categories/:id/name', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when category belongs to a different household', async () => {
+    const categories = new InMemoryCategoryRepository();
+    const categoryId = CategoryId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await categories.save(new Category(categoryId, otherHouseholdId, GroupId.generate(), 'Other Cat'));
+    const response = await makeApp(new InMemoryGroupRepository(), categories).inject({
+      method: 'PATCH',
+      url: `/api/categories/${categoryId}/name`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: { name: 'New Name' },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── PATCH /api/categories/:id/group ─────────────────────────────────────────
@@ -351,6 +392,20 @@ describe('PATCH /api/categories/:id/group', () => {
     });
     expect(response.statusCode).toBe(404);
   });
+
+  it('returns 404 when category belongs to a different household', async () => {
+    const categories = new InMemoryCategoryRepository();
+    const categoryId = CategoryId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await categories.save(new Category(categoryId, otherHouseholdId, GroupId.generate(), 'Other Cat'));
+    const response = await makeApp(new InMemoryGroupRepository(), categories).inject({
+      method: 'PATCH',
+      url: `/api/categories/${categoryId}/group`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: { groupId: GroupId.generate() },
+    });
+    expect(response.statusCode).toBe(404);
+  });
 });
 
 // ─── DELETE /api/categories/:id ───────────────────────────────────────────────
@@ -387,6 +442,19 @@ describe('DELETE /api/categories/:id', () => {
       headers: { 'x-user-id': userId, 'x-household-id': householdId },
     });
     expect(response.statusCode).toBe(422);
+  });
+
+  it('returns 404 when category belongs to a different household', async () => {
+    const categories = new InMemoryCategoryRepository();
+    const categoryId = CategoryId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await categories.save(new Category(categoryId, otherHouseholdId, GroupId.generate(), 'Other Cat'));
+    const response = await makeApp(new InMemoryGroupRepository(), categories).inject({
+      method: 'DELETE',
+      url: `/api/categories/${categoryId}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(404);
   });
 });
 
