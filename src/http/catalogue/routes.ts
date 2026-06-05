@@ -45,19 +45,21 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
         },
       },
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const { name } = request.body as { name: string };
       const useCase = new RenameGroup(repos.groups);
-      await useCase.execute({ id: GroupId.from(id), newName: name });
+      await useCase.execute({ id: GroupId.from(id), newName: name, householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 
     app.delete('/groups/:id', {
       preHandler: [requireUserId, requireHouseholdId],
     }, async (request, reply) => {
+      const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
       const useCase = new SoftDeleteGroup(repos.groups);
-      await useCase.execute({ id: GroupId.from(id) });
+      await useCase.execute({ id: GroupId.from(id), householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 

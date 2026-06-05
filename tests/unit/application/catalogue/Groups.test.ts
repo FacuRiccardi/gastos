@@ -35,7 +35,7 @@ describe('Catalogue / Groups', () => {
       const id = GroupId.generate();
       await groups.save(new Group(id, householdId, 'Old Name'));
 
-      await useCase.execute({ id, newName: 'New Name' });
+      await useCase.execute({ id, newName: 'New Name', householdId });
 
       const saved = await groups.findById(id);
       expect(saved!.name).toBe('New Name');
@@ -45,7 +45,18 @@ describe('Catalogue / Groups', () => {
       const useCase = new RenameGroup(groups);
 
       await expect(
-        useCase.execute({ id: GroupId.generate(), newName: 'X' }),
+        useCase.execute({ id: GroupId.generate(), newName: 'X', householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
+    });
+
+    it('throws when the group belongs to a different household', async () => {
+      const useCase = new RenameGroup(groups);
+      const id = GroupId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      await groups.save(new Group(id, otherHouseholdId, 'Some Group'));
+
+      await expect(
+        useCase.execute({ id, newName: 'New Name', householdId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
@@ -56,7 +67,7 @@ describe('Catalogue / Groups', () => {
       const id = GroupId.generate();
       await groups.save(new Group(id, householdId, 'Food'));
 
-      await useCase.execute({ id });
+      await useCase.execute({ id, householdId });
 
       const saved = await groups.findById(id);
       expect(saved!.isDeleted).toBe(true);
@@ -65,7 +76,18 @@ describe('Catalogue / Groups', () => {
     it('throws when the group does not exist', async () => {
       const useCase = new SoftDeleteGroup(groups);
 
-      await expect(useCase.execute({ id: GroupId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
+      await expect(useCase.execute({ id: GroupId.generate(), householdId })).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
+    });
+
+    it('throws when the group belongs to a different household', async () => {
+      const useCase = new SoftDeleteGroup(groups);
+      const id = GroupId.generate();
+      const otherHouseholdId = HouseholdId.generate();
+      await groups.save(new Group(id, otherHouseholdId, 'Some Group'));
+
+      await expect(
+        useCase.execute({ id, householdId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'Group not found' });
     });
   });
 
