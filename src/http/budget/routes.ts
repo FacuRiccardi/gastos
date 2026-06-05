@@ -63,6 +63,9 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
             groupId: { type: 'string' },
           },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -106,6 +109,7 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
             },
           },
         },
+        response: { 204: { type: 'null' } },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -126,6 +130,7 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.delete('/budget-limits/:id', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: { response: { 204: { type: 'null' } } },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
@@ -136,6 +141,21 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.get('/budget-limits/:id/balance', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            required: ['remaining'],
+            properties: {
+              remaining: {
+                type: 'object',
+                required: ['amount', 'currency'],
+                properties: { amount: { type: 'number' }, currency: { type: 'string' } },
+              },
+            },
+          },
+        },
+      },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
@@ -148,6 +168,42 @@ export function budgetRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.get('/budget-limits', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            required: ['limits'],
+            properties: {
+              limits: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['id', 'money', 'period'],
+                  properties: {
+                    id: { type: 'string' },
+                    money: {
+                      type: 'object',
+                      required: ['amount', 'currency'],
+                      properties: { amount: { type: 'number' }, currency: { type: 'string' } },
+                    },
+                    period: {
+                      type: 'object',
+                      required: ['kind'],
+                      properties: {
+                        kind: { type: 'string' },
+                        startDate: { type: 'string' },
+                        endDate: { type: 'string' },
+                      },
+                    },
+                    categoryId: { type: 'string' },
+                    groupId: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
       const useCase = new ListBudgetLimits(repos.budgetLimits);

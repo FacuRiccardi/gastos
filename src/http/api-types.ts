@@ -29,11 +29,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -68,11 +72,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -103,7 +111,7 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -138,7 +146,14 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            groups: {
+                                id: string;
+                                name: string;
+                            }[];
+                        };
+                    };
                 };
             };
         };
@@ -159,11 +174,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -204,7 +223,7 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -236,7 +255,7 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -272,7 +291,15 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            categories: {
+                                id: string;
+                                name: string;
+                                groupId: string;
+                            }[];
+                        };
+                    };
                 };
             };
         };
@@ -294,11 +321,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -339,7 +370,7 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -380,7 +411,7 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -412,7 +443,7 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -454,7 +485,29 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            items: {
+                                id: string;
+                                householdId: string;
+                                userId: string;
+                                categoryId: string;
+                                money: {
+                                    amount: number;
+                                    currency: string;
+                                };
+                                paymentMethod: {
+                                    kind: string;
+                                    instrumentId?: string;
+                                };
+                                date: string;
+                                installmentPlan?: {
+                                    count: number;
+                                };
+                            }[];
+                            total: number;
+                        };
+                    };
                 };
             };
         };
@@ -487,11 +540,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -523,7 +580,7 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -557,7 +614,16 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            instruments: {
+                                id: string;
+                                userId: string;
+                                type: string;
+                                name: string;
+                            }[];
+                        };
+                    };
                 };
             };
         };
@@ -580,11 +646,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -625,7 +695,7 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -657,7 +727,7 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -691,7 +761,24 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            limits: {
+                                id: string;
+                                money: {
+                                    amount: number;
+                                    currency: string;
+                                };
+                                period: {
+                                    kind: string;
+                                    startDate?: string;
+                                    endDate?: string;
+                                };
+                                categoryId?: string;
+                                groupId?: string;
+                            }[];
+                        };
+                    };
                 };
             };
         };
@@ -722,11 +809,15 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
             };
         };
@@ -758,7 +849,7 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -794,7 +885,7 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                200: {
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -827,7 +918,14 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            remaining: {
+                                amount: number;
+                                currency: string;
+                            };
+                        };
+                    };
                 };
             };
         };

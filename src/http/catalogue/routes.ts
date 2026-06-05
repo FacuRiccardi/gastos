@@ -26,6 +26,9 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['name'],
           properties: { name: { type: 'string', minLength: 1 } },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -43,6 +46,7 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['name'],
           properties: { name: { type: 'string', minLength: 1 } },
         },
+        response: { 204: { type: 'null' } },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -55,6 +59,7 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.delete('/groups/:id', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: { response: { 204: { type: 'null' } } },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
@@ -65,6 +70,24 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.get('/groups', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            required: ['groups'],
+            properties: {
+              groups: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['id', 'name'],
+                  properties: { id: { type: 'string' }, name: { type: 'string' } },
+                },
+              },
+            },
+          },
+        },
+      },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
       const useCase = new ListGroups(repos.groups);
@@ -87,6 +110,9 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
             groupId: { type: 'string', minLength: 1 },
           },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -108,6 +134,7 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['name'],
           properties: { name: { type: 'string', minLength: 1 } },
         },
+        response: { 204: { type: 'null' } },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -126,6 +153,7 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['groupId'],
           properties: { groupId: { type: 'string', minLength: 1 } },
         },
+        response: { 204: { type: 'null' } },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
@@ -138,6 +166,7 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.delete('/categories/:id', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: { response: { 204: { type: 'null' } } },
     }, async (request, reply) => {
       const req = request as typeof request & { householdId: string };
       const { id } = request.params as { id: string };
@@ -153,6 +182,26 @@ export function catalogueRoutes(repos: Repositories): FastifyPluginAsync {
           type: 'object',
           required: ['groupId'],
           properties: { groupId: { type: 'string', minLength: 1 } },
+        },
+        response: {
+          200: {
+            type: 'object',
+            required: ['categories'],
+            properties: {
+              categories: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['id', 'name', 'groupId'],
+                  properties: {
+                    id: { type: 'string' },
+                    name: { type: 'string' },
+                    groupId: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     }, async (request, reply) => {

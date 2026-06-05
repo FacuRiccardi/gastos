@@ -81,6 +81,9 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
             },
           },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const req = request as typeof request & RequestWithAuth;
@@ -106,6 +109,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.delete('/expenses/:id', {
       preHandler: [requireUserId, requireHouseholdId],
+      schema: { response: { 204: { type: 'null' } } },
     }, async (request, reply) => {
       const req = request as typeof request & RequestWithAuth;
       const { id } = request.params as { id: string };
@@ -127,6 +131,44 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
             categoryId: { oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }] },
             paymentInstrumentId: { type: 'string' },
             groupId: { type: 'string' },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            required: ['items', 'total'],
+            properties: {
+              items: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['id', 'householdId', 'userId', 'categoryId', 'money', 'paymentMethod', 'date'],
+                  properties: {
+                    id: { type: 'string' },
+                    householdId: { type: 'string' },
+                    userId: { type: 'string' },
+                    categoryId: { type: 'string' },
+                    money: {
+                      type: 'object',
+                      required: ['amount', 'currency'],
+                      properties: { amount: { type: 'number' }, currency: { type: 'string' } },
+                    },
+                    paymentMethod: {
+                      type: 'object',
+                      required: ['kind'],
+                      properties: { kind: { type: 'string' }, instrumentId: { type: 'string' } },
+                    },
+                    date: { type: 'string' },
+                    installmentPlan: {
+                      type: 'object',
+                      required: ['count'],
+                      properties: { count: { type: 'integer' } },
+                    },
+                  },
+                },
+              },
+              total: { type: 'integer' },
+            },
           },
         },
       },
@@ -178,6 +220,9 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
             name: { type: 'string', minLength: 1 },
           },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
@@ -200,6 +245,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['name'],
           properties: { name: { type: 'string', minLength: 1 } },
         },
+        response: { 204: { type: 'null' } },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
@@ -212,7 +258,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.delete('/payment-instruments/:id', {
       preHandler: requireUserId,
-      schema: { security: [{ userId: [] }] },
+      schema: { security: [{ userId: [] }], response: { 204: { type: 'null' } } },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
       const { id } = request.params as { id: string };
@@ -223,7 +269,30 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.get('/payment-instruments', {
       preHandler: requireUserId,
-      schema: { security: [{ userId: [] }] },
+      schema: {
+        security: [{ userId: [] }],
+        response: {
+          200: {
+            type: 'object',
+            required: ['instruments'],
+            properties: {
+              instruments: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['id', 'userId', 'type', 'name'],
+                  properties: {
+                    id: { type: 'string' },
+                    userId: { type: 'string' },
+                    type: { type: 'string' },
+                    name: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
       const useCase = new ListPaymentInstruments(repos.paymentInstruments);

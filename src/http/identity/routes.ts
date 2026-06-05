@@ -17,6 +17,9 @@ export function identityRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['name'],
           properties: { name: { type: 'string', minLength: 1 } },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const { name } = request.body as { name: string };
@@ -34,6 +37,9 @@ export function identityRoutes(repos: Repositories): FastifyPluginAsync {
           required: ['name'],
           properties: { name: { type: 'string', minLength: 1 } },
         },
+        response: {
+          201: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        },
       },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
@@ -45,7 +51,7 @@ export function identityRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.post('/households/:id/members', {
       preHandler: requireUserId,
-      schema: { security: [{ userId: [] }] },
+      schema: { security: [{ userId: [] }], response: { 204: { type: 'null' } } },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
       const { id } = request.params as { id: string };
