@@ -148,7 +148,7 @@ describe('Catalogue use cases (integration)', () => {
       const { id: deletedId } = await new CreateCategory(repos.categories, repos.groups).execute({ householdId, groupId, name: 'Deleted' });
       await new SoftDeleteCategory(repos.categories).execute({ id: deletedId, householdId });
 
-      const { categories } = await new ListCategories(repos.categories).execute({ groupId });
+      const { categories } = await new ListCategories(repos.categories).execute({ groupId, householdId });
 
       expect(categories).toHaveLength(1);
       expect(categories[0]!.name).toBe('Active');
