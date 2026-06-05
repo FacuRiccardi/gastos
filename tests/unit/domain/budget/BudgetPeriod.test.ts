@@ -73,8 +73,10 @@ describe('BudgetPeriod.from()', () => {
     const period = BudgetPeriod.from({ kind: 'Custom', startDate: '2025-01-01', endDate: '2025-01-31' });
     expect(period.kind).toBe('Custom');
     const { from, to } = period.getDateRange(new Date());
-    expect(from.toDate().toISOString().split('T')[0]).toBe('2025-01-01');
-    expect(to.toDate().toISOString().split('T')[0]).toBe('2025-01-31');
+    const toLocalDateStr = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    expect(toLocalDateStr(from.toDate())).toBe('2025-01-01');
+    expect(toLocalDateStr(to.toDate())).toBe('2025-01-31');
   });
 
   it('throws DomainError for Custom without startDate', () => {
