@@ -11,6 +11,7 @@ export function identityRoutes(repos: Repositories): FastifyPluginAsync {
   return async (app) => {
     app.post('/users', {
       schema: {
+        security: [],
         body: {
           type: 'object',
           required: ['name'],
@@ -27,6 +28,7 @@ export function identityRoutes(repos: Repositories): FastifyPluginAsync {
     app.post('/households', {
       preHandler: requireUserId,
       schema: {
+        security: [{ userId: [] }],
         body: {
           type: 'object',
           required: ['name'],
@@ -43,6 +45,7 @@ export function identityRoutes(repos: Repositories): FastifyPluginAsync {
 
     app.post('/households/:id/members', {
       preHandler: requireUserId,
+      schema: { security: [{ userId: [] }] },
     }, async (request, reply) => {
       const req = request as typeof request & { userId: string };
       const { id } = request.params as { id: string };

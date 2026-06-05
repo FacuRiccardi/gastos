@@ -3,7 +3,7 @@ import { makeRepos } from './src/infrastructure/repositories.js';
 
 const app = buildApp(makeRepos());
 
-app.listen({ port: 3000 }, (err, address) => {
+app.listen({ port: Number(process.env['PORT']) || 3000, host: '0.0.0.0' }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
