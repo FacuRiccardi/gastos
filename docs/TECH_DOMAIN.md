@@ -441,6 +441,181 @@ BudgetLimit.forGroup(id, householdId, money, period)
 
 ---
 
+---
+
+## HTTP Layer
+
+### Folder Layout
+
+```
+src/http/
+  app.ts                              ← buildApp(repos: Repositories): FastifyInstance
+  types.ts                            ← Repositories interface
+  error-handler.ts                    ← centralized setErrorHandler
+  auth.ts                             ← onRequest hook: validates X-User-Id (and X-Household-Id where required)
+  identity/
+    routes.ts
+  catalogue/
+    routes.ts
+  expense/
+    routes.ts
+    payment-instrument/
+      routes.ts
+  budget/
+    routes.ts
+```
+
+### App Factory
+
+```typescript
+// src/http/app.ts
+export function buildApp(repos: Repositories): FastifyInstance
+```
+
+- Never a module-level singleton. Every call returns a fresh, independent Fastify instance.
+- `repos` is injected; both unit tests (in-memory repos) and E2E tests (Drizzle repos) call the same factory.
+- Registers the error handler, auth hook, and all route plugins inside the factory.
+- `index.js` calls `buildApp(makeRepos())` and starts the server.
+
+### Repositories Type
+
+```typescript
+// src/http/types.ts
+export interface Repositories {
+  households: HouseholdRepository;
+  users: UserRepository;
+  groups: GroupRepository;
+  categories: CategoryRepository;
+  expenses: ExpenseRepository;
+  paymentInstruments: PaymentInstrumentRepository;
+  budgetLimits: BudgetLimitRepository;
+}
+```
+
+### Route Registration
+
+Each bounded context is a Fastify plugin registered with an `/api` prefix:
+
+```typescript
+app.register(identityRoutes(repos), { prefix: '/api' });
+app.register(catalogueRoutes(repos), { prefix: '/api' });
+app.register(expenseRoutes(repos), { prefix: '/api' });
+app.register(budgetRoutes(repos), { prefix: '/api' });
+```
+
+Each `*routes` export is a factory function that closes over `repos` and returns a Fastify plugin function.
+
+### Authentication
+
+- **Header:** `X-User-Id` — plain UUID string.
+- **Scope:** all routes except `POST /api/users`.
+- **Implementation:** `src/http/auth.ts` exports an `onRequest` hook. It validates the UUID format and sets `request.userId` (typed `string`). The controller wraps it in `new UserId(request.userId)` before passing to the use case.
+- **Missing or non-UUID header → 400.**
+
+### Household Context
+
+All catalogue, expense, and budget operations require a household. The household ID is passed via the `X-Household-Id` header (plain UUID), validated by the same auth hook. The controller wraps it in `new HouseholdId(request.householdId)`.
+
+Missing or non-UUID `X-Household-Id` header on a household-scoped route → 400.
+
+### Endpoints
+
+| Method | Path | Use Case | Auth |
+|--------|------|----------|------|
+| POST | /api/users | CreateUser | none |
+| POST | /api/households | CreateHousehold | X-User-Id |
+| POST | /api/households/:id/members | JoinHousehold | X-User-Id |
+| POST | /api/groups | CreateGroup | X-User-Id, X-Household-Id |
+| PATCH | /api/groups/:id/name | RenameGroup | X-User-Id, X-Household-Id |
+| DELETE | /api/groups/:id | SoftDeleteGroup | X-User-Id, X-Household-Id |
+| GET | /api/groups | ListGroups | X-User-Id, X-Household-Id |
+| POST | /api/categories | CreateCategory | X-User-Id, X-Household-Id |
+| PATCH | /api/categories/:id/name | RenameCategory | X-User-Id, X-Household-Id |
+| PATCH | /api/categories/:id/group | MoveCategory | X-User-Id, X-Household-Id |
+| DELETE | /api/categories/:id | SoftDeleteCategory | X-User-Id, X-Household-Id |
+| GET | /api/categories | ListCategories | X-User-Id, X-Household-Id |
+| POST | /api/expenses | LogExpense | X-User-Id, X-Household-Id |
+| DELETE | /api/expenses/:id | DeleteExpense | X-User-Id, X-Household-Id |
+| GET | /api/expenses | ListExpenses | X-User-Id, X-Household-Id |
+| POST | /api/payment-instruments | CreatePaymentInstrument | X-User-Id |
+| PATCH | /api/payment-instruments/:id/name | RenamePaymentInstrument | X-User-Id |
+| DELETE | /api/payment-instruments/:id | SoftDeletePaymentInstrument | X-User-Id |
+| GET | /api/payment-instruments | ListPaymentInstruments | X-User-Id |
+| POST | /api/budget-limits | CreateBudgetLimit | X-User-Id, X-Household-Id |
+| PATCH | /api/budget-limits/:id | EditBudgetLimit | X-User-Id, X-Household-Id |
+| DELETE | /api/budget-limits/:id | DeleteBudgetLimit | X-User-Id, X-Household-Id |
+| GET | /api/budget-limits/:id/balance | GetBudgetLimitBalance | X-User-Id, X-Household-Id |
+| GET | /api/budget-limits | ListBudgetLimits | X-User-Id, X-Household-Id |
+
+### Error Handler
+
+Centralized in `src/http/error-handler.ts`, registered via `app.setErrorHandler()`.
+
+| Condition | HTTP Status |
+|-----------|-------------|
+| `DomainError` (`.type === 'Domain'`) | 422 |
+| `ApplicationError` with "not found" in message (case-insensitive) | 404 |
+| Other `ApplicationError` | 400 |
+| `InfrastructureError` | 500 |
+| Unknown errors | 500 |
+
+Error response shape: `{ "error": "<message>" }`
+
+Controllers never catch errors individually — all exceptions flow to `setErrorHandler`.
+
+### Request Validation
+
+Fastify built-in JSON schema, defined inline in each route file (`schema: { body: { ... } }`). No Zod. Validation failures produce Fastify's default 400 response.
+
+### Request Body Conventions
+
+**Money:**
+```json
+{ "amount": 1500.00, "currency": "ARS" }
+```
+
+**BudgetPeriod:**
+```json
+{ "kind": "Monthly" }
+{ "kind": "Rolling30Days" }
+{ "kind": "Custom", "startDate": "2024-01-01", "endDate": "2024-01-31" }
+```
+
+**PaymentMethod on LogExpense:**
+```json
+{ "kind": "Cash" }
+{ "kind": "CreditCard", "instrumentId": "<uuid>", "installments": 3 }
+{ "kind": "BankAccount", "instrumentId": "<uuid>" }
+```
+
+### Response DTO Convention
+
+- Branded IDs → use directly (they ARE strings at runtime; no `.value` needed)
+- `Money` → `{ amount: number, currency: string }` (use `money.currency.code` for the string)
+- `ExpenseDate` → ISO date string via `.toDate().toISOString().split('T')[0]`
+- `Page<T>` → `{ items: T[], total: number }`
+- Domain aggregates are never returned directly; controllers map to plain objects
+
+### Unit Test Setup
+
+- Location: `tests/unit/http/`
+- One file per bounded context: `identity.test.ts`, `catalogue.test.ts`, `expense.test.ts`, `budget.test.ts`
+- App is built with in-memory repos: `buildApp({ households: new InMemoryHouseholdRepository(), ... })`
+- HTTP calls via `app.inject()` — no TCP port, no DB
+
+### E2E Test Setup
+
+- Location: `tests/integration/http/`
+- One file per bounded context: `identity.test.ts`, `catalogue.test.ts`, `expense.test.ts`, `budget.test.ts`
+- App is built with real repos: `buildApp(makeRepos())`
+- `clearTables()` in `beforeEach` — clean slate per test
+- HTTP calls via `app.inject()` — no TCP port
+- Database: `TEST_DATABASE_URL` (never `DATABASE_URL`)
+- Parallelism: same `fileParallelism: false` as other integration tests
+- Scope: one happy-path test per endpoint — verifies wiring only
+
+---
+
 ## Conventions
 
 - **Aggregate Root (AR):** the only entry point into its consistency boundary. External code holds a reference to the AR, never to internal entities directly.
