@@ -41,7 +41,7 @@ describe('Expense / PaymentInstruments', () => {
       const id = PaymentInstrumentId.generate();
       await instruments.save(new PaymentInstrument(id, userId, PaymentInstrumentType.CreditCard, 'Old'));
 
-      await useCase.execute({ id, newName: 'New' });
+      await useCase.execute({ id, newName: 'New', userId });
 
       const saved = await instruments.findById(id);
       expect(saved!.name).toBe('New');
@@ -51,7 +51,18 @@ describe('Expense / PaymentInstruments', () => {
       const useCase = new RenamePaymentInstrument(instruments);
 
       await expect(
-        useCase.execute({ id: PaymentInstrumentId.generate(), newName: 'X' }),
+        useCase.execute({ id: PaymentInstrumentId.generate(), newName: 'X', userId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
+    });
+
+    it('throws when the instrument belongs to a different user', async () => {
+      const useCase = new RenamePaymentInstrument(instruments);
+      const id = PaymentInstrumentId.generate();
+      const otherUserId = UserId.generate();
+      await instruments.save(new PaymentInstrument(id, otherUserId, PaymentInstrumentType.CreditCard, 'Other Card'));
+
+      await expect(
+        useCase.execute({ id, newName: 'New', userId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });
@@ -62,7 +73,7 @@ describe('Expense / PaymentInstruments', () => {
       const id = PaymentInstrumentId.generate();
       await instruments.save(new PaymentInstrument(id, userId, PaymentInstrumentType.BankAccount, 'Checking'));
 
-      await useCase.execute({ id });
+      await useCase.execute({ id, userId });
 
       const saved = await instruments.findById(id);
       expect(saved!.isDeleted).toBe(true);
@@ -72,7 +83,18 @@ describe('Expense / PaymentInstruments', () => {
       const useCase = new SoftDeletePaymentInstrument(instruments);
 
       await expect(
-        useCase.execute({ id: PaymentInstrumentId.generate() }),
+        useCase.execute({ id: PaymentInstrumentId.generate(), userId }),
+      ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
+    });
+
+    it('throws when the instrument belongs to a different user', async () => {
+      const useCase = new SoftDeletePaymentInstrument(instruments);
+      const id = PaymentInstrumentId.generate();
+      const otherUserId = UserId.generate();
+      await instruments.save(new PaymentInstrument(id, otherUserId, PaymentInstrumentType.BankAccount, 'Other Account'));
+
+      await expect(
+        useCase.execute({ id, userId }),
       ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
     });
   });

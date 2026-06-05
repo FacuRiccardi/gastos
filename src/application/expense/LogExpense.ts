@@ -34,13 +34,13 @@ export class LogExpense {
 
   async execute(input: LogExpenseInput): Promise<LogExpenseOutput> {
     const category = await this.categories.findById(input.categoryId);
-    if (!category) throw new ApplicationError('Category not found');
+    if (!category || category.householdId !== input.householdId) throw new ApplicationError('Category not found');
     if (category.isDeleted) throw new ApplicationError('Category is deleted');
 
     const kind = input.paymentMethod.kind;
     if (kind === 'CreditCard' || kind === 'BankAccount') {
       const instrument = await this.instruments.findById(input.paymentMethod.instrumentId);
-      if (!instrument) throw new ApplicationError('PaymentInstrument not found');
+      if (!instrument || instrument.userId !== input.userId) throw new ApplicationError('PaymentInstrument not found');
       if (instrument.isDeleted) throw new ApplicationError('PaymentInstrument has been deleted');
       if (instrument.type !== PaymentInstrumentType[kind]) {
         throw new ApplicationError(`PaymentInstrument must be of type ${kind}`);

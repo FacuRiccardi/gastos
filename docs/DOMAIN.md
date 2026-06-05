@@ -167,6 +167,7 @@ _Avoid_: "budget" (too vague), "spending rule."
 - A `BudgetLimit` is scoped to a `Household`.
 - Only `Currency.ARS` is supported in the initial build. All `Money` values are in the same currency for budget balance calculations to be valid.
 - A `BudgetLimit`'s remaining balance = cap `Money` minus the sum of all `Expense.Money` values in the Household whose `CategoryId` (or whose Category's `GroupId`) matches the limit's target, within the active `BudgetPeriod`.
+- A use case operating on a resource by ID must verify the resource belongs to the caller's Household (or User for user-scoped resources). A mismatch must be treated as "not found" to avoid leaking that a resource exists under a different owner.
 
 ---
 

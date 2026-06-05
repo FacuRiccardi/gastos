@@ -53,7 +53,7 @@ describe('Budget / GetBudgetLimitBalance', () => {
     const categoryId = CategoryId.generate();
     await limits.save(BudgetLimit.forCategory(id, householdId, cap, period, categoryId));
 
-    const result = await useCase.execute({ id });
+    const result = await useCase.execute({ id, householdId });
 
     expect(result.remaining.amount).toBe(1000);
   });
@@ -65,7 +65,7 @@ describe('Budget / GetBudgetLimitBalance', () => {
     await expenses.save(makeExpense(categoryId, 300, 2024, 1, 10));
     await expenses.save(makeExpense(categoryId, 200, 2024, 1, 20));
 
-    const result = await useCase.execute({ id });
+    const result = await useCase.execute({ id, householdId });
 
     expect(result.remaining.amount).toBe(500);
   });
@@ -80,7 +80,7 @@ describe('Budget / GetBudgetLimitBalance', () => {
     await expenses.save(makeExpense(catA, 100, 2024, 1, 5));
     await expenses.save(makeExpense(catB, 150, 2024, 1, 12));
 
-    const result = await useCase.execute({ id });
+    const result = await useCase.execute({ id, householdId });
 
     expect(result.remaining.amount).toBe(750);
   });
@@ -91,7 +91,7 @@ describe('Budget / GetBudgetLimitBalance', () => {
     await limits.save(BudgetLimit.forCategory(id, householdId, cap, period, categoryId));
     await expenses.save(makeExpense(categoryId, 1200, 2024, 1, 10));
 
-    const result = await useCase.execute({ id });
+    const result = await useCase.execute({ id, householdId });
 
     expect(result.remaining.amount).toBe(-200);
     expect(result.remaining.isOverBudget()).toBe(true);
@@ -99,7 +99,18 @@ describe('Budget / GetBudgetLimitBalance', () => {
 
   it('throws when the budget limit does not exist', async () => {
     await expect(
-      useCase.execute({ id: BudgetLimitId.generate() }),
+      useCase.execute({ id: BudgetLimitId.generate(), householdId }),
+    ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
+  });
+
+  it('throws when the budget limit belongs to a different household', async () => {
+    const id = BudgetLimitId.generate();
+    const categoryId = CategoryId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    await limits.save(BudgetLimit.forCategory(id, otherHouseholdId, cap, period, categoryId));
+
+    await expect(
+      useCase.execute({ id, householdId }),
     ).rejects.toMatchObject({ type: 'Application', message: 'BudgetLimit not found' });
   });
 });

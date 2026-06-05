@@ -119,9 +119,10 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
     app.delete('/expenses/:id', {
       preHandler: [requireUserId, requireHouseholdId],
     }, async (request, reply) => {
+      const req = request as typeof request & RequestWithAuth;
       const { id } = request.params as { id: string };
       const useCase = new DeleteExpense(repos.expenses);
-      await useCase.execute({ id: ExpenseId.from(id) });
+      await useCase.execute({ id: ExpenseId.from(id), householdId: HouseholdId.from(req.householdId) });
       return reply.code(204).send();
     });
 
@@ -211,19 +212,21 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
         },
       },
     }, async (request, reply) => {
+      const req = request as typeof request & { userId: string };
       const { id } = request.params as { id: string };
       const { name } = request.body as { name: string };
       const useCase = new RenamePaymentInstrument(repos.paymentInstruments);
-      await useCase.execute({ id: PaymentInstrumentId.from(id), newName: name });
+      await useCase.execute({ id: PaymentInstrumentId.from(id), newName: name, userId: UserId.from(req.userId) });
       return reply.code(204).send();
     });
 
     app.delete('/payment-instruments/:id', {
       preHandler: requireUserId,
     }, async (request, reply) => {
+      const req = request as typeof request & { userId: string };
       const { id } = request.params as { id: string };
       const useCase = new SoftDeletePaymentInstrument(repos.paymentInstruments);
-      await useCase.execute({ id: PaymentInstrumentId.from(id) });
+      await useCase.execute({ id: PaymentInstrumentId.from(id), userId: UserId.from(req.userId) });
       return reply.code(204).send();
     });
 

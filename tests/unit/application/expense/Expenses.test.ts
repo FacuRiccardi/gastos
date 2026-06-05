@@ -39,7 +39,7 @@ describe('Expense / DeleteExpense', () => {
     const categoryId = CategoryId.generate();
     await expenses.save(makeExpense(id, categoryId));
 
-    await useCase.execute({ id });
+    await useCase.execute({ id, householdId });
 
     const found = await expenses.findById(id);
     expect(found).toBeNull();
@@ -48,7 +48,19 @@ describe('Expense / DeleteExpense', () => {
   it('throws when the expense does not exist', async () => {
     const useCase = new DeleteExpense(expenses);
 
-    await expect(useCase.execute({ id: ExpenseId.generate() })).rejects.toMatchObject({ type: 'Application', message: 'Expense not found' });
+    await expect(useCase.execute({ id: ExpenseId.generate(), householdId })).rejects.toMatchObject({ type: 'Application', message: 'Expense not found' });
+  });
+
+  it('throws when the expense belongs to a different household', async () => {
+    const useCase = new DeleteExpense(expenses);
+    const id = ExpenseId.generate();
+    const otherHouseholdId = HouseholdId.generate();
+    const categoryId = CategoryId.generate();
+    await expenses.save(makeExpense(id, categoryId));
+
+    await expect(
+      useCase.execute({ id, householdId: otherHouseholdId }),
+    ).rejects.toMatchObject({ type: 'Application', message: 'Expense not found' });
   });
 });
 

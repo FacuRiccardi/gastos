@@ -96,6 +96,15 @@ describe('Expense / LogExpense', () => {
     expect(saved!.installmentPlan?.count).toBe(3);
   });
 
+  it('throws when the category belongs to a different household', async () => {
+    const otherHouseholdId = HouseholdId.generate();
+    await categories.save(new Category(categoryId, otherHouseholdId, groupId, 'Food'));
+
+    await expect(
+      useCase.execute({ householdId, userId, categoryId, money, paymentMethod: { kind: 'Cash' }, date }),
+    ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
+  });
+
   it('throws when the category does not exist', async () => {
     await expect(
       useCase.execute({
@@ -107,6 +116,25 @@ describe('Expense / LogExpense', () => {
         date,
       }),
     ).rejects.toMatchObject({ type: 'Application', message: 'Category not found' });
+  });
+
+  it('throws when the payment instrument belongs to a different user', async () => {
+    await categories.save(new Category(categoryId, householdId, groupId, 'Food'));
+    const instrumentId = PaymentInstrumentId.generate();
+    const otherUserId = UserId.generate();
+    await instruments.save(new PaymentInstrument(instrumentId, otherUserId, PaymentInstrumentType.CreditCard, 'Other Card'));
+
+    await expect(
+      useCase.execute({
+        householdId,
+        userId,
+        categoryId,
+        money,
+        paymentMethod: { kind: 'CreditCard', instrumentId },
+        date,
+        installmentPlan: new InstallmentPlan(1),
+      }),
+    ).rejects.toMatchObject({ type: 'Application', message: 'PaymentInstrument not found' });
   });
 
   it('throws when a credit-card payment references an instrument that does not exist', async () => {

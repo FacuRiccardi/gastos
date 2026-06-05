@@ -22,7 +22,7 @@ export class CreateCategory {
 
   async execute(input: CreateCategoryInput): Promise<CreateCategoryOutput> {
     const group = await this.groups.findById(input.groupId);
-    if (!group) throw new ApplicationError('Group not found');
+    if (!group || group.householdId !== input.householdId) throw new ApplicationError('Group not found');
 
     const id = CategoryId.generate();
     const category = new Category(id, input.householdId, input.groupId, input.name);
