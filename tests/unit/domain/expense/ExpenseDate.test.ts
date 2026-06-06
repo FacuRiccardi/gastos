@@ -18,4 +18,12 @@ describe('ExpenseDate', () => {
     const b = new ExpenseDate(new Date('2025-01-16'));
     expect(a.equals(b)).toBe(false);
   });
+
+  it('fromString("2026-06-01") stores year=2026 month=5 day=1 as local calendar date', () => {
+    const d = ExpenseDate.fromString('2026-06-01');
+    const dt = d.toDate();
+    expect(dt.getFullYear()).toBe(2026);
+    expect(dt.getMonth()).toBe(5);
+    expect(dt.getDate()).toBe(1);
+  });
 });
