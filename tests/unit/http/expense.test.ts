@@ -20,6 +20,8 @@ import { Money } from '../../../src/domain/shared/Money.js';
 import { Currency } from '../../../src/domain/shared/Currency.js';
 import { PaymentInstrument } from '../../../src/domain/expense/payment-instrument/PaymentInstrument.js';
 import { PaymentInstrumentType } from '../../../src/domain/expense/payment-instrument/PaymentInstrumentType.js';
+import { ExpenseFilters } from '../../../src/domain/expense/ExpenseFilters.js';
+import { Pagination } from '../../../src/domain/shared/Pagination.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -92,6 +94,46 @@ describe('POST /api/expenses', () => {
       payload: { categoryId: CategoryId.generate() },
     });
     expect(response.statusCode).toBe(400);
+  });
+
+  it('returns 400 when date is not in YYYY-MM-DD format', async () => {
+    const response = await makeApp().inject({
+      method: 'POST',
+      url: '/api/expenses',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: {
+        categoryId: CategoryId.generate(),
+        money: { amount: 100, currency: 'ARS' },
+        paymentMethod: { kind: 'Cash' },
+        date: 'not-a-date',
+      },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('stores the date as the local calendar date (no UTC timezone shift)', async () => {
+    const expenses = new InMemoryExpenseRepository();
+    const categories = new InMemoryCategoryRepository();
+    const categoryId = CategoryId.generate();
+    await categories.save(new Category(categoryId, householdId, GroupId.generate(), 'Food'));
+
+    await makeApp(expenses, categories).inject({
+      method: 'POST',
+      url: '/api/expenses',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: {
+        categoryId,
+        money: { amount: 100, currency: 'ARS' },
+        paymentMethod: { kind: 'Cash' },
+        date: '2026-06-01',
+      },
+    });
+
+    const page = await expenses.findByHousehold(householdId, new ExpenseFilters(), new Pagination(10, 0));
+    const dt = page.items[0].date.toDate();
+    expect(dt.getFullYear()).toBe(2026);
+    expect(dt.getMonth()).toBe(5);
+    expect(dt.getDate()).toBe(1);
   });
 
   it('returns 404 when category is not found', async () => {
@@ -195,6 +237,24 @@ describe('GET /api/expenses', () => {
     const response = await makeApp().inject({
       method: 'GET',
       url: '/api/expenses?limit=abc',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('returns 200 when filtering by a single categoryId string', async () => {
+    const response = await makeApp().inject({
+      method: 'GET',
+      url: `/api/expenses?categoryId=${CategoryId.generate()}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('returns 400 when from is not in YYYY-MM-DD format', async () => {
+    const response = await makeApp().inject({
+      method: 'GET',
+      url: '/api/expenses?from=not-a-date',
       headers: { 'x-user-id': userId, 'x-household-id': householdId },
     });
     expect(response.statusCode).toBe(400);

@@ -107,6 +107,50 @@ describe('DELETE /api/expenses/:id', () => {
 });
 
 describe('GET /api/expenses', () => {
+  it('returns the posted date unchanged (no UTC timezone shift)', async () => {
+    const app = makeApp();
+    const { userId, householdId } = await seedHousehold(app);
+    const { categoryId } = await seedCategory(app, userId, householdId);
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/expenses',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: { categoryId, money: { amount: 100, currency: 'ARS' }, paymentMethod: { kind: 'Cash' }, date: '2026-06-01' },
+    });
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/expenses',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    const { items } = list.json<{ items: Array<{ date: string }> }>();
+    expect(items[0]!.date).toBe('2026-06-01');
+  });
+
+  it('returns 200 and filters results when a single categoryId is passed', async () => {
+    const app = makeApp();
+    const { userId, householdId } = await seedHousehold(app);
+    const { categoryId } = await seedCategory(app, userId, householdId);
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/expenses',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: { categoryId, money: { amount: 50, currency: 'ARS' }, paymentMethod: { kind: 'Cash' }, date: '2026-06-01' },
+    });
+
+    const list = await app.inject({
+      method: 'GET',
+      url: `/api/expenses?categoryId=${categoryId}`,
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(list.statusCode).toBe(200);
+    const { items, total } = list.json<{ items: Array<{ categoryId: string }>; total: number }>();
+    expect(total).toBe(1);
+    expect(items[0]!.categoryId).toBe(categoryId);
+  });
+
   it('seeds expenses and returns them with correct total', async () => {
     const app = makeApp();
     const { userId, householdId } = await seedHousehold(app);

@@ -103,17 +103,8 @@ export class DrizzleExpenseRepository implements ExpenseRepository {
     return conditions;
   }
 
-  private parseDate(dateStr: string): ExpenseDate {
-    const [y, m, day] = dateStr.split('-').map(Number);
-    return new ExpenseDate(new Date(y!, m! - 1, day!));
-  }
-
   private formatDate(d: ExpenseDate): string {
-    const dt = d.toDate();
-    const y = dt.getFullYear();
-    const m = String(dt.getMonth() + 1).padStart(2, '0');
-    const day = String(dt.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return d.toLocalDateString();
   }
 
   private toDomain(row: typeof expenses.$inferSelect): Expense {
@@ -129,7 +120,7 @@ export class DrizzleExpenseRepository implements ExpenseRepository {
       CategoryId.from(row.categoryId),
       new Money(parseFloat(row.moneyAmount), Currency.from(row.moneyCurrency)),
       paymentMethod,
-      this.parseDate(row.date),
+      ExpenseDate.fromString(row.date),
       installmentPlan,
     );
   }
