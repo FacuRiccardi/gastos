@@ -13,17 +13,22 @@ verification after each write operation.
 ## Known bugs (as of 2026-06-05)
 
 - **Date off-by-one**: `new Date("YYYY-MM-DD")` parses as UTC midnight. In UTC-3, dates are stored and returned one day behind what was sent. Affects all expense dates.
-- **`categoryId` filter broken**: `GET /expenses?categoryId=<uuid>` fails with `oneOf` validation error. Use `groupId` filter instead until fixed.
+
+## Fixed bugs
+
+- **`categoryId` filter** ~~broken~~: previously failed with `oneOf` validation error. Verified working as of 2026-06-06 — `GET /api/expenses?categoryId=<uuid>` returns correct results.
 
 ## Prerequisites
 
-1. Start the DB and server in a devbox shell:
+1. Start the DB and server from the `backend/` directory:
    ```bash
+   cd backend
    devbox run start
    # Listens on :3000
    ```
 2. DB is accessible from outside devbox via:
    ```bash
+   cd backend
    devbox run -- psql -h /tmp -U postgres -p 5432 -d gastos -c '<query>'
    ```
 3. Auth is header-based — no tokens:
@@ -38,7 +43,7 @@ Run the tests **in order** — later tests depend on IDs captured from earlier o
 
 ### 1.1 Create user A
 ```bash
-curl -s -X POST http://localhost:3000/users \
+curl -s -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice"}' | jq
 # Expect: {"id": "<uuid>"}
@@ -51,7 +56,7 @@ devbox run -- psql -h /tmp -U postgres gastos -c "SELECT * FROM users WHERE id='
 
 ### 1.2 Create user B (for join test)
 ```bash
-curl -s -X POST http://localhost:3000/users \
+curl -s -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Bob"}' | jq
 # Capture: USER_B=<id>
@@ -59,7 +64,7 @@ curl -s -X POST http://localhost:3000/users \
 
 ### 1.3 Create household
 ```bash
-curl -s -X POST http://localhost:3000/households \
+curl -s -X POST http://localhost:3000/api/households \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -d '{"name": "Home"}' | jq
@@ -75,7 +80,7 @@ devbox run -- psql -h /tmp -U postgres gastos \
 
 ### 1.4 User B joins household
 ```bash
-curl -s -X POST "http://localhost:3000/households/$HH/members" \
+curl -s -X POST "http://localhost:3000/api/households/$HH/members" \
   -H "X-User-Id: $USER_B"
 # Expect: 204
 ```
@@ -89,11 +94,11 @@ devbox run -- psql -h /tmp -U postgres gastos \
 ### 1.5 Auth error cases
 ```bash
 # Missing X-User-Id → 400
-curl -s -X POST http://localhost:3000/households \
+curl -s -X POST http://localhost:3000/api/households \
   -H "Content-Type: application/json" -d '{"name":"x"}' | jq
 
 # Missing X-Household-Id → 400
-curl -s http://localhost:3000/groups -H "X-User-Id: $USER_A" | jq
+curl -s http://localhost:3000/api/groups -H "X-User-Id: $USER_A" | jq
 ```
 
 ---
@@ -102,7 +107,7 @@ curl -s http://localhost:3000/groups -H "X-User-Id: $USER_A" | jq
 
 ### 2.1 Create group
 ```bash
-curl -s -X POST http://localhost:3000/groups \
+curl -s -X POST http://localhost:3000/api/groups \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -116,7 +121,7 @@ devbox run -- psql -h /tmp -U postgres gastos -c "SELECT * FROM groups WHERE id=
 
 ### 2.2 Rename group
 ```bash
-curl -s -X PATCH "http://localhost:3000/groups/$GROUP/name" \
+curl -s -X PATCH "http://localhost:3000/api/groups/$GROUP/name" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -127,7 +132,7 @@ DB check: `name` column should now be `Groceries`.
 
 ### 2.3 List groups
 ```bash
-curl -s http://localhost:3000/groups \
+curl -s http://localhost:3000/api/groups \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: {"groups": [{"id":"...", "name":"Groceries"}]}
@@ -135,7 +140,7 @@ curl -s http://localhost:3000/groups \
 
 ### 2.4 Create a second group (needed for category move test)
 ```bash
-curl -s -X POST http://localhost:3000/groups \
+curl -s -X POST http://localhost:3000/api/groups \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -145,7 +150,7 @@ curl -s -X POST http://localhost:3000/groups \
 
 ### 2.5 Delete group (soft-delete)
 ```bash
-curl -s -X DELETE "http://localhost:3000/groups/$GROUP2" \
+curl -s -X DELETE "http://localhost:3000/api/groups/$GROUP2" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH"
 # Expect: 204
@@ -153,7 +158,7 @@ curl -s -X DELETE "http://localhost:3000/groups/$GROUP2" \
 DB check: row should still exist with `deleted_at` set; list should exclude it.
 ```bash
 devbox run -- psql -h /tmp -U postgres gastos -c "SELECT id, name, deleted_at FROM groups;"
-curl -s http://localhost:3000/groups \
+curl -s http://localhost:3000/api/groups \
   -H "X-User-Id: $USER_A" -H "X-Household-Id: $HH" | jq
 # GROUP2 should not appear in the list
 ```
@@ -166,7 +171,7 @@ Requires an active group. Use `GROUP` from step 2.1.
 
 ### 3.1 Create category
 ```bash
-curl -s -X POST http://localhost:3000/categories \
+curl -s -X POST http://localhost:3000/api/categories \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -176,7 +181,7 @@ curl -s -X POST http://localhost:3000/categories \
 
 ### 3.2 Rename category
 ```bash
-curl -s -X PATCH "http://localhost:3000/categories/$CAT/name" \
+curl -s -X PATCH "http://localhost:3000/api/categories/$CAT/name" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -186,14 +191,14 @@ curl -s -X PATCH "http://localhost:3000/categories/$CAT/name" \
 
 ### 3.3 Create a target group and move category there
 ```bash
-curl -s -X POST http://localhost:3000/groups \
+curl -s -X POST http://localhost:3000/api/groups \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
   -d '{"name": "Leisure"}' | jq
 # Capture: GROUP3=<id>
 
-curl -s -X PATCH "http://localhost:3000/categories/$CAT/group" \
+curl -s -X PATCH "http://localhost:3000/api/categories/$CAT/group" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -204,7 +209,7 @@ DB check: `group_id` on the category row should now be `$GROUP3`.
 
 ### 3.4 List categories by group
 ```bash
-curl -s "http://localhost:3000/categories?groupId=$GROUP3" \
+curl -s "http://localhost:3000/api/categories?groupId=$GROUP3" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: category "Farmers Market" appears
@@ -213,14 +218,14 @@ curl -s "http://localhost:3000/categories?groupId=$GROUP3" \
 ### 3.5 Delete category (soft-delete)
 ```bash
 # Create a throwaway category to delete
-curl -s -X POST http://localhost:3000/categories \
+curl -s -X POST http://localhost:3000/api/categories \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
   -d "{\"name\": \"Temp\", \"groupId\": \"$GROUP\"}" | jq
 # Capture: CAT_TMP=<id>
 
-curl -s -X DELETE "http://localhost:3000/categories/$CAT_TMP" \
+curl -s -X DELETE "http://localhost:3000/api/categories/$CAT_TMP" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH"
 # Expect: 204; list should exclude it
@@ -232,7 +237,7 @@ curl -s -X DELETE "http://localhost:3000/categories/$CAT_TMP" \
 
 ### 4.1 Create credit card instrument
 ```bash
-curl -s -X POST http://localhost:3000/payment-instruments \
+curl -s -X POST http://localhost:3000/api/payment-instruments \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -d '{"type": "CreditCard", "name": "Visa Gold"}' | jq
@@ -245,7 +250,7 @@ devbox run -- psql -h /tmp -U postgres gastos -c "SELECT * FROM payment_instrume
 
 ### 4.2 Create bank account instrument
 ```bash
-curl -s -X POST http://localhost:3000/payment-instruments \
+curl -s -X POST http://localhost:3000/api/payment-instruments \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -d '{"type": "BankAccount", "name": "Checking"}' | jq
@@ -254,7 +259,7 @@ curl -s -X POST http://localhost:3000/payment-instruments \
 
 ### 4.3 Invalid type → 400
 ```bash
-curl -s -X POST http://localhost:3000/payment-instruments \
+curl -s -X POST http://localhost:3000/api/payment-instruments \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -d '{"type": "Cash", "name": "Wallet"}' | jq
@@ -263,7 +268,7 @@ curl -s -X POST http://localhost:3000/payment-instruments \
 
 ### 4.4 Rename instrument
 ```bash
-curl -s -X PATCH "http://localhost:3000/payment-instruments/$PI/name" \
+curl -s -X PATCH "http://localhost:3000/api/payment-instruments/$PI/name" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -d '{"name": "Visa Platinum"}'
@@ -272,14 +277,14 @@ curl -s -X PATCH "http://localhost:3000/payment-instruments/$PI/name" \
 
 ### 4.5 List instruments
 ```bash
-curl -s http://localhost:3000/payment-instruments \
+curl -s http://localhost:3000/api/payment-instruments \
   -H "X-User-Id: $USER_A" | jq
 # Expect: both PI (renamed) and PI2 in the list
 ```
 
 ### 4.6 Delete instrument (soft-delete)
 ```bash
-curl -s -X DELETE "http://localhost:3000/payment-instruments/$PI2" \
+curl -s -X DELETE "http://localhost:3000/api/payment-instruments/$PI2" \
   -H "X-User-Id: $USER_A"
 # Expect: 204; PI2 should not appear in subsequent list call
 ```
@@ -293,7 +298,7 @@ Requires `CAT` (from step 3.1) and `PI` (from step 4.1).
 ### 5.1 Log a cash expense
 > Note: `new Date("YYYY-MM-DD")` parses dates as UTC midnight and shifts them one day back in UTC-3. Dates shown in responses will be one day behind what was sent — known bug.
 ```bash
-curl -s -X POST http://localhost:3000/expenses \
+curl -s -X POST http://localhost:3000/api/expenses \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -308,7 +313,7 @@ devbox run -- psql -h /tmp -U postgres gastos -c "SELECT * FROM expenses WHERE i
 ### 5.2 Log a credit card expense
 > CreditCard requires `installmentPlan` — omitting it returns a 422.
 ```bash
-curl -s -X POST http://localhost:3000/expenses \
+curl -s -X POST http://localhost:3000/api/expenses \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -318,7 +323,7 @@ curl -s -X POST http://localhost:3000/expenses \
 
 ### 5.3 Log an installment expense
 ```bash
-curl -s -X POST http://localhost:3000/expenses \
+curl -s -X POST http://localhost:3000/api/expenses \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -329,7 +334,7 @@ DB check: `installment_count` column should be 6.
 
 ### 5.4 List expenses (no filters)
 ```bash
-curl -s http://localhost:3000/expenses \
+curl -s http://localhost:3000/api/expenses \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: {items: [...3 expenses], total: 3}
@@ -337,24 +342,23 @@ curl -s http://localhost:3000/expenses \
 
 ### 5.5 Filter by date range
 ```bash
-curl -s "http://localhost:3000/expenses?from=2026-06-02&to=2026-06-02" \
+curl -s "http://localhost:3000/api/expenses?from=2026-06-02&to=2026-06-02" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: only EXP2
 ```
 
 ### 5.6 Filter by categoryId
-> **BROKEN** — `oneOf` schema validation rejects a single string value. Skip until fixed.
 ```bash
-# Currently returns: {"error": "querystring/categoryId must match exactly one schema in oneOf"}
-curl -s "http://localhost:3000/expenses?categoryId=$CAT" \
+curl -s "http://localhost:3000/api/expenses?categoryId=$CAT" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
+# Expect: expenses belonging to CAT
 ```
 
 ### 5.7 Filter by paymentInstrumentId
 ```bash
-curl -s "http://localhost:3000/expenses?paymentInstrumentId=$PI" \
+curl -s "http://localhost:3000/api/expenses?paymentInstrumentId=$PI" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: EXP2 and EXP3 (both credit card with PI)
@@ -362,7 +366,7 @@ curl -s "http://localhost:3000/expenses?paymentInstrumentId=$PI" \
 
 ### 5.8 Pagination
 ```bash
-curl -s "http://localhost:3000/expenses?limit=2&offset=0" \
+curl -s "http://localhost:3000/api/expenses?limit=2&offset=0" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: 2 items returned, total still 3
@@ -370,7 +374,7 @@ curl -s "http://localhost:3000/expenses?limit=2&offset=0" \
 
 ### 5.9 Delete expense
 ```bash
-curl -s -X DELETE "http://localhost:3000/expenses/$EXP1" \
+curl -s -X DELETE "http://localhost:3000/api/expenses/$EXP1" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH"
 # Expect: 204
@@ -379,7 +383,7 @@ DB check: row should be gone (hard delete).
 
 ### 5.10 Cross-household delete → should fail
 ```bash
-curl -s -X DELETE "http://localhost:3000/expenses/$EXP2" \
+curl -s -X DELETE "http://localhost:3000/api/expenses/$EXP2" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: 00000000-0000-0000-0000-000000000000" | jq
 # Expect: 404 or 403 (expense doesn't belong to that household)
@@ -394,7 +398,7 @@ Requires `CAT` and `GROUP` from earlier steps.
 ### 6.1 Create monthly group-scoped budget
 > Budget limits require `categoryId` or `groupId` — household-wide budgets are rejected.
 ```bash
-curl -s -X POST http://localhost:3000/budget-limits \
+curl -s -X POST http://localhost:3000/api/budget-limits \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -408,7 +412,7 @@ devbox run -- psql -h /tmp -U postgres gastos -c "SELECT * FROM budget_limits;"
 
 ### 6.2 Create category-scoped budget
 ```bash
-curl -s -X POST http://localhost:3000/budget-limits \
+curl -s -X POST http://localhost:3000/api/budget-limits \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -418,7 +422,7 @@ curl -s -X POST http://localhost:3000/budget-limits \
 
 ### 6.3 Create Rolling30Days budget
 ```bash
-curl -s -X POST http://localhost:3000/budget-limits \
+curl -s -X POST http://localhost:3000/api/budget-limits \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -428,7 +432,7 @@ curl -s -X POST http://localhost:3000/budget-limits \
 
 ### 6.4 Create Custom period budget
 ```bash
-curl -s -X POST http://localhost:3000/budget-limits \
+curl -s -X POST http://localhost:3000/api/budget-limits \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -438,7 +442,7 @@ curl -s -X POST http://localhost:3000/budget-limits \
 
 ### 6.5 List budget limits
 ```bash
-curl -s http://localhost:3000/budget-limits \
+curl -s http://localhost:3000/api/budget-limits \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: all 4 limits; Custom period includes startDate/endDate fields
@@ -446,16 +450,18 @@ curl -s http://localhost:3000/budget-limits \
 
 ### 6.6 Get balance for monthly budget
 ```bash
-curl -s "http://localhost:3000/budget-limits/$BL1/balance" \
+curl -s "http://localhost:3000/api/budget-limits/$BL1/balance" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
-# Expect: {"remaining": {"amount": <10000 - June expenses>, "currency": "ARS"}}
-# Manual check: EXP2 (120) + EXP3 (600) = 720 spent → remaining should be 9280
+# Expect: {"remaining": {"amount": <10000 - June expenses in GROUP>, "currency": "ARS"}}
+# Note: BL1 is scoped to GROUP. If CAT was moved to a different group (step 3.3 moves it
+# to GROUP3), expenses logged to CAT will NOT count against BL1. In that case remaining = 10000.
+# To see deductions, either log expenses to a category still under GROUP, or scope BL1 to GROUP3.
 ```
 
 ### 6.7 Edit budget limit
 ```bash
-curl -s -X PATCH "http://localhost:3000/budget-limits/$BL1" \
+curl -s -X PATCH "http://localhost:3000/api/budget-limits/$BL1" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" \
@@ -466,7 +472,7 @@ DB check: amount should now be 15000.
 
 ### 6.8 Balance reflects updated cap
 ```bash
-curl -s "http://localhost:3000/budget-limits/$BL1/balance" \
+curl -s "http://localhost:3000/api/budget-limits/$BL1/balance" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH" | jq
 # Expect: remaining ≈ 14280 (15000 - 720)
@@ -474,7 +480,7 @@ curl -s "http://localhost:3000/budget-limits/$BL1/balance" \
 
 ### 6.9 Delete budget limit
 ```bash
-curl -s -X DELETE "http://localhost:3000/budget-limits/$BL4" \
+curl -s -X DELETE "http://localhost:3000/api/budget-limits/$BL4" \
   -H "X-User-Id: $USER_A" \
   -H "X-Household-Id: $HH"
 # Expect: 204; BL4 should not appear in subsequent list call
@@ -486,27 +492,27 @@ curl -s -X DELETE "http://localhost:3000/budget-limits/$BL4" \
 
 | Method | Path | Auth headers |
 |--------|------|-------------|
-| POST | /users | — |
-| POST | /households | X-User-Id |
-| POST | /households/:id/members | X-User-Id |
-| POST | /groups | X-User-Id, X-Household-Id |
-| PATCH | /groups/:id/name | X-User-Id, X-Household-Id |
-| DELETE | /groups/:id | X-User-Id, X-Household-Id |
-| GET | /groups | X-User-Id, X-Household-Id |
-| POST | /categories | X-User-Id, X-Household-Id |
-| PATCH | /categories/:id/name | X-User-Id, X-Household-Id |
-| PATCH | /categories/:id/group | X-User-Id, X-Household-Id |
-| DELETE | /categories/:id | X-User-Id, X-Household-Id |
-| GET | /categories?groupId= | X-User-Id, X-Household-Id |
-| POST | /payment-instruments | X-User-Id |
-| PATCH | /payment-instruments/:id/name | X-User-Id |
-| DELETE | /payment-instruments/:id | X-User-Id |
-| GET | /payment-instruments | X-User-Id |
-| POST | /expenses | X-User-Id, X-Household-Id |
-| DELETE | /expenses/:id | X-User-Id, X-Household-Id |
-| GET | /expenses | X-User-Id, X-Household-Id |
-| POST | /budget-limits | X-User-Id, X-Household-Id |
-| PATCH | /budget-limits/:id | X-User-Id, X-Household-Id |
-| DELETE | /budget-limits/:id | X-User-Id, X-Household-Id |
-| GET | /budget-limits/:id/balance | X-User-Id, X-Household-Id |
-| GET | /budget-limits | X-User-Id, X-Household-Id |
+| POST | /api/users | — |
+| POST | /api/households | X-User-Id |
+| POST | /api/households/:id/members | X-User-Id |
+| POST | /api/groups | X-User-Id, X-Household-Id |
+| PATCH | /api/groups/:id/name | X-User-Id, X-Household-Id |
+| DELETE | /api/groups/:id | X-User-Id, X-Household-Id |
+| GET | /api/groups | X-User-Id, X-Household-Id |
+| POST | /api/categories | X-User-Id, X-Household-Id |
+| PATCH | /api/categories/:id/name | X-User-Id, X-Household-Id |
+| PATCH | /api/categories/:id/group | X-User-Id, X-Household-Id |
+| DELETE | /api/categories/:id | X-User-Id, X-Household-Id |
+| GET | /api/categories?groupId= | X-User-Id, X-Household-Id |
+| POST | /api/payment-instruments | X-User-Id |
+| PATCH | /api/payment-instruments/:id/name | X-User-Id |
+| DELETE | /api/payment-instruments/:id | X-User-Id |
+| GET | /api/payment-instruments | X-User-Id |
+| POST | /api/expenses | X-User-Id, X-Household-Id |
+| DELETE | /api/expenses/:id | X-User-Id, X-Household-Id |
+| GET | /api/expenses | X-User-Id, X-Household-Id |
+| POST | /api/budget-limits | X-User-Id, X-Household-Id |
+| PATCH | /api/budget-limits/:id | X-User-Id, X-Household-Id |
+| DELETE | /api/budget-limits/:id | X-User-Id, X-Household-Id |
+| GET | /api/budget-limits/:id/balance | X-User-Id, X-Household-Id |
+| GET | /api/budget-limits | X-User-Id, X-Household-Id |
