@@ -1,0 +1,29 @@
+{
+  "name": "gastos-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5",
+    "openapi-fetch": "^0.13",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-hook-form": "^7",
+    "react-router": "^7",
+    "zod": "^3",
+    "zustand": "^5"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "typescript": "^5",
+    "vite": "^6"
+  }
+}

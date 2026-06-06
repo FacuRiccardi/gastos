@@ -10,8 +10,8 @@ const spec = app.swagger();
 const ast = await openapiTS(spec as Parameters<typeof openapiTS>[0]);
 const output = astToString(ast);
 
-const outPath = new URL('../src/http/api-types.ts', import.meta.url);
+const outPath = new URL('../../shared/api-types.ts', import.meta.url);
 writeFileSync(outPath, `${COMMENT_HEADER}${output}`);
 
 await app.close();
-console.log('Generated src/http/api-types.ts');
+console.log('Generated shared/api-types.ts');
