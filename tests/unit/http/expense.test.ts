@@ -96,6 +96,21 @@ describe('POST /api/expenses', () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it('returns 400 when date is not in YYYY-MM-DD format', async () => {
+    const response = await makeApp().inject({
+      method: 'POST',
+      url: '/api/expenses',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+      payload: {
+        categoryId: CategoryId.generate(),
+        money: { amount: 100, currency: 'ARS' },
+        paymentMethod: { kind: 'Cash' },
+        date: 'not-a-date',
+      },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
   it('stores the date as the local calendar date (no UTC timezone shift)', async () => {
     const expenses = new InMemoryExpenseRepository();
     const categories = new InMemoryCategoryRepository();
@@ -234,6 +249,15 @@ describe('GET /api/expenses', () => {
       headers: { 'x-user-id': userId, 'x-household-id': householdId },
     });
     expect(response.statusCode).toBe(200);
+  });
+
+  it('returns 400 when from is not in YYYY-MM-DD format', async () => {
+    const response = await makeApp().inject({
+      method: 'GET',
+      url: '/api/expenses?from=not-a-date',
+      headers: { 'x-user-id': userId, 'x-household-id': householdId },
+    });
+    expect(response.statusCode).toBe(400);
   });
 });
 

@@ -37,7 +37,7 @@ function mapExpense(e: Expense) {
     paymentMethod: e.paymentMethod.kind === 'Cash'
       ? { kind: 'Cash' }
       : { kind: e.paymentMethod.kind, instrumentId: e.paymentMethod.instrumentId },
-    date: e.date.toDate().toISOString().split('T')[0],
+    date: e.date.toLocalDateString(),
   };
   if (e.installmentPlan) {
     return { ...base, installmentPlan: { count: e.installmentPlan.count } };
@@ -74,7 +74,7 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
                 instrumentId: { type: 'string' },
               },
             },
-            date: { type: 'string' },
+            date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
             installmentPlan: {
               type: 'object',
               properties: { count: { type: 'integer' } },
@@ -126,8 +126,8 @@ export function expenseRoutes(repos: Repositories): FastifyPluginAsync {
           properties: {
             limit: { type: 'integer', minimum: 1 },
             offset: { type: 'integer', minimum: 0 },
-            from: { type: 'string' },
-            to: { type: 'string' },
+            from: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+            to: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
             categoryId: { anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }] },
             paymentInstrumentId: { type: 'string' },
             groupId: { type: 'string' },

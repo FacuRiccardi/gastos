@@ -10,6 +10,13 @@ export class ExpenseDate {
     return new ExpenseDate(new Date(year, month - 1, day));
   }
 
+  toLocalDateString(): string {
+    const y = this.date.getFullYear();
+    const m = String(this.date.getMonth() + 1).padStart(2, '0');
+    const d = String(this.date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   equals(other: ExpenseDate): boolean {
     return this.date.getTime() === other.date.getTime();
   }

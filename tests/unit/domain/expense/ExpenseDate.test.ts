@@ -26,4 +26,10 @@ describe('ExpenseDate', () => {
     expect(dt.getMonth()).toBe(5);
     expect(dt.getDate()).toBe(1);
   });
+
+  it('toLocalDateString() is symmetric with fromString — round-trips "YYYY-MM-DD" without UTC shift', () => {
+    expect(ExpenseDate.fromString('2026-06-01').toLocalDateString()).toBe('2026-06-01');
+    expect(ExpenseDate.fromString('2026-01-31').toLocalDateString()).toBe('2026-01-31');
+    expect(ExpenseDate.fromString('2026-12-31').toLocalDateString()).toBe('2026-12-31');
+  });
 });
