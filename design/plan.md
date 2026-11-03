@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js 22 (ESM), Vitest, `googleapis`, `@google-cloud/firestore`, `@google-cloud/functions-framework`, `cheerio` (HTML parsing), Terraform (`google` provider), Firestore emulator for data layer tests.
 
-**Spec:** `docs/superpowers/specs/2026-11-02-card-expense-ingestion-design.md`
+**Spec:** `design/spec.md`
 
 ## Global Constraints
 
@@ -146,7 +146,7 @@ Inputs or failures that the spec implies but no obvious task covers; each has it
 ### Task 6: OAuth authorization script
 
 **Files:**
-- Create: `scripts/authorize.js`, `docs/runbook.md` (completed in Task 8)
+- Create: `scripts/authorize.js`, `RUNBOOK.md` (completed in Task 8)
 
 **Interfaces:**
 - Consumes: variables `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GCP_PROJECT_ID` (from the environment).
@@ -174,7 +174,7 @@ Inputs or failures that the spec implies but no obvious task covers; each has it
 ### Task 8: Runbook and end-to-end verification
 
 **Files:**
-- Modify: `docs/runbook.md`
+- Modify: `RUNBOOK.md`
 
 - [ ] **Step 1:** Document, in this order, the manual steps from the spec: (1) billing account; (2) create the project and the OAuth consent screen → "In production"; (3) create OAuth client ID; (4) `terraform apply` (first pass, with `gmail_label_id` empty if it does not exist yet); (5) create in Gmail the label `Gastos BBVA` and the filter `from:avisos-bbva-ar@bbva.com subject:"Compra aprobada"` without skipping the inbox, and get its ID with `labels.list`; (6) `node scripts/authorize.js`; (7) second `terraform apply` with `gmail_label_id`; (8) trigger `renewWatch` once (`gcloud scheduler jobs run`).
 - [ ] **Step 2:** Verification: forward yourself or wait for a real "Compra aprobada" email and check in the Firestore console that the document appears in `expenses` with the expected fields within a few seconds. Expected: 1 new document; if the notification is sent again (republish the Pub/Sub message from the console), there is still 1 document.

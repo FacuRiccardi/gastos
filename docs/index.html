@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>card-expenses</title>
+  <style>
+    :root { --bg: #ffffff; --fg: #1a1a1a; --muted: #5c5c5c; --link: #0b57d0; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #161616; --fg: #ececec; --muted: #a8a8a8; --link: #8ab4f8; }
+    }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, sans-serif; }
+    main { max-width: 640px; margin: 0 auto; padding: 48px 16px; }
+    h1 { font-size: 1.75rem; margin: 0 0 8px; }
+    p.lead { color: var(--muted); margin-top: 0; }
+    a { color: var(--link); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>card-expenses</h1>
+    <p class="lead">A personal tool that records my credit card purchases automatically.</p>
+    <p>
+      When my bank sends an email notification for an approved card purchase, card-expenses reads
+      that email and saves the date, merchant and amount in my own private database, so I can
+      see how much I spend each month.
+    </p>
+    <p>
+      This is a single-user project: it only accesses the Gmail mailbox of its owner, and it is
+      not offered to other users.
+    </p>
+    <p><a href="privacy.html">Privacy policy</a></p>
+  </main>
+</body>
+</html>

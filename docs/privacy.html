@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>card-expenses - Privacy policy</title>
+  <style>
+    :root { --bg: #ffffff; --fg: #1a1a1a; --muted: #5c5c5c; --link: #0b57d0; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #161616; --fg: #ececec; --muted: #a8a8a8; --link: #8ab4f8; }
+    }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, sans-serif; }
+    main { max-width: 640px; margin: 0 auto; padding: 48px 16px; }
+    h1 { font-size: 1.75rem; margin: 0 0 8px; }
+    h2 { font-size: 1.15rem; margin: 32px 0 8px; }
+    p.lead { color: var(--muted); margin-top: 0; }
+    a { color: var(--link); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Privacy policy</h1>
+    <p class="lead">card-expenses &middot; Last updated: November 2, 2026</p>
+
+    <h2>What this app is</h2>
+    <p>
+      card-expenses is a personal, single-user tool. It is used only by its owner, with the
+      owner's own Google account, to keep track of credit card purchases.
+    </p>
+
+    <h2>What data it accesses</h2>
+    <p>
+      With the owner's permission it has read-only access to Gmail (the
+      <code>gmail.readonly</code> scope). It only looks at emails that carry a specific label,
+      which a Gmail filter applies to purchase notifications sent by the owner's bank. It does
+      not read, search or use any other email.
+    </p>
+
+    <h2>What data it stores</h2>
+    <p>
+      From each purchase notification it extracts and stores: the purchase date, the merchant
+      name, the amount and currency, and the last four digits of the card. This data is kept in
+      a private database that only the owner can access. The content of the emails themselves is
+      not stored.
+    </p>
+
+    <h2>Sharing</h2>
+    <p>
+      The data is not sold, shared, transferred or disclosed to anyone, and it is not used for
+      advertising or to train any machine learning model. Use of information received from
+      Google APIs adheres to the
+      <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
+      including the Limited Use requirements.
+    </p>
+
+    <h2>Retention and deletion</h2>
+    <p>
+      Data is kept for as long as the owner wants it. The owner can delete it at any time from the
+      database, and can revoke the app's access to Gmail at any time at
+      <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.
+    </p>
+
+    <h2>Contact</h2>
+    <p>Questions: <a href="mailto:riccardifacu@gmail.com">riccardifacu@gmail.com</a></p>
+
+    <p><a href="index.html">&larr; Back</a></p>
+  </main>
+</body>
+</html>

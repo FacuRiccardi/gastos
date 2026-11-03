@@ -1,6 +1,6 @@
 # Deployment runbook — card expense ingestion
 
-Required tools: Node.js, Terraform ≥ 1.5, Google Cloud CLI (`gcloud`), all with the account your personal Google account.
+Required tools: Node.js, Terraform ≥ 1.5, Google Cloud CLI (`gcloud`), all with your personal Google account.
 
 On Windows, in PowerShell (then close and reopen the terminal so the PATH is refreshed):
 ```
