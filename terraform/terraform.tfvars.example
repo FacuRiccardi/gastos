@@ -1,0 +1,7 @@
+project_id         = "my-expenses-project"
+gmail_user         = "user@example.com"
+alert_email        = "user@example.com"
+billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
+# Second pass (after creating the Gmail label, running scripts/authorize.js and scripts/get-label-id.js):
+# deploy_functions = true
+# gmail_label_id   = "Label_123"

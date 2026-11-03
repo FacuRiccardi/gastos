@@ -1,0 +1,24 @@
+{
+  "name": "card-expenses",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run --exclude test/store.test.js",
+    "test:store": "firebase emulators:exec --only firestore --project demo-expenses \"vitest run test/store.test.js\""
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^8.7.1",
+    "@google-cloud/functions-framework": "^5.0.5",
+    "cheerio": "^1.2.0",
+    "googleapis": "^178.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.34.2",
+    "vitest": "^4.1.12"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules
+.env
+*.tfstate*
+.terraform
+terraform.tfvars
+.superpowers
+terraform/build
+client_secret*.json
+*.eml
+*.log
