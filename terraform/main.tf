@@ -32,6 +32,7 @@ resource "google_project_service" "apis" {
     "cloudscheduler.googleapis.com", "firestore.googleapis.com", "secretmanager.googleapis.com",
     "monitoring.googleapis.com", "billingbudgets.googleapis.com", "iam.googleapis.com",
     "eventarc.googleapis.com", "cloudresourcemanager.googleapis.com", "compute.googleapis.com",
+    "fcm.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
@@ -82,6 +83,12 @@ resource "google_service_account" "invoker" {
 resource "google_project_iam_member" "functions_firestore" {
   project = var.project_id
   role    = "roles/datastore.user"
+  member  = "serviceAccount:${local.runtime_sa}"
+}
+
+resource "google_project_iam_member" "functions_fcm" {
+  project = var.project_id
+  role    = "roles/firebasecloudmessaging.admin"
   member  = "serviceAccount:${local.runtime_sa}"
 }
 
