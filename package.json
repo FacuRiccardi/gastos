@@ -12,7 +12,11 @@
     "test:store": "firebase emulators:exec --only firestore --project demo-expenses \"vitest run test/store.test.js\"",
     "test:rules": "firebase emulators:exec --only firestore --project demo-expenses \"vitest run test/rules\"",
     "web:build": "npm --prefix web run build",
-    "web:deploy": "npm run web:build && firebase deploy --only hosting,firestore"
+    "web:deploy": "npm run web:build && firebase deploy --only hosting,firestore",
+    "dev:dump": "node scripts/dump-prod.js",
+    "dev:emulators": "firebase emulators:start --only auth,firestore --project demo-gastos --import=emulator-state --export-on-exit",
+    "dev:seed": "node scripts/seed-emulator.js",
+    "dev:web": "npm --prefix web run dev -- --mode emulator"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.7.1",

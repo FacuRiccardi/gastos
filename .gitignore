@@ -15,3 +15,7 @@ web/dist
 
 Resumenes/
 *.xlsx
+
+# Local dev emulator: copy of production data (private) and the emulator state
+emulator-data/
+emulator-state/

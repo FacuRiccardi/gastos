@@ -101,6 +101,17 @@ docs/           GitHub Pages site (home page and privacy policy used by the Goog
 RUNBOOK.md      step-by-step deployment guide
 ```
 
+## Local dev environment (emulator)
+
+A copy of production runs on the Firebase emulators (Auth + Firestore), so the app can be used and modified freely with no quota and no risk to the real data.
+
+1. **Copy production** (read-only, needs `gcloud auth application-default login`): `GCP_PROJECT_ID=<project-id> npm run dev:dump`. It writes `emulator-data/` (git-ignored, private).
+2. **Start the emulators**: `npm run dev:emulators` (UI at http://127.0.0.1:4000). Their state is kept in `emulator-state/` between runs.
+3. **Load the copy** (first time, or to reset to it): `npm run dev:seed`. It only talks to localhost and recreates the household users with the `household` claim.
+4. **Start the web app** against them: `npm run dev:web`. Sign in with Google: the emulator shows a fake account picker; use one of the seeded emails.
+
+The dev setup uses the fake project `demo-gastos` and has no production credentials in the web app. To get fresh production data, repeat steps 1 and 3.
+
 ## Running the tests
 
 ```
