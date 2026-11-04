@@ -1,4 +1,5 @@
 import { extractMessage, extractHeaders } from './message.js';
+import { merchantKey } from './merchant.js';
 import { parsePurchaseApproved, ParseError } from './parser.js';
 
 // Sender and subject of the bank's emails (external data, in Spanish: "Compra aprobada" = "Approved purchase")
@@ -27,7 +28,9 @@ async function processMessage({ gmail, store, logger }, id) {
     }
     const message = extractMessage(raw);
     const expense = parsePurchaseApproved(message.html);
-    return await store.saveExpense(id, { ...expense, receivedAt: message.receivedAt });
+    // A merchant the household already categorized gets that category; a new one stays uncategorized.
+    const categoryId = await store.getMerchantCategory(merchantKey(expense.merchant));
+    return await store.saveExpense(id, { ...expense, receivedAt: message.receivedAt, ...(categoryId ? { categoryId } : {}) });
   } catch (e) {
     if (e.code === 404 || e.status === 404) {
       logger.info({ message: 'Message no longer exists (deleted), skipping', id });

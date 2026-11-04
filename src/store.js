@@ -2,6 +2,7 @@ import { Timestamp } from '@google-cloud/firestore';
 
 const EXPENSES = 'expenses';
 const STATE_DOC = 'state/sync';
+const MERCHANTS = 'merchantCategories';
 
 export function createStore(db) {
   return {
@@ -19,12 +20,21 @@ export function createStore(db) {
           cardType: expense.cardType, // 'credit' | 'debit'
           cardHolder: expense.cardHolder, // first name, as written by the bank
           status: expense.status, // 'approved' | 'rejected'
+          // Only when the merchant is already in the dictionary; otherwise the purchase stays uncategorized.
+          ...(expense.categoryId ? { categoryId: expense.categoryId } : {}),
         });
         return true;
       } catch (e) {
         if (e.code === 6) return false; // ALREADY_EXISTS
         throw e;
       }
+    },
+
+    // Category the household chose for this merchant key (see merchantKey), or null.
+    async getMerchantCategory(key) {
+      if (!key) return null;
+      const snap = await db.collection(MERCHANTS).doc(key).get();
+      return snap.exists ? (snap.data().categoryId ?? null) : null;
     },
 
     async getHistoryId() {

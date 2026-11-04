@@ -23,6 +23,7 @@ function fakeStore() {
       expenses.set(id, e);
       return true;
     }),
+    getMerchantCategory: vi.fn(async () => null),
     getHistoryId: vi.fn(async () => historyId),
     setHistoryId: vi.fn(async (id) => {
       if (historyId === null || BigInt(id) > BigInt(historyId)) historyId = String(id);
