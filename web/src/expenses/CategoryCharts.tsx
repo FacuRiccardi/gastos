@@ -10,17 +10,17 @@ function BarChart({ slices }: { slices: Slice[] }) {
   const [open, setOpen] = useState<string | null>(null)
   const biggest = Math.max(...slices.map((s) => s.percent), 1)
   return (
-    <ul className="grid gap-1" aria-label={strings.gastos.barsAria}>
+    <ul className="grid grid-cols-[minmax(0,1fr)] gap-1" aria-label={strings.gastos.barsAria}>
       {slices.map((s) => {
         const expanded = open === s.id
         return (
-          <li key={s.id}>
+          <li key={s.id} className="min-w-0">
             <button
               type="button"
               aria-expanded={expanded}
               aria-label={strings.gastos.categoryRowAria(s.name, formatMoney(s.amount, 'ARS'), formatPercent(s.percent))}
               onClick={() => setOpen(expanded ? null : s.id)}
-              className="grid min-h-11 w-full gap-1 rounded-md px-1 py-1.5 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="grid min-h-11 w-full grid-cols-[minmax(0,1fr)] gap-1 rounded-md px-1 py-1.5 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span className="flex items-baseline justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -36,7 +36,7 @@ function BarChart({ slices }: { slices: Slice[] }) {
               </span>
             </button>
             {expanded && (
-              <ul className="mb-2 ml-5 grid gap-1 border-l pl-3 text-sm text-muted-foreground" aria-label={strings.gastos.merchantsAria(s.name)}>
+              <ul className="mb-2 ml-5 grid grid-cols-[minmax(0,1fr)] gap-1 border-l pl-3 text-sm text-muted-foreground" aria-label={strings.gastos.merchantsAria(s.name)}>
                 {s.top.map((m) => (
                   <li key={m.merchant} className="flex justify-between gap-3">
                     <span className="min-w-0 truncate">{m.merchant}</span>
@@ -55,7 +55,7 @@ function BarChart({ slices }: { slices: Slice[] }) {
 export function CategoryCharts({ slices, hasForeign }: { slices: Slice[]; hasForeign: boolean }) {
   if (slices.length === 0) return <p className="text-sm text-muted-foreground">{strings.gastos.noChartData}</p>
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
       <h4 className="flex items-center gap-1 text-sm font-medium">
         {strings.gastos.byCategory}
         {hasForeign && <InfoTip text={strings.gastos.foreignNote} label={strings.moreInfo} />}
