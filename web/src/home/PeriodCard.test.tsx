@@ -62,11 +62,17 @@ describe('PeriodCard', () => {
   })
 
   it('shows the note that foreign currency is left out only when the group has it', () => {
-    const { unmount } = renderCard(currentGroup(100), { '2026-11': 1000 })
+    // Without a cap there is no percentage tooltip, so the only "more info" button would be the foreign-currency note.
+    const { unmount } = renderCard(currentGroup(100), {})
     expect(screen.queryByRole('button', { name: strings.moreInfo })).not.toBeInTheDocument()
     unmount()
-    renderCard(currentGroup(100, [expense({ amount: 5, currency: 'USD' })]), { '2026-11': 1000 })
+    renderCard(currentGroup(100, [expense({ amount: 5, currency: 'USD' })]), {})
     expect(screen.getByRole('button', { name: strings.moreInfo })).toBeInTheDocument()
+  })
+
+  it('explains the cap percentage and the comparison with a tooltip each', () => {
+    renderCard(currentGroup(100), { '2026-11': 1000 }, { previous: { month: '2026-10', total: 200 } })
+    expect(screen.getAllByRole('button', { name: strings.moreInfo })).toHaveLength(2)
   })
 
   describe('spending cap bar', () => {
@@ -151,9 +157,12 @@ describe('PeriodCard', () => {
 describe('PeriodCard comparison with the previous month', () => {
   const label = strings.gastos.monthLabel('2026-10')
 
-  it('a running period says what share of the previous month it already is', () => {
-    renderCard(currentGroup(1500), { '2026-11': 10000 }, { previous: { month: '2026-10', total: 3000 } })
-    expect(screen.getByText(new RegExp(`Va en el 50% de lo que fue ${label}`))).toBeInTheDocument()
+  it('a running period says how much less (or more) it is than the previous month, like a closed one', () => {
+    const { unmount } = renderCard(currentGroup(1500), { '2026-11': 10000 }, { previous: { month: '2026-10', total: 3000 } })
+    expect(screen.getByText(strings.home.lessThanPrevious(50, label))).toBeInTheDocument()
+    unmount()
+    renderCard(currentGroup(4500), { '2026-11': 10000 }, { previous: { month: '2026-10', total: 3000 } })
+    expect(screen.getByText(strings.home.moreThanPrevious(50, label))).toBeInTheDocument()
   })
 
   it('a closed period says it came to more or less than the previous month', () => {

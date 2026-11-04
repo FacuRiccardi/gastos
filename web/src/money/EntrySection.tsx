@@ -16,10 +16,10 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/Toast'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { buenosAiresDay, formatCalendarDate, isValidDateString } from '@/lib/dates'
+import { buenosAiresDay, formatCalendarDate, formatLongDate, isValidDateString } from '@/lib/dates'
 import { formatMoney } from '@/lib/format'
 import { strings } from '@/strings'
-import { OWNERS, parseAmount, sumByCurrency, type Currency, type EntriesApi, type Owner } from './entries'
+import { OWNERS, parseAmount, type Currency, type EntriesApi, type Owner } from './entries'
 import type { Entry } from './entries'
 
 const s = strings.money
@@ -122,6 +122,10 @@ function NewEntryForm({
       <div className="grid gap-2">
         <Label htmlFor={`${id}-date`}>{s.dateLabel}</Label>
         <Input id={`${id}-date`} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        {/* The browser shows the date as dd/mm or mm/dd depending on its language; in words there is no doubt. */}
+        <p className="min-h-5 text-sm text-muted-foreground" aria-live="polite">
+          {formatLongDate(date)}
+        </p>
       </div>
       {problem && (
         <p role="alert" className="text-sm text-destructive">
@@ -135,7 +139,7 @@ function NewEntryForm({
   )
 }
 
-// One list (incomes or savings): its total per currency, a green "+" that opens the form, and a table
+// One list (incomes or savings): a green "+" that opens the form, and a table
 // like the one of the closing dates (select rows, delete the selected ones after confirming, scroll, load more).
 export function EntrySection({ labels, entries, api, withOwner = false }: { labels: EntryLabels; entries: Entry[]; api: EntriesApi; withOwner?: boolean }) {
   const [open, setOpen] = useState(false)
@@ -145,7 +149,6 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
   const [confirming, setConfirming] = useState(false)
   const [pending, setPending] = useState(false)
   const toast = useToast()
-  const totals = Object.entries(sumByCurrency(entries)) as [Currency, number][]
   const onError = () => setFailed(true)
 
   const shown = entries.slice(0, visible)
@@ -173,14 +176,7 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
   return (
     <section aria-label={labels.title} className="grid gap-3">
       <div className="flex items-center justify-between gap-2">
-        <div>
-          <h3 className="font-semibold">{labels.title}</h3>
-          {totals.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {s.total}: {totals.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ')}
-            </p>
-          )}
-        </div>
+        <h3 className="font-semibold">{labels.title}</h3>
         <Button
           type="button"
           size="icon"

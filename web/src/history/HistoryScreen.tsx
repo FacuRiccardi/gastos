@@ -1,4 +1,5 @@
-import { useMemo, type CSSProperties } from 'react'
+import { ChevronDownIcon } from 'lucide-react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import type { CardsData } from '@/cards/cardsApi'
 import { CollapsibleCard } from '@/components/CollapsibleCard'
 import { ListSkeleton } from '@/components/LoadingSkeletons'
@@ -11,6 +12,7 @@ import { addMonths, type FixedData } from '@/fixed/fixedApi'
 import { buenosAiresDay } from '@/lib/dates'
 import type { Expense } from '@/lib/expense'
 import { formatMoney } from '@/lib/format'
+import { useIsPhone } from '@/lib/useMediaQuery'
 import { OWNERS, type EntriesSource, type Owner } from '@/money/entries'
 import { useEntries } from '@/money/useEntries'
 import { strings } from '@/strings'
@@ -69,6 +71,8 @@ export function HistoryScreen({
   const savings = useEntries(savingsSource)
   const rates = useRates(ratesSource)
   const views = useMemo(() => buildAccountViews(expenses, cards), [expenses, cards])
+  const phone = useIsPhone()
+  const [openMonth, setOpenMonth] = useState<string | null>(null)
 
   const rows = useMemo(() => {
     const current = buenosAiresDay(new Date()).slice(0, 7)
@@ -109,6 +113,45 @@ export function HistoryScreen({
         <ListSkeleton rows={5} />
       ) : rows.length === 0 ? (
         <p className="text-center text-muted-foreground">{s.empty}</p>
+      ) : phone ? (
+        // On a phone the wide table does not fit: one card per month, the balance on top and the rest when it is tapped.
+        <ul className="grid gap-2">
+          {rows.map((b) => {
+            const open = openMonth === b.month
+            const lines: [string, string][] = [
+              ...OWNERS.map((owner): [string, string] => [s.incomeOf(owner), money(incomeOf(b, owner))]),
+              [s.incomeTotal, money(b.incomeTotal)],
+              [s.fixed, money(b.fixedTotal)],
+              [s.cards, money(b.cardsTotal)],
+              [s.savings, money(b.savedThisMonth.USD ?? 0, 'USD')],
+            ]
+            return (
+              <li key={b.month} className="rounded-lg border">
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => setOpenMonth(open ? null : b.month)}
+                  className="flex min-h-12 w-full items-center gap-2 rounded-lg px-3 py-2 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <ChevronDownIcon className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+                  <span className="flex-1 font-medium">{strings.gastos.monthLabel(b.month)}</span>
+                  <span {...balanceCell(b)}>{formatMoney(b.balance, 'ARS')}</span>
+                </button>
+                {open && (
+                  <dl className="grid gap-1 border-t px-3 py-2 text-sm">
+                    {lines.map(([label, value]) => (
+                      <div key={label} className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">{label}</dt>
+                        <dd className="tabular-nums">{value}</dd>
+                      </div>
+                    ))}
+                    {b.missingRate && <p className="text-xs text-amber-700 dark:text-amber-400">{s.noRate}</p>}
+                  </dl>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       ) : (
         <Table>
           <TableHeader>

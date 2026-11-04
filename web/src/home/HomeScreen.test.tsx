@@ -5,6 +5,7 @@ import type { CardsData } from '@/cards/cardsApi'
 import type { Category } from '@/categories/types'
 import type { FixedData } from '@/fixed/fixedApi'
 import type { Expense } from '@/lib/expense'
+import type { Rates, RatesSource } from '@/balance/ratesApi'
 import { OWNERS, type Entry, type EntriesSource } from '@/money/entries'
 import { strings } from '@/strings'
 import type { Caps, CapsSource } from './capsApi'
@@ -47,6 +48,7 @@ const incomesComplete: Entry[] = OWNERS.map((owner, i) => ({ id: `i${i}`, amount
 
 const incomesSource = (entries: Entry[]): EntriesSource => ({ subscribe: (onData) => (onData(entries), () => {}) })
 const capsSource = (caps: Caps): CapsSource => ({ subscribe: (onData) => (onData(caps), () => {}) })
+const ratesSource = (rates: Rates = {}): RatesSource => ({ subscribe: (onData) => (onData(rates), () => {}) })
 
 function renderHome(over: Partial<Parameters<typeof HomeScreen>[0]> = {}, incomes: Entry[] = incomesComplete, caps: Caps = { '2026-11': 1000 }) {
   const onNavigate = vi.fn()
@@ -58,6 +60,7 @@ function renderHome(over: Partial<Parameters<typeof HomeScreen>[0]> = {}, income
       categories={categories}
       incomesSource={incomesSource(incomes)}
       capsSource={capsSource(caps)}
+      ratesSource={ratesSource()}
       onCategoryChange={vi.fn()}
       onNavigate={onNavigate}
       {...over}
@@ -201,5 +204,65 @@ describe('HomeScreen', () => {
       expect(screen.queryByRole('region', { name: s.currentTitle })).not.toBeInTheDocument()
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
+  })
+})
+
+describe('HomeScreen alerts on a phone', () => {
+  const original = window.matchMedia
+  beforeEach(() => {
+    window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} })) as unknown as typeof window.matchMedia
+  })
+  afterEach(() => {
+    window.matchMedia = original
+  })
+
+  const manyAlerts = () =>
+    renderHome(
+      {
+        fixed: { types: [{ id: 't1', name: 'Alquiler', disabled: false }], entries: [] },
+        expenses: [expense({ categoryId: null }), expense({ cardLast4: '4321' })],
+      },
+      [],
+    )
+
+  it('folds several alerts into one line, so the total to pay stays on the first screen', () => {
+    manyAlerts()
+    expect(screen.getByRole('button', { name: /4 pendientes/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryAllByRole('alert')).toHaveLength(0)
+  })
+
+  it('shows every alert when the line is tapped', async () => {
+    manyAlerts()
+    await userEvent.click(screen.getByRole('button', { name: /4 pendientes/ }))
+    expect(screen.getAllByRole('alert')).toHaveLength(4)
+  })
+
+  it('keeps a single alert as it is', () => {
+    renderHome({ fixed: { types: [{ id: 't1', name: 'Alquiler', disabled: false }], entries: [] } })
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: /pendientes/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('HomeScreen total with dollars', () => {
+  const dollars = [expense({ amount: 400 }), expense({ amount: 10, currency: 'USD' })]
+
+  it('adds the dollar purchases at the rate of the month', () => {
+    renderHome({ expenses: dollars, ratesSource: ratesSource({ '2026-11': 1500 }) })
+    // 400 + 10 USD x 1500
+    expect(screen.getByTestId('home-total')).toHaveTextContent('15.400,00')
+    expect(screen.getByText(/Incluye .*10,00 a .*1\.500,00 \(TC de Noviembre 2026\)\./)).toBeInTheDocument()
+  })
+
+  it('without a rate for the month it uses the latest earlier one and says so', () => {
+    renderHome({ expenses: dollars, ratesSource: ratesSource({ '2026-09': 1000 }) })
+    expect(screen.getByTestId('home-total')).toHaveTextContent('10.400,00')
+    expect(screen.getByText(/TC de Septiembre 2026, el último cargado/)).toBeInTheDocument()
+  })
+
+  it('leaves the dollars out when no rate was ever loaded', () => {
+    renderHome({ expenses: dollars })
+    expect(screen.getByTestId('home-total')).toHaveTextContent('400,00')
+    expect(screen.queryByText(/Incluye/)).not.toBeInTheDocument()
   })
 })

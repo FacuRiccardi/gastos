@@ -11,7 +11,7 @@ import { CategoriesScreen } from '@/categories/CategoriesScreen'
 import { useCategories } from '@/categories/useCategories'
 import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { useCards } from '@/cards/useCards'
-import { ToastProvider } from '@/components/Toast'
+import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
 import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, HomeSkeleton, PageSkeleton, PeriodSkeleton } from '@/components/LoadingSkeletons'
 import { merchantKey } from '@/merchants/merchantKey'
@@ -250,6 +250,7 @@ function Authorized({
       setOpenSection(target)
     }
   }
+  const toast = useToast()
   const [categorySaveFailed, setCategorySaveFailed] = useState(false)
   // From "Compras a categorizar": also remember the choice for the merchant (for its future purchases)
   // and apply it to the other pending purchases of the same merchant.
@@ -263,11 +264,16 @@ function Authorized({
       categoriesApi.setExpenseCategory(expenseId, categoryId),
       merchantsApi.remember(expense.merchant, categoryId),
       ...same.map((e) => categoriesApi.setExpenseCategory(e.id, categoryId)),
-    ]).catch(() => setCategorySaveFailed(true))
+    ])
+      .then(() => toast(strings.saved))
+      .catch(() => setCategorySaveFailed(true))
   }
   const changeCategory = (expenseId: string, categoryId: string | null) => {
     setCategorySaveFailed(false)
-    categoriesApi.setExpenseCategory(expenseId, categoryId).catch(() => setCategorySaveFailed(true))
+    categoriesApi
+      .setExpenseCategory(expenseId, categoryId)
+      .then(() => toast(strings.saved))
+      .catch(() => setCategorySaveFailed(true))
   }
 
   return (
@@ -318,6 +324,7 @@ function Authorized({
                 categories={categories.categories}
                 incomesSource={incomesSource}
                 capsSource={capsSource}
+                ratesSource={ratesSource}
                 onCategoryChange={changeCategory}
                 onNavigate={goTo}
               />
@@ -342,6 +349,7 @@ function Authorized({
                 categories={categories.categories}
                 onCategoryChange={changeCategory}
                 capsSource={capsSource}
+                ratesSource={ratesSource}
               />
             </>
           )}

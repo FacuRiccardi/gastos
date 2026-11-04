@@ -35,11 +35,11 @@ describe('EntrySection table', () => {
     expect(screen.queryByRole('button', { name: /Eliminar seleccionados/ })).not.toBeInTheDocument()
   })
 
-  it('shows one row per entry with date and money, and the total per currency', () => {
+  it('shows one row per entry with date and money, and no total of the whole history', () => {
     renderSection([entry('a', { amount: 1500.5 }), entry('b', { amount: 20, currency: 'USD', date: '2026-10-15' }), entry('c', { amount: 500 })])
     expect(screen.getAllByRole('row')).toHaveLength(1 + 3)
     expect(screen.getByText('15/10/2026')).toBeInTheDocument()
-    expect(screen.getByText(/Total: .*2\.000,50.* · .*20,00/)).toBeInTheDocument()
+    expect(screen.queryByText(/Total/)).not.toBeInTheDocument()
   })
 
   it('shows the owner column only with owners, with a dash when an entry has none', () => {
@@ -174,5 +174,13 @@ describe('EntrySection new entry form', () => {
     await userEvent.click(screen.getByRole('button', { name: s.save }))
     expect(await screen.findByText(s.apiError)).toBeInTheDocument()
     expect(screen.getByRole('form', { name: labels.add })).toBeInTheDocument()
+  })
+})
+
+describe('EntrySection date in words', () => {
+  it('writes the chosen date out, so dd/mm and mm/dd cannot be mixed up', async () => {
+    renderSection([])
+    await userEvent.click(screen.getByRole('button', { name: labels.add }))
+    expect(screen.getByText('Miércoles, 4 de noviembre de 2026')).toBeInTheDocument()
   })
 })

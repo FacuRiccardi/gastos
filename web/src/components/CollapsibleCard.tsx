@@ -27,7 +27,7 @@ export function CollapsibleCard({
           aria-expanded={open}
           aria-controls={`${id}-content`}
           onClick={() => setOpen((o) => !o)}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left outline-none max-sm:min-h-11 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ChevronDownIcon className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
           <CardTitle id={`${id}-title`}>{title}</CardTitle>

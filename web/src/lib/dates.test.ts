@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, buenosAiresDay, formatCalendarDate, isValidDateString, parseDisplayDate } from './dates'
+import { addDays, buenosAiresDay, formatCalendarDate, formatLongDate, isValidDateString, parseDisplayDate } from './dates'
 
 describe('parseDisplayDate', () => {
   it('parses a valid date', () => {
@@ -54,5 +54,16 @@ describe('buenosAiresDay', () => {
     expect(buenosAiresDay(new Date('2026-11-16T02:30:00Z'))).toBe('2026-11-15')
     expect(buenosAiresDay(new Date('2026-11-15T03:00:00Z'))).toBe('2026-11-15')
     expect(buenosAiresDay(new Date('2026-11-15T02:59:00Z'))).toBe('2026-11-14')
+  })
+})
+
+describe('formatLongDate', () => {
+  it('writes the date out in words, with the weekday', () => {
+    expect(formatLongDate('2026-11-04')).toBe('Miércoles, 4 de noviembre de 2026')
+  })
+
+  it('is empty for an invalid date', () => {
+    expect(formatLongDate('2026-02-30')).toBe('')
+    expect(formatLongDate('')).toBe('')
   })
 })

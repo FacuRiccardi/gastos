@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useToast } from '@/components/Toast'
 import { formatCalendarDate } from '@/lib/dates'
 import { strings } from '@/strings'
 import type { CardsApi } from './cardsApi'
@@ -45,6 +46,7 @@ export function CyclesSection({
   cycles: Cycle[]
   api: Pick<CardsApi, 'addCycles' | 'deleteCycle'>
 }) {
+  const toast = useToast()
   const [bulk, setBulk] = useState('')
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [problem, setProblem] = useState<Problem>(null)
@@ -66,6 +68,7 @@ export function CyclesSection({
   const run: Run = async (action) => {
     try {
       await action()
+      toast(strings.saved)
       return true
     } catch {
       setProblem({ kind: 'api' })

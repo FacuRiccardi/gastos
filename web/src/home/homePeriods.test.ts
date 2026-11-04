@@ -197,3 +197,38 @@ describe('previousMonthTotal', () => {
     expect(previousMonthTotal(views, cycles, '2026-08', '2026-10-12')).toBeNull()
   })
 })
+
+describe('dollars in the total to pay', () => {
+  // a1: 100 pesos and 10 dollars in the current period (Oct 6 - Nov 5, month 2026-11)
+  const mixed = buildAccountViews([expense({ amount: 100 }), expense({ amount: 10, currency: 'USD' })], data())
+
+  it('are multiplied by the rate of the group month and added to the total, per account and overall', () => {
+    const g = buildHomePeriods(mixed, cycles, '2026-10-12', { '2026-11': 1500 }).current!
+    expect(g.total).toBe(15100)
+    expect(g.usd).toBe(10)
+    expect(g.rate).toEqual({ rate: 1500, month: '2026-11', exact: true })
+    expect(g.foreign).toBe(false)
+    expect(g.accounts.find((a) => a.account.id === 'a1')?.total).toBe(15100)
+  })
+
+  it('use the latest earlier rate when the month has none', () => {
+    const g = buildHomePeriods(mixed, cycles, '2026-10-12', { '2026-09': 1000 }).current!
+    expect(g.total).toBe(10100)
+    expect(g.rate).toEqual({ rate: 1000, month: '2026-09', exact: false })
+  })
+
+  it('stay out (and are flagged) when there is no rate at all', () => {
+    const g = buildHomePeriods(mixed, cycles, '2026-10-12').current!
+    expect(g.total).toBe(100)
+    expect(g.usd).toBe(0)
+    expect(g.rate).toBeNull()
+    expect(g.foreign).toBe(true)
+  })
+
+  it('other currencies are always left out', () => {
+    const views = buildAccountViews([expense({ amount: 100 }), expense({ amount: 5, currency: 'EUR' as 'USD' })], data())
+    const g = buildHomePeriods(views, cycles, '2026-10-12', { '2026-11': 1500 }).current!
+    expect(g.total).toBe(100)
+    expect(g.foreign).toBe(true)
+  })
+})
