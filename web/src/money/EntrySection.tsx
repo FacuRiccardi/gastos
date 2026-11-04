@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/Toast'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buenosAiresDay, formatCalendarDate, isValidDateString } from '@/lib/dates'
@@ -48,6 +49,7 @@ function NewEntryForm({
   onDone: () => void
 }) {
   const id = useId()
+  const toast = useToast()
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState<Currency>('ARS')
   const [date, setDate] = useState(() => buenosAiresDay(new Date()))
@@ -67,6 +69,7 @@ function NewEntryForm({
     try {
       await api.add({ amount: value, currency, date, ...(withOwner && owner ? { owner } : {}) })
       setAmount('')
+      toast(strings.saved)
       onDone()
     } catch {
       onError()
@@ -100,18 +103,21 @@ function NewEntryForm({
       </div>
       <div className="grid gap-2">
         <span className="text-sm font-medium">{s.currencyLabel}</span>
-        <Select items={CURRENCIES} value={currency} onValueChange={(v) => v !== null && setCurrency(v as Currency)}>
-          <SelectTrigger aria-label={s.currencyLabel} className="w-full sm:w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CURRENCIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>
-                {c.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Two options: a switch is one tap, a dropdown is two. */}
+        <div role="radiogroup" aria-label={s.currencyLabel} className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:w-56">
+          {CURRENCIES.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              role="radio"
+              aria-checked={currency === c.value}
+              onClick={() => setCurrency(c.value as Currency)}
+              className="h-8 rounded-md text-sm font-medium text-foreground/60 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:bg-background aria-checked:text-foreground aria-checked:shadow-sm max-sm:h-10"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${id}-date`}>{s.dateLabel}</Label>
@@ -138,6 +144,7 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
   const [selected, setSelected] = useState<string[]>([])
   const [confirming, setConfirming] = useState(false)
   const [pending, setPending] = useState(false)
+  const toast = useToast()
   const totals = Object.entries(sumByCurrency(entries)) as [Currency, number][]
   const onError = () => setFailed(true)
 
@@ -154,6 +161,7 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
     try {
       await Promise.all(chosen.map((id) => api.remove(id)))
       setSelected([])
+      toast(strings.deleted)
     } catch {
       onError()
     } finally {
@@ -198,12 +206,13 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
             <Trash2Icon />
             {s.deleteSelected(chosen.length)}
           </Button>
-          <div className="max-h-[19rem] overflow-y-auto">
+          {/* The list scrolls inside its own box only on wide screens; on a phone a second scroll would trap the finger. */}
+          <div className="sm:max-h-[19rem] sm:overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-8">
-                    <input type="checkbox" className="size-4 accent-primary" aria-label={s.selectAll} checked={allShownChosen} onChange={toggleAllShown} />
+                  <TableHead className="w-8 max-sm:w-12">
+                    <input type="checkbox" className="size-4 accent-primary max-sm:size-6" aria-label={s.selectAll} checked={allShownChosen} onChange={toggleAllShown} />
                   </TableHead>
                   <TableHead>{s.columns.date}</TableHead>
                   <TableHead className="text-right">{s.columns.amount}</TableHead>
@@ -215,11 +224,12 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
                   const date = formatCalendarDate(e.date)
                   const amount = formatMoney(e.amount, e.currency)
                   return (
-                    <TableRow key={e.id}>
+                    <TableRow key={e.id} className="cursor-pointer" onClick={() => toggle(e.id)}>
                       <TableCell>
                         <input
                           type="checkbox"
-                          className="size-4 accent-primary"
+                          className="size-4 accent-primary max-sm:size-6"
+                          onClick={(ev) => ev.stopPropagation()}
                           aria-label={s.selectAria(date, amount)}
                           checked={chosen.includes(e.id)}
                           onChange={() => toggle(e.id)}

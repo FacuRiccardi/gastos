@@ -112,3 +112,22 @@ describe('formatPercent', () => {
     expect(formatPercent(0.96)).toBe('1,0%')
   })
 })
+
+describe('buildBreakdown merchants', () => {
+  it('keeps the merchants of each slice, the heaviest first', () => {
+    const b = run([
+      expense({ categoryId: 'food', merchant: 'CHICO', amount: 100 }),
+      expense({ categoryId: 'food', merchant: 'GRANDE', amount: 600 }),
+      expense({ categoryId: 'food', merchant: 'GRANDE', amount: 200 }),
+    ])
+    expect(b.slices[0].top).toEqual([
+      { merchant: 'GRANDE', amount: 800 },
+      { merchant: 'CHICO', amount: 100 },
+    ])
+  })
+
+  it('keeps at most five merchants', () => {
+    const list = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((m, i) => expense({ categoryId: 'food', merchant: m, amount: 100 + i }))
+    expect(run(list).slices[0].top).toHaveLength(5)
+  })
+})

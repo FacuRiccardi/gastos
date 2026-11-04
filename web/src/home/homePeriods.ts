@@ -2,6 +2,7 @@ import type { CardsData } from '@/cards/cardsApi'
 import type { Account } from '@/cards/types'
 import { dueDateOf } from '@/balance/balance'
 import type { AccountView, TabView } from '@/expenses/statements'
+import { addMonths } from '@/fixed/fixedApi'
 import type { Expense } from '@/lib/expense'
 import type { Caps } from './capsApi'
 
@@ -62,6 +63,13 @@ export function buildHomePeriods(views: AccountView[], cycles: CardsData['cycles
     // already due: the old period is no longer shown
     closed: closedGroup && closedGroup.latestDue !== null && closedGroup.latestDue >= today ? closedGroup : null,
   }
+}
+
+/** What the calendar month before `month` came to (same rule as `groupForMonth`), or null when there is nothing to compare with. */
+export function previousMonthTotal(views: AccountView[], cycles: CardsData['cycles'], month: string, today: string): { month: string; total: number } | null {
+  const previous = addMonths(month, -1)
+  const group = groupForMonth(views, cycles, previous, today)
+  return group && group.total > 0 ? { month: previous, total: group.total } : null
 }
 
 /** The cap of a month: its own, or else the latest one defined before it. */

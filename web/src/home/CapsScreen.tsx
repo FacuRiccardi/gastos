@@ -1,4 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon, Trash2Icon } from 'lucide-react'
+import { ScreenError } from '@/components/ScreenError'
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   AlertDialog,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { ListSkeleton } from '@/components/LoadingSkeletons'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
 import { addMonths } from '@/fixed/fixedApi'
 import { buenosAiresDay } from '@/lib/dates'
@@ -60,6 +62,7 @@ export function CapsScreen({ source, api }: { source: CapsSource; api: CapsApi }
   const [invalid, setInvalid] = useState(false)
   const [failed, setFailed] = useState(false)
   const [pending, setPending] = useState(false)
+  const toast = useToast()
   const current = buenosAiresDay(new Date()).slice(0, 7)
   const own = state.caps[month]
   // The field shows the cap of the chosen month, if it has one.
@@ -70,9 +73,7 @@ export function CapsScreen({ source, api }: { source: CapsSource; api: CapsApi }
 
   if (state.status === 'error') {
     return (
-      <p role="alert" className="py-8 text-center text-destructive">
-        {state.error}
-      </p>
+      <ScreenError>{state.error}</ScreenError>
     )
   }
   if (state.status === 'loading') return <ListSkeleton rows={3} />
@@ -87,6 +88,7 @@ export function CapsScreen({ source, api }: { source: CapsSource; api: CapsApi }
     setFailed(false)
     try {
       await api.save(month, value)
+      toast(strings.saved)
     } catch {
       setFailed(true)
     } finally {

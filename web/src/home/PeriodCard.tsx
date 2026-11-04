@@ -1,3 +1,4 @@
+import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Disclosure } from '@/cards/Disclosure'
 import type { Category } from '@/categories/types'
@@ -57,6 +58,26 @@ function CapBar({ total, cap }: { total: number; cap: number }) {
   )
 }
 
+// ---- How the period compares with the one before it. A period that is still running is compared as a share
+// (it is not over yet); a finished one says whether it came to more or less.
+function PreviousComparison({ group, previous }: { group: PeriodGroup; previous: { month: string; total: number } }) {
+  const label = strings.gastos.monthLabel(previous.month)
+  const closed = group.kind === 'closed'
+  if (!closed) {
+    return <p className="text-sm text-muted-foreground">{s.soFarOfPrevious(Math.round((group.total / previous.total) * 100), label, formatMoney(previous.total, 'ARS'))}</p>
+  }
+  const percent = Math.round((Math.abs(group.total - previous.total) / previous.total) * 100)
+  if (percent === 0) return <p className="text-sm text-muted-foreground">{s.samePrevious(label)}</p>
+  const up = group.total > previous.total
+  const Icon = up ? TrendingUpIcon : TrendingDownIcon
+  return (
+    <p className={`flex items-center gap-1 text-sm font-medium ${up ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+      <Icon className="size-4" aria-hidden />
+      {up ? s.moreThanPrevious(percent, label) : s.lessThanPrevious(percent, label)}
+    </p>
+  )
+}
+
 // ---- One group of periods (the current one, or the one that closed and has not fallen due yet)
 export function PeriodCard({
   group,
@@ -67,6 +88,7 @@ export function PeriodCard({
   showBadge,
   headerAction,
   alwaysShowMovements,
+  previous,
 }: {
   group: PeriodGroup
   caps: Record<string, number>
@@ -80,6 +102,8 @@ export function PeriodCard({
   headerAction?: ReactNode
   // Show the list of movements always open, without its toggle (Gastos); Inicio keeps it collapsible.
   alwaysShowMovements?: boolean
+  // The month before this one and what it came to, for the comparison under the total.
+  previous?: { month: string; total: number } | null
 }) {
   const closed = group.kind === 'closed'
   const cap = capFor(group.month, caps)
@@ -115,16 +139,20 @@ export function PeriodCard({
         <p className="text-3xl font-semibold tabular-nums" data-testid="home-total">
           {formatMoney(group.total, 'ARS')}
         </p>
+        {previous && <PreviousComparison group={group} previous={previous} />}
       </CardHeader>
       <CardContent className="grid gap-4">
-        <ul className="grid gap-1 text-sm text-muted-foreground">
+        <ul className="grid gap-2 text-sm text-muted-foreground">
           {group.accounts.map(({ account, tab, due }) => (
-            <li key={account.id} className="flex flex-wrap justify-between gap-x-3">
-              <span>
-                {account.name} · {tab.period ? strings.gastos.periodLabel(tab.period.start, tab.period.end) : strings.gastos.tabs.open}
-                {closed && due ? ` · ${s.dueOn(formatCalendarDate(due))}` : ''}
-              </span>
-              <span className="tabular-nums">{formatMoney(tab.totals.ARS ?? 0, 'ARS')}</span>
+            <li key={account.id} className="grid gap-0.5">
+              <div className="flex justify-between gap-3">
+                <span className="font-medium text-foreground">{account.name}</span>
+                <span className="tabular-nums text-foreground">{formatMoney(tab.totals.ARS ?? 0, 'ARS')}</span>
+              </div>
+              <div className="flex flex-wrap gap-x-2 text-xs">
+                <span>{tab.period ? strings.gastos.periodLabel(tab.period.start, tab.period.end) : strings.gastos.tabs.open}</span>
+                {closed && due && <span className="font-medium text-foreground">{s.dueOn(formatCalendarDate(due))}</span>}
+              </div>
             </li>
           ))}
         </ul>

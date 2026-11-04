@@ -147,3 +147,27 @@ describe('PeriodCard', () => {
     expect(screen.getByRole('button', { name: 'Cambiar mes' })).toBeInTheDocument()
   })
 })
+
+describe('PeriodCard comparison with the previous month', () => {
+  const label = strings.gastos.monthLabel('2026-10')
+
+  it('a running period says what share of the previous month it already is', () => {
+    renderCard(currentGroup(1500), { '2026-11': 10000 }, { previous: { month: '2026-10', total: 3000 } })
+    expect(screen.getByText(new RegExp(`Va en el 50% de lo que fue ${label}`))).toBeInTheDocument()
+  })
+
+  it('a closed period says it came to more or less than the previous month', () => {
+    const views = buildAccountViews([expense({ amount: 150, purchaseDate: new Date('2026-09-20T15:00:00Z') })], data)
+    const closed = buildHomePeriods(views, data.cycles, '2026-10-12').closed!
+    const { unmount } = renderCard(closed, {}, { previous: { month: '2026-09', total: 100 } })
+    expect(screen.getByText(strings.home.moreThanPrevious(50, strings.gastos.monthLabel('2026-09')))).toBeInTheDocument()
+    unmount()
+    renderCard(closed, {}, { previous: { month: '2026-09', total: 300 } })
+    expect(screen.getByText(strings.home.lessThanPrevious(50, strings.gastos.monthLabel('2026-09')))).toBeInTheDocument()
+  })
+
+  it('shows no comparison when there is no previous month', () => {
+    renderCard(currentGroup(1500), {}, { previous: null })
+    expect(screen.queryByText(/Va en el/)).not.toBeInTheDocument()
+  })
+})
