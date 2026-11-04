@@ -13,6 +13,7 @@ import type { EntriesApi } from '@/money/entries'
 import type { CardsApi, CardsData, CardsSource } from '@/cards/cardsApi'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import type { Expense } from '@/lib/expense'
+import { inertPushApi } from '@/push/pushApi'
 import { strings } from '@/strings'
 
 const person: AuthUser = { uid: 'u1', displayName: 'Persona Uno', photoURL: null, email: 'user@example.com' }
@@ -74,6 +75,7 @@ function setup({ claim = false }: { claim?: boolean } = {}) {
   render(
     <App
       authApi={authApi}
+      pushApi={inertPushApi}
       createExpensesSource={createExpensesSource}
       createCardsSource={createCardsSource}
       createCardsApi={createCardsApi}

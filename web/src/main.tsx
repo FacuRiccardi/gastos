@@ -12,7 +12,9 @@ import { createFirestoreRatesApi, createFirestoreRatesSource } from '@/balance/f
 import { createFirestoreFixedApi, createFirestoreFixedSource } from '@/fixed/firestoreFixed'
 import { createFirestoreMerchantsApi, createFirestoreMerchantsSource } from '@/merchants/firestoreMerchants'
 import { createFirestoreExpensesSource } from '@/expenses/expensesSource'
-import { auth, db } from '@/lib/firebase'
+import { createFirebasePushApi } from '@/push/firebasePush'
+import { inertPushApi } from '@/push/pushApi'
+import { app, auth, db } from '@/lib/firebase'
 import { syncSystemTheme } from '@/lib/theme'
 
 syncSystemTheme()
@@ -21,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App
       authApi={createFirebaseAuthApi(auth)}
+      pushApi={import.meta.env.VITE_USE_EMULATOR === 'true' ? inertPushApi : createFirebasePushApi(app, db)}
       createExpensesSource={() => createFirestoreExpensesSource(db)}
       createCardsSource={() => createFirestoreCardsSource(db)}
       createCardsApi={() => createFirestoreCardsApi(db)}

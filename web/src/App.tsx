@@ -34,10 +34,13 @@ import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import { useExpenses } from '@/expenses/useExpenses'
 import type { Expense } from '@/lib/expense'
+import type { PushApi } from '@/push/pushApi'
+import { usePushRegistration } from '@/push/usePushRegistration'
 import { strings } from '@/strings'
 
 type AppProps = {
   authApi: AuthApi
+  pushApi: PushApi
   createExpensesSource: () => ExpensesSource
   createCardsSource: () => CardsSource
   createCardsApi: () => CardsApi
@@ -59,6 +62,7 @@ type AppProps = {
 
 export default function App({
   authApi,
+  pushApi,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -81,6 +85,7 @@ export default function App({
     <AuthProvider api={authApi}>
       <ToastProvider>
       <Screens
+        pushApi={pushApi}
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
         createCardsApi={createCardsApi}
@@ -105,6 +110,7 @@ export default function App({
 }
 
 function Screens({
+  pushApi,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -124,6 +130,7 @@ function Screens({
   createCapAlertApi,
 }: Pick<
   AppProps,
+  | 'pushApi'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createCardsApi'
@@ -160,6 +167,7 @@ function Screens({
       return (
         <Authorized
           user={state.user}
+          pushApi={pushApi}
           createExpensesSource={createExpensesSource}
           createCardsSource={createCardsSource}
           createCardsApi={createCardsApi}
@@ -185,6 +193,7 @@ function Screens({
 
 function Authorized({
   user,
+  pushApi,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -205,6 +214,7 @@ function Authorized({
   onSignOut,
 }: Pick<
   AppProps,
+  | 'pushApi'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createCardsApi'
@@ -226,6 +236,7 @@ function Authorized({
   user: AuthUser
   onSignOut: () => void
 }) {
+  usePushRegistration(pushApi, user.uid)
   const [source] = useState(createExpensesSource)
   // Created once so switching tabs never recreates them. Both subscriptions live here, shared by
   // the Gastos and Tarjetas tabs, and only exist once the user is authorized.
