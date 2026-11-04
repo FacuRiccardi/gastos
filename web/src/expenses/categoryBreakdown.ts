@@ -19,8 +19,8 @@ const topOf = (merchants: Map<string, number>) =>
     .slice(0, TOP_MERCHANTS)
 
 /**
- * Share of each category in the pesos spent. Rejected purchases and other currencies are left out
- * (`hasForeign` reports the latter). Credits are netted inside their category; a category whose net
+ * Share of each category in the pesos spent. Rejected purchases are left out. Dollar purchases count at `usdRate`
+ * (pesos per dollar) when it is given; without it, and for any other currency, they are left out (`hasForeign` reports it). Credits are netted inside their category; a category whose net
  * is not positive is not shown. Purchases without a (valid) category go to "uncategorized". Shares
  * under 1% are merged into one virtual slice (kept as is when there is only one of them).
  * Slices are sorted from the largest to the smallest, the merged one last.
@@ -29,16 +29,18 @@ export function buildBreakdown(
   expenses: Expense[],
   categories: Category[],
   labels: { uncategorized: string; minor: string },
+  usdRate: number | null = null,
 ): Breakdown {
   const byId = new Map(categories.map((c) => [c.id, c]))
   const totals = new Map<string, { name: string; color: string; amount: number; merchants: Map<string, number> }>()
   let hasForeign = false
   for (const e of expenses) {
     if (e.status === 'rejected') continue
-    if (e.currency !== 'ARS') {
+    if (e.currency !== 'ARS' && !(e.currency === 'USD' && usdRate)) {
       hasForeign = true
       continue
     }
+    const amount = e.currency === 'USD' ? e.amount * (usdRate ?? 0) : e.amount
     const category = e.categoryId ? byId.get(e.categoryId) : undefined
     const id = category?.id ?? 'none'
     const entry = totals.get(id) ?? {
@@ -47,8 +49,8 @@ export function buildBreakdown(
       amount: 0,
       merchants: new Map<string, number>(),
     }
-    entry.amount += e.amount
-    entry.merchants.set(e.merchant, (entry.merchants.get(e.merchant) ?? 0) + e.amount)
+    entry.amount += amount
+    entry.merchants.set(e.merchant, (entry.merchants.get(e.merchant) ?? 0) + amount)
     totals.set(id, entry)
   }
 

@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { CategoryPicker } from '@/categories/CategoryPicker'
 import type { Category } from '@/categories/types'
 import { ListSkeleton } from '@/components/LoadingSkeletons'
+import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
 import { strings } from '@/strings'
+import { merchantLabel } from './merchantLabel'
 import type { MerchantEntry, MerchantsApi } from './merchantsApi'
 
 const s = strings.categories.dictionary
@@ -26,6 +28,7 @@ export function MerchantDictionary({
   api: MerchantsApi
   onError: () => void
 }) {
+  const toast = useToast()
   const [query, setQuery] = useState('')
   const shown = merchants.filter((m) => norm(m.merchant).includes(norm(query.trim())))
 
@@ -47,14 +50,14 @@ export function MerchantDictionary({
             <ul className="grid max-h-96 gap-2 overflow-y-auto">
               {shown.map((m) => (
                 <li key={m.key} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2">
-                  <span className="min-w-0 flex-1 truncate">{m.merchant}</span>
+                  <span className="min-w-0 flex-1 truncate">{merchantLabel(m.merchant)}</span>
                   <CategoryPicker
                     categories={categories}
                     categoryId={m.categoryId}
                     merchant={m.merchant}
                     allowNone={false}
-                    ariaLabel={s.changeAria(m.merchant)}
-                    onChange={(categoryId) => categoryId && void api.remember(m.merchant, categoryId).catch(onError)}
+                    ariaLabel={s.changeAria(merchantLabel(m.merchant))}
+                    onChange={(categoryId) => categoryId && void api.remember(m.merchant, categoryId).then(() => toast(strings.saved)).catch(onError)}
                   />
                 </li>
               ))}

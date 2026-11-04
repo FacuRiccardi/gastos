@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -88,12 +89,14 @@ function AccountFormDialog({
   const [owner, setOwner] = useState(account.owner)
   const [pending, guarded] = usePending(run)
   const [failed, setFailed] = useState(false)
+  const [incomplete, setIncomplete] = useState(false)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     const cleanName = name.trim()
     const cleanOwner = normalizeOwner(owner)
-    if (!cleanName || !cleanOwner) return
+    if (!cleanName || !cleanOwner) return setIncomplete(true)
+    setIncomplete(false)
     setFailed(false)
     const ok = await guarded(() =>
       api.updateAccount(account.id, { name: cleanName, owner: cleanOwner }),
@@ -129,6 +132,11 @@ function AccountFormDialog({
               onChange={(e) => setOwner(e.target.value)}
             />
           </div>
+          {incomplete && (
+            <p role="alert" className="text-sm text-destructive">
+              {s.accountIncomplete}
+            </p>
+          )}
           {failed && (
             <p role="alert" className="text-sm text-destructive">
               {s.apiError}
@@ -164,12 +172,14 @@ function ChangeCardDialog({
   const [accountId, setAccountId] = useState(card.accountId)
   const [pending, guarded] = usePending(run)
   const [failed, setFailed] = useState(false)
+  const [incomplete, setIncomplete] = useState(false)
   const id = `holder-${cardKey(card)}`
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     const cleanHolder = normalizeOwner(holder)
-    if (!cleanHolder) return
+    if (!cleanHolder) return setIncomplete(true)
+    setIncomplete(false)
     setFailed(false)
     const ok = await guarded(() => api.saveCard({ ...card, holder: cleanHolder, accountId }))
     if (!ok) setFailed(true)
@@ -198,6 +208,11 @@ function ChangeCardDialog({
               ariaLabel={s.accountLabel}
             />
           </div>
+          {incomplete && (
+            <p role="alert" className="text-sm text-destructive">
+              {s.cardIncomplete}
+            </p>
+          )}
           {failed && (
             <p role="alert" className="text-sm text-destructive">
               {s.apiError}
@@ -292,7 +307,7 @@ function AccountSection({
           aria-expanded={open}
           aria-controls={`${titleId}-content`}
           onClick={() => setOpen((o) => !o)}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left outline-none max-sm:min-h-11 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ChevronDownIcon className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
           <span>
@@ -378,13 +393,15 @@ function NewAccountForm({ run, api }: { run: Run; api: CardsApi }) {
   const [name, setName] = useState('')
   const [owner, setOwner] = useState('')
   const [open, setOpen] = useState(false)
+  const [incomplete, setIncomplete] = useState(false)
   const [pending, guarded] = usePending(run)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     const cleanName = name.trim()
     const cleanOwner = normalizeOwner(owner)
-    if (!cleanName || !cleanOwner) return
+    if (!cleanName || !cleanOwner) return setIncomplete(true)
+    setIncomplete(false)
     if (await guarded(() => api.createAccount({ name: cleanName, owner: cleanOwner }))) {
       setName('')
       setOwner('')
@@ -416,6 +433,8 @@ function NewAccountForm({ run, api }: { run: Run; api: CardsApi }) {
           id="new-account-name"
           value={name}
           maxLength={40}
+          placeholder={s.namePlaceholder}
+          aria-invalid={incomplete && !name.trim()}
           onChange={(e) => setName(e.target.value)}
         />
       </div>
@@ -425,9 +444,16 @@ function NewAccountForm({ run, api }: { run: Run; api: CardsApi }) {
           id="new-account-owner"
           value={owner}
           maxLength={40}
+          placeholder={s.ownerPlaceholder}
+          aria-invalid={incomplete && !normalizeOwner(owner)}
           onChange={(e) => setOwner(e.target.value)}
         />
       </div>
+      {incomplete && (
+        <p role="alert" className="text-sm text-destructive">
+          {s.accountIncomplete}
+        </p>
+      )}
       <Button type="submit" className="justify-self-start" disabled={pending}>
         {s.createAccount}
       </Button>
@@ -450,12 +476,14 @@ export function CardsScreen({
   data: CardsData
   api: CardsApi
 }) {
+  const toast = useToast()
   const [failed, setFailed] = useState(false)
 
   const run: Run = async (action) => {
     setFailed(false)
     try {
       await action()
+      toast(strings.saved)
       return true
     } catch {
       setFailed(true)

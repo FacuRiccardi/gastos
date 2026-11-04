@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { CollapsibleCard } from '@/components/CollapsibleCard'
+import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
 import type { Expense } from '@/lib/expense'
 import { MerchantDictionary } from '@/merchants/MerchantDictionary'
@@ -37,7 +38,7 @@ function ColorInput({ value, onCommit, label }: { value: string; onCommit: (colo
       type="color"
       aria-label={label}
       value={local}
-      className="size-8 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5"
+      className="size-8 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5 max-sm:size-11"
       onChange={(e) => {
         setLocal(e.target.value)
         // The picker fires continuously while dragging: save once it settles.
@@ -50,16 +51,21 @@ function ColorInput({ value, onCommit, label }: { value: string; onCommit: (colo
 }
 
 function CategoryRow({ category, api, onError }: { category: Category; api: CategoriesApi; onError: () => void }) {
+  const toast = useToast()
   const [name, setName] = useState(category.name)
   const [deleting, setDeleting] = useState(false)
   useEffect(() => setName(category.name), [category.name])
-  const save = (patch: Partial<{ name: string; color: string }>) =>
-    api.update(category.id, { name: category.name, color: category.color, ...patch }).catch(onError)
+  // The colour picker saves while you drag it, so only a rename confirms with a toast.
+  const save = (patch: Partial<{ name: string; color: string }>, notify = false) =>
+    api
+      .update(category.id, { name: category.name, color: category.color, ...patch })
+      .then(() => notify && toast(strings.saved))
+      .catch(onError)
 
   function commitName() {
     const clean = name.trim()
     if (!clean) return setName(category.name)
-    if (clean !== category.name) void save({ name: clean })
+    if (clean !== category.name) void save({ name: clean }, true)
   }
 
   return (
@@ -86,7 +92,7 @@ function CategoryRow({ category, api, onError }: { category: Category; api: Cate
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{s.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void api.remove(category.id).catch(onError)}>{s.delete}</AlertDialogAction>
+            <AlertDialogAction onClick={() => void api.remove(category.id).then(() => toast(strings.deleted)).catch(onError)}>{s.delete}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -95,6 +101,7 @@ function CategoryRow({ category, api, onError }: { category: Category; api: Cate
 }
 
 function NewCategory({ api, onError }: { api: CategoriesApi; onError: () => void }) {
+  const toast = useToast()
   const [name, setName] = useState('')
   const [color, setColor] = useState(DEFAULT_COLOR)
   const [pending, setPending] = useState(false)
@@ -106,6 +113,7 @@ function NewCategory({ api, onError }: { api: CategoriesApi; onError: () => void
     setPending(true)
     try {
       await api.create({ name: clean, color })
+      toast(strings.saved)
       setName('')
     } catch {
       onError()

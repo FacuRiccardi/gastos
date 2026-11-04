@@ -41,7 +41,10 @@ function CapBar({ total, cap }: { total: number; cap: number }) {
         <span>
           {formatMoney(total, 'ARS')} {s.of} {formatMoney(cap, 'ARS')}
         </span>
-        <span className="tabular-nums">{Math.round(percent)}%</span>
+        <span className="flex items-center gap-1 tabular-nums">
+          {Math.round(percent)}%
+          <InfoTip text={s.capPercentTip} label={strings.moreInfo} />
+        </span>
       </div>
       {percent >= 100 && (
         <div className="grid gap-1">
@@ -58,22 +61,27 @@ function CapBar({ total, cap }: { total: number; cap: number }) {
   )
 }
 
-// ---- How the period compares with the one before it. A period that is still running is compared as a share
-// (it is not over yet); a finished one says whether it came to more or less.
+// ---- How the period compares with the one before it: green and pointing down when it is below, red and pointing up
+// when it is above. A period that is still running is compared with the whole previous month, so its tooltip says it can still change.
 function PreviousComparison({ group, previous }: { group: PeriodGroup; previous: { month: string; total: number } }) {
   const label = strings.gastos.monthLabel(previous.month)
-  const closed = group.kind === 'closed'
-  if (!closed) {
-    return <p className="text-sm text-muted-foreground">{s.soFarOfPrevious(Math.round((group.total / previous.total) * 100), label, formatMoney(previous.total, 'ARS'))}</p>
-  }
+  const tip = group.kind === 'closed' ? s.previousClosedTip : s.previousOpenTip
   const percent = Math.round((Math.abs(group.total - previous.total) / previous.total) * 100)
-  if (percent === 0) return <p className="text-sm text-muted-foreground">{s.samePrevious(label)}</p>
+  if (percent === 0) {
+    return (
+      <p className="flex items-center gap-1 text-sm text-muted-foreground">
+        {s.samePrevious(label)}
+        <InfoTip text={tip} label={strings.moreInfo} />
+      </p>
+    )
+  }
   const up = group.total > previous.total
   const Icon = up ? TrendingUpIcon : TrendingDownIcon
   return (
     <p className={`flex items-center gap-1 text-sm font-medium ${up ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
       <Icon className="size-4" aria-hidden />
       {up ? s.moreThanPrevious(percent, label) : s.lessThanPrevious(percent, label)}
+      <InfoTip text={tip} label={strings.moreInfo} />
     </p>
   )
 }
@@ -108,7 +116,7 @@ export function PeriodCard({
   const closed = group.kind === 'closed'
   const cap = capFor(group.month, caps)
   const heading = title ?? (closed ? s.closedTitle : s.currentTitle)
-  const breakdown = buildBreakdown(group.expenses, categories, { uncategorized: strings.categories.uncategorized, minor: strings.gastos.minorCategories })
+  const breakdown = buildBreakdown(group.expenses, categories, { uncategorized: strings.categories.uncategorized, minor: strings.gastos.minorCategories }, group.rate?.rate ?? null)
   const movements =
     group.expenses.length === 0 ? (
       <p className="text-sm text-muted-foreground">{strings.gastos.noPurchases}</p>
@@ -139,6 +147,9 @@ export function PeriodCard({
         <p className="text-3xl font-semibold tabular-nums" data-testid="home-total">
           {formatMoney(group.total, 'ARS')}
         </p>
+        {group.usd > 0 && group.rate && (
+          <p className="text-xs text-muted-foreground">{s.includesUsd(formatMoney(group.usd, 'USD'), formatMoney(group.rate.rate, 'ARS'), strings.gastos.monthLabel(group.rate.month), group.rate.exact)}</p>
+        )}
         {previous && <PreviousComparison group={group} previous={previous} />}
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -147,7 +158,7 @@ export function PeriodCard({
             <li key={account.id} className="grid gap-0.5">
               <div className="flex justify-between gap-3">
                 <span className="font-medium text-foreground">{account.name}</span>
-                <span className="tabular-nums text-foreground">{formatMoney(tab.totals.ARS ?? 0, 'ARS')}</span>
+                <span className="tabular-nums text-foreground">{formatMoney(group.accounts.find((a) => a.account.id === account.id)?.total ?? 0, 'ARS')}</span>
               </div>
               <div className="flex flex-wrap gap-x-2 text-xs">
                 <span>{tab.period ? strings.gastos.periodLabel(tab.period.start, tab.period.end) : strings.gastos.tabs.open}</span>

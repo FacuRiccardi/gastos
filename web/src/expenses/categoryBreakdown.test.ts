@@ -131,3 +131,17 @@ describe('buildBreakdown merchants', () => {
     expect(run(list).slices[0].top).toHaveLength(5)
   })
 })
+
+describe('buildBreakdown with dollars', () => {
+  it('counts dollar purchases at the rate when one is given', () => {
+    const b = buildBreakdown([expense({ categoryId: 'food', amount: 100 }), expense({ categoryId: 'food', amount: 10, currency: 'USD' })], categories, labels, 1500)
+    expect(b.slices[0].amount).toBe(15100)
+    expect(b.hasForeign).toBe(false)
+  })
+
+  it('leaves them out and flags it without a rate', () => {
+    const b = buildBreakdown([expense({ categoryId: 'food', amount: 100 }), expense({ categoryId: 'food', amount: 10, currency: 'USD' })], categories, labels)
+    expect(b.slices[0].amount).toBe(100)
+    expect(b.hasForeign).toBe(true)
+  })
+})

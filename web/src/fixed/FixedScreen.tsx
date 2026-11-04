@@ -100,7 +100,7 @@ function TypesCard({ types, api, onError }: { types: FixedType[]; api: FixedApi;
   }
 
   return (
-    <section aria-label={s.typesTitle} className="grid gap-3">
+    <section aria-label={s.typesTitle} className="grid min-w-0 gap-3 [&>*]:min-w-0">
       <div className="flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-1 font-semibold">
           {s.typesTitle}
@@ -170,8 +170,8 @@ function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month
   }
 
   return (
-    <li className={`flex flex-wrap items-center gap-2 rounded-md border p-2 ${type.disabled ? 'border-dashed bg-muted/40 opacity-60' : ''}`}>
-      <span className="min-w-0 flex-1 font-medium">
+    <li className={`flex flex-wrap items-center gap-2 rounded-md border p-2 ${type.disabled ? 'border-dashed bg-muted/40 opacity-60' : ''} ${!type.disabled && !entry ? 'border-amber-500/50' : ''}`}>
+      <span className="min-w-0 flex-1 font-medium max-sm:basis-full">
         {type.name}
         {isRent(type.name) && (
           <span className="ml-2 inline-flex items-center gap-1 align-middle">
@@ -182,15 +182,18 @@ function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month
         )}
       </span>
       {type.disabled && <span className="rounded-full border px-2 text-xs">{s.disabledBadge}</span>}
+      {!type.disabled && !entry && (
+        <span className="rounded-full border border-amber-500/50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">{s.missingBadge}</span>
+      )}
       {showForm ? (
-        <form onSubmit={submit} aria-label={s.loadAria(type.name)} className="flex items-center gap-2">
+        <form onSubmit={submit} aria-label={s.loadAria(type.name)} className="flex items-center gap-2 max-sm:w-full">
           <Input
             inputMode="decimal"
             placeholder="0,00"
             value={text}
             aria-label={s.amountAria(type.name)}
             aria-invalid={invalid}
-            className="w-32"
+            className="w-32 max-sm:w-auto max-sm:flex-1"
             onChange={(e) => setText(e.target.value)}
           />
           <Button type="submit" size="sm" disabled={pending}>
@@ -209,7 +212,7 @@ function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month
         </form>
       ) : (
         <>
-          <span className="font-medium tabular-nums">{formatMoney(entry!.amount, 'ARS')}</span>
+          <span className="font-medium tabular-nums max-sm:flex-1">{formatMoney(entry!.amount, 'ARS')}</span>
           {!type.disabled && (
             <>
           <Button
@@ -232,7 +235,7 @@ function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{s.cancel}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void api.clear(type.id, month).catch(onError)}>{s.clear}</AlertDialogAction>
+                <AlertDialogAction onClick={() => void api.clear(type.id, month).then(() => toast(strings.deleted)).catch(onError)}>{s.clear}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -249,15 +252,15 @@ function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onE
   const entries = data.entries.filter((e) => e.month === month && data.types.some((t) => t.id === e.typeId))
   const total = Math.round(entries.reduce((sum, e) => sum + e.amount, 0) * 100) / 100
   // Disabled types only show up where they already have an amount; nothing new can be loaded for them.
-  // What still has to be loaded goes first, so an alert about missing expenses lands on exactly those rows.
-  const missing = (t: FixedType) => !t.disabled && !entries.some((e) => e.typeId === t.id)
-  const rows = data.types.filter((t) => !t.disabled || entries.some((e) => e.typeId === t.id)).sort((a, b) => Number(missing(b)) - Number(missing(a)))
+  const rows = data.types.filter((t) => !t.disabled || entries.some((e) => e.typeId === t.id))
+  // Rows keep their place when they are saved; what is still missing is marked and counted instead.
+  const pendingCount = rows.filter((t) => !t.disabled && !entries.some((e) => e.typeId === t.id)).length
 
   return (
-    <section aria-label={s.monthTitle} className="grid gap-3">
+    <section aria-label={s.monthTitle} className="grid min-w-0 gap-3 [&>*]:min-w-0">
       <div className="grid gap-2">
         <h3 className="font-semibold">{s.monthTitle}</h3>
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon-sm" aria-label={s.nextMonth} onClick={() => setMonth((m) => addMonths(m, 1))}>
               <ChevronLeftIcon />
@@ -276,13 +279,14 @@ function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onE
           )}
         </div>
       </div>
-      <div>
+      <div className="grid gap-2">
+        {pendingCount > 0 && <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{s.pendingCount(pendingCount)}</p>}
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{s.loadTypesFirst}</p>
         ) : (
-          <ul className="grid gap-2">
+          <ul className="grid gap-2 [&>*]:min-w-0">
             {rows.map((t) => (
-              <MonthRow key={`${t.id}_${month}`} type={t} month={month} entry={entries.find((e) => e.typeId === t.id)} api={api} onError={onError} />
+              <MonthRow key={`${t.id}_${month}_${entries.some((e) => e.typeId === t.id) ? 'loaded' : 'empty'}`} type={t} month={month} entry={entries.find((e) => e.typeId === t.id)} api={api} onError={onError} />
             ))}
           </ul>
         )}
@@ -296,7 +300,7 @@ export function FixedScreen({ data, api }: { data: FixedData; api: FixedApi }) {
   const [failed, setFailed] = useState(false)
   const onError = () => setFailed(true)
   return (
-    <div className="grid gap-8">
+    <div className="grid min-w-0 gap-8 [&>*]:min-w-0">
       {failed && (
         <p role="alert" className="rounded-md border border-destructive p-3 text-destructive">
           {s.apiError}

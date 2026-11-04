@@ -45,3 +45,13 @@ export function buenosAiresDay(date: Date): string {
   const parts = Object.fromEntries(dayParts.formatToParts(date).map((p) => [p.type, p.value]))
   return `${parts.year}-${parts.month}-${parts.day}`
 }
+
+/** `2026-11-04` as "miércoles 4 de noviembre de 2026" (so a date can be read without guessing dd/mm or mm/dd); '' when invalid. */
+export function formatLongDate(value: string): string {
+  if (!isValidDateString(value)) return ''
+  const [year, month, day] = value.split('-').map(Number)
+  const text = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(year, month - 1, day)),
+  )
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
