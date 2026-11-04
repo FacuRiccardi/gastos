@@ -89,12 +89,12 @@ export const strings = {
     uncategorized: (n: number) => (n === 1 ? 'Hay 1 compra sin categorizar.' : `Hay ${n} compras sin categorizar.`),
     goCategorize: 'Categorizar compras',
     newCards: (n: number, cards: string) => (n === 1 ? `Hay una tarjeta nueva sin cuenta asignada: ${cards}.` : `Hay ${n} tarjetas nuevas sin cuenta asignada: ${cards}.`),
-    goCards: 'Asignar cuenta',
-    capAlert: {
-      message: (level: number, total: string) => `Superaste el ${level}% de tu tope: vas gastando ${total}`,
-      dismiss: 'Entendido',
-    },
-  },
+    goCards: 'Asignar cuenta',
+    capAlert: {
+      message: (level: number, total: string) => `Superaste el ${level}% de tu tope: vas gastando ${total}`,
+      dismiss: 'Entendido',
+    },
+  },
   history: {
     title: 'Histórico',
     intro: 'Un renglón por mes: ingresos, gastos fijos, tarjetas (los resúmenes que vencen ese mes) y el balance.',
