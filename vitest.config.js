@@ -6,6 +6,12 @@ import { fileURLToPath } from 'node:url';
 const rootFirebase = (sub) => fileURLToPath(new URL(`./node_modules/firebase/${sub}`, import.meta.url));
 // Emulator test files share one Firestore database, so they must not run in parallel.
 export default defineConfig({
-  resolve: { alias: [{ find: /^firebase\/firestore$/, replacement: rootFirebase('firestore/dist/index.mjs') }] },
+  resolve: {
+    alias: [
+      { find: /^firebase\/firestore$/, replacement: rootFirebase('firestore/dist/index.mjs') },
+      // Lets root tests import web modules that use the `@/` path alias (parity tests).
+      { find: /^@\//, replacement: fileURLToPath(new URL('./web/src/', import.meta.url)) },
+    ],
+  },
   test: { fileParallelism: false, environment: 'node', include: ['test/**/*.test.{js,ts}'] },
 });
