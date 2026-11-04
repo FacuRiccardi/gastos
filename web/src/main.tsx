@@ -7,6 +7,7 @@ import { createFirestoreCardsApi, createFirestoreCardsSource } from '@/cards/fir
 import { createFirestoreCategoriesApi, createFirestoreCategoriesSource } from '@/categories/firestoreCategories'
 import { createFirestoreEntriesApi, createFirestoreEntriesSource } from '@/money/firestoreEntries'
 import { createFirestoreCapsApi, createFirestoreCapsSource } from '@/home/firestoreCaps'
+import { createFirestoreCapAlertApi, createFirestoreCapAlertSource } from '@/home/firestoreCapAlerts'
 import { createFirestoreRatesApi, createFirestoreRatesSource } from '@/balance/firestoreRates'
 import { createFirestoreFixedApi, createFirestoreFixedSource } from '@/fixed/firestoreFixed'
 import { createFirestoreMerchantsApi, createFirestoreMerchantsSource } from '@/merchants/firestoreMerchants'
@@ -35,6 +36,8 @@ createRoot(document.getElementById('root')!).render(
       createRatesApi={() => createFirestoreRatesApi(db)}
       createCapsSource={() => createFirestoreCapsSource(db)}
       createCapsApi={() => createFirestoreCapsApi(db)}
+      createCapAlertSource={(uid) => createFirestoreCapAlertSource(db, uid)}
+      createCapAlertApi={(uid) => createFirestoreCapAlertApi(db, uid)}
     />
   </StrictMode>,
 )

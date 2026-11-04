@@ -23,6 +23,7 @@ import { BalanceScreen } from '@/balance/BalanceScreen'
 import type { RatesApi, RatesSource } from '@/balance/ratesApi'
 import { BudgetScreen, type BudgetSection } from '@/budget/BudgetScreen'
 import type { CapsApi, CapsSource } from '@/home/capsApi'
+import type { CapAlertApi, CapAlertSource } from '@/home/capAlertApi'
 import { HomeScreen } from '@/home/HomeScreen'
 import { HistoryScreen } from '@/history/HistoryScreen'
 import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
@@ -52,6 +53,8 @@ type AppProps = {
   createRatesApi: () => RatesApi
   createCapsSource: () => CapsSource
   createCapsApi: () => CapsApi
+  createCapAlertSource: (uid: string) => CapAlertSource
+  createCapAlertApi: (uid: string) => CapAlertApi
 }
 
 export default function App({
@@ -71,6 +74,8 @@ export default function App({
   createRatesApi,
   createCapsSource,
   createCapsApi,
+  createCapAlertSource,
+  createCapAlertApi,
 }: AppProps) {
   return (
     <AuthProvider api={authApi}>
@@ -91,6 +96,8 @@ export default function App({
         createRatesApi={createRatesApi}
         createCapsSource={createCapsSource}
         createCapsApi={createCapsApi}
+        createCapAlertSource={createCapAlertSource}
+        createCapAlertApi={createCapAlertApi}
       />
       </ToastProvider>
     </AuthProvider>
@@ -113,6 +120,8 @@ function Screens({
   createRatesApi,
   createCapsSource,
   createCapsApi,
+  createCapAlertSource,
+  createCapAlertApi,
 }: Pick<
   AppProps,
   | 'createExpensesSource'
@@ -130,6 +139,8 @@ function Screens({
   | 'createRatesApi'
   | 'createCapsSource'
   | 'createCapsApi'
+  | 'createCapAlertSource'
+  | 'createCapAlertApi'
 >) {
   const { state, error, signIn, signOut, recheck } = useAuth()
 
@@ -164,6 +175,8 @@ function Screens({
           createRatesApi={createRatesApi}
           createCapsSource={createCapsSource}
           createCapsApi={createCapsApi}
+          createCapAlertSource={createCapAlertSource}
+          createCapAlertApi={createCapAlertApi}
           onSignOut={() => void signOut()}
         />
       )
@@ -187,6 +200,8 @@ function Authorized({
   createRatesApi,
   createCapsSource,
   createCapsApi,
+  createCapAlertSource,
+  createCapAlertApi,
   onSignOut,
 }: Pick<
   AppProps,
@@ -205,6 +220,8 @@ function Authorized({
   | 'createRatesApi'
   | 'createCapsSource'
   | 'createCapsApi'
+  | 'createCapAlertSource'
+  | 'createCapAlertApi'
 > & {
   user: AuthUser
   onSignOut: () => void
@@ -234,6 +251,11 @@ function Authorized({
   const [ratesApi] = useState(createRatesApi)
   const [capsSource] = useState(createCapsSource)
   const [capsApi] = useState(createCapsApi)
+  // Per signed-in person (their own dismissals of the cap alert); the home banner uses them.
+  const [capAlertSource] = useState(() => createCapAlertSource(user.uid))
+  const [capAlertApi] = useState(() => createCapAlertApi(user.uid))
+  void capAlertSource // not shown yet: the home banner receives them next
+  void capAlertApi
   // The tab is controlled so the alerts of the home view can take you to the right one.
   const [tab, setTab] = useState<string>('home')
   // The card to open when an alert of the home view takes you to another tab (cleared when you change tab by hand).
