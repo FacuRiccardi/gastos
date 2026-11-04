@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
 import { InfoTip } from '@/components/ui/tooltip'
 import { buenosAiresDay } from '@/lib/dates'
@@ -76,6 +77,7 @@ function TypeRow({ type, api, onError }: { type: FixedType; api: FixedApi; onErr
 }
 
 function TypesCard({ types, api, onError }: { types: FixedType[]; api: FixedApi; onError: () => void }) {
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [pending, setPending] = useState(false)
@@ -87,6 +89,7 @@ function TypesCard({ types, api, onError }: { types: FixedType[]; api: FixedApi;
     setPending(true)
     try {
       await api.addType(clean)
+      toast(strings.saved)
       setName('')
       setOpen(false)
     } catch {
@@ -139,6 +142,7 @@ function TypesCard({ types, api, onError }: { types: FixedType[]; api: FixedApi;
 
 // One type in the chosen month: an amount to fill in, or what was already loaded (editable).
 function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month: string; entry?: FixedEntry; api: FixedApi; onError: () => void }) {
+  const toast = useToast()
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState('')
   const [invalid, setInvalid] = useState(false)
@@ -155,6 +159,7 @@ function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month
     setPending(true)
     try {
       await api.save(type.id, month, amount)
+      toast(strings.saved)
       setText('')
       setEditing(false)
     } catch {
@@ -244,7 +249,9 @@ function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onE
   const entries = data.entries.filter((e) => e.month === month && data.types.some((t) => t.id === e.typeId))
   const total = Math.round(entries.reduce((sum, e) => sum + e.amount, 0) * 100) / 100
   // Disabled types only show up where they already have an amount; nothing new can be loaded for them.
-  const rows = data.types.filter((t) => !t.disabled || entries.some((e) => e.typeId === t.id))
+  // What still has to be loaded goes first, so an alert about missing expenses lands on exactly those rows.
+  const missing = (t: FixedType) => !t.disabled && !entries.some((e) => e.typeId === t.id)
+  const rows = data.types.filter((t) => !t.disabled || entries.some((e) => e.typeId === t.id)).sort((a, b) => Number(missing(b)) - Number(missing(a)))
 
   return (
     <section aria-label={s.monthTitle} className="grid gap-3">

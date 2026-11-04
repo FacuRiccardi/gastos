@@ -26,7 +26,7 @@ export function CardsAccordion({
             <span className="font-semibold">{c.card.holder}</span>
             <span className="text-muted-foreground">
               <span className="hidden sm:inline">{strings.expenses.cardType[c.card.type]} </span>
-              {c.card.last4}
+              ····{c.card.last4}
             </span>
             <span className="ml-auto text-muted-foreground">{strings.gastos.noPurchases}</span>
           </div>
@@ -39,7 +39,7 @@ export function CardsAccordion({
               <span className="font-semibold">{c.card.holder}</span>
               <span className="text-muted-foreground">
                 <span className="hidden sm:inline">{strings.expenses.cardType[c.card.type]} </span>
-                {c.card.last4}
+                ····{c.card.last4}
               </span>
               {c.count > 0 && (
                 <span className="hidden text-muted-foreground sm:inline">{strings.expenses.purchases(c.count)}</span>

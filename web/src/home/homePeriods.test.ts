@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { CardsData } from '@/cards/cardsApi'
 import { buildAccountViews } from '@/expenses/statements'
 import type { Expense } from '@/lib/expense'
-import { buildHomePeriods, capFor, capLevel, groupForMonth } from './homePeriods'
+import { buildHomePeriods, capFor, capLevel, groupForMonth, previousMonthTotal } from './homePeriods'
 
 let n = 0
 const expense = (over: Partial<Expense> = {}): Expense => ({
@@ -183,5 +183,17 @@ describe('capLevel', () => {
     [250, 'red'],
   ])('%s%% is %s', (percent, level) => {
     expect(capLevel(percent)).toBe(level)
+  })
+})
+
+describe('previousMonthTotal', () => {
+  const views = buildAccountViews(purchases, data())
+
+  it('is what the calendar month before came to, with its month', () => {
+    expect(previousMonthTotal(views, cycles, '2026-11', '2026-10-12')).toEqual({ month: '2026-10', total: 150 })
+  })
+
+  it('is null when the month before has no closing dates', () => {
+    expect(previousMonthTotal(views, cycles, '2026-08', '2026-10-12')).toBeNull()
   })
 })

@@ -30,8 +30,8 @@ export function CategoryPicker({
         aria-label={ariaLabel ?? strings.categories.changeAria(merchant)}
         className={
           current
-            ? 'h-5! w-fit gap-1.5 rounded-full px-2 py-0 text-xs'
-            : 'h-5! w-fit gap-1.5 rounded-full border-destructive/30 bg-destructive/10 px-2 py-0 text-xs text-destructive'
+            ? 'h-5! w-fit gap-1.5 rounded-full px-2 py-0 text-xs max-sm:h-9! max-sm:px-3 max-sm:text-sm max-sm:relative max-sm:before:absolute max-sm:before:-inset-y-1 max-sm:before:inset-x-0 max-sm:before:content-[""]'
+            : 'h-5! w-fit gap-1.5 rounded-full border-destructive/30 bg-destructive/10 px-2 py-0 text-xs text-destructive max-sm:h-9! max-sm:px-3 max-sm:text-sm max-sm:relative max-sm:before:absolute max-sm:before:-inset-y-1 max-sm:before:inset-x-0 max-sm:before:content-[""]'
         }
         style={current ? categoryTagStyle(current.color) : undefined}
       >

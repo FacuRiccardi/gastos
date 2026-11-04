@@ -1,0 +1,15 @@
+{
+  "name": "Gastos de tarjeta",
+  "short_name": "Gastos",
+  "description": "Gastos de tarjeta, presupuesto y balance del hogar",
+  "lang": "es-AR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

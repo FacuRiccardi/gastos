@@ -1,9 +1,11 @@
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ScreenError } from '@/components/ScreenError'
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { CardsData } from '@/cards/cardsApi'
 import { Button } from '@/components/ui/button'
 import { BalanceSkeleton } from '@/components/LoadingSkeletons'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
 import { InfoTip } from '@/components/ui/tooltip'
 import { buildAccountViews } from '@/expenses/statements'
@@ -68,6 +70,7 @@ const moneyByCurrency = (totals: Partial<Record<Currency, number>>) => {
 function RateField({ month, rate, api, onError }: { month: string; rate: number | null; api: RatesApi; onError: () => void }) {
   const [text, setText] = useState(rate ? String(rate).replace('.', ',') : '')
   const [invalid, setInvalid] = useState(false)
+  const toast = useToast()
   useEffect(() => setText(rate ? String(rate).replace('.', ',') : ''), [rate, month])
 
   async function submit(e: FormEvent) {
@@ -77,6 +80,7 @@ function RateField({ month, rate, api, onError }: { month: string; rate: number 
     setInvalid(false)
     try {
       await api.save(month, value)
+      toast(strings.saved)
     } catch {
       onError()
     }
@@ -209,9 +213,7 @@ export function BalanceScreen({
   const error = [incomes, savings, rates].find((x) => x.status === 'error')
   if (error) {
     return (
-      <p role="alert" className="py-8 text-center text-destructive">
-        {error.error}
-      </p>
+      <ScreenError>{error.error}</ScreenError>
     )
   }
   if (incomes.status === 'loading' || savings.status === 'loading' || rates.status === 'loading') {
@@ -224,12 +226,12 @@ export function BalanceScreen({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1">
             <CardTitle className="text-xl">{s.title}</CardTitle>
-            <InfoTip text={s.formula} label={strings.moreInfo} />
           </div>
           <span className={`text-2xl font-bold tabular-nums ${balance.balance < 0 ? toneClass.expense : toneClass.income}`} aria-label={s.balanceAria}>
             {formatMoney(balance.balance, 'ARS')}
           </span>
         </div>
+        <p className="text-sm text-muted-foreground">{s.formula}</p>
         <div className="flex items-center gap-1">
           <Button variant="outline" size="icon-sm" aria-label={strings.fixed.nextMonth} onClick={() => setMonth((m) => addMonths(m, 1))}>
             <ChevronLeftIcon />

@@ -1,4 +1,5 @@
 import { AlertTriangleIcon } from 'lucide-react'
+import { ScreenError } from '@/components/ScreenError'
 import { useMemo, type ReactNode } from 'react'
 import type { CardsData } from '@/cards/cardsApi'
 import { findUnassignedCards } from '@/cards/cardLogic'
@@ -14,7 +15,7 @@ import { OWNERS, type EntriesSource } from '@/money/entries'
 import { useEntries } from '@/money/useEntries'
 import { strings } from '@/strings'
 import type { CapsSource } from './capsApi'
-import { buildHomePeriods, type PeriodGroup } from './homePeriods'
+import { buildHomePeriods, previousMonthTotal, type PeriodGroup } from './homePeriods'
 import { PeriodCard } from './PeriodCard'
 import { useCaps } from './useCaps'
 
@@ -70,9 +71,7 @@ export function HomeScreen({
   const error = incomes.status === 'error' ? incomes : caps.status === 'error' ? caps : null
   if (error) {
     return (
-      <p role="alert" className="py-8 text-center text-destructive">
-        {error.error}
-      </p>
+      <ScreenError>{error.error}</ScreenError>
     )
   }
   if (incomes.status === 'loading' || caps.status === 'loading') return <HomeSkeleton />
@@ -109,7 +108,14 @@ export function HomeScreen({
         <p className="py-8 text-center text-muted-foreground">{s.noPeriods}</p>
       ) : (
         groups.map((g) => (
-          <PeriodCard key={g.kind} group={g} caps={caps.caps} categories={categories} onCategoryChange={onCategoryChange} />
+          <PeriodCard
+            key={g.kind}
+            group={g}
+            caps={caps.caps}
+            categories={categories}
+            onCategoryChange={onCategoryChange}
+            previous={previousMonthTotal(views, cards.cycles, g.month, today)}
+          />
         ))
       )}
     </div>

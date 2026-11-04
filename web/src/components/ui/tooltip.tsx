@@ -9,7 +9,7 @@ function InfoTip({ text, label }: { text: ReactNode; label: string }) {
       <TooltipPrimitive.Root>
         <TooltipPrimitive.Trigger
           aria-label={label}
-          className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="relative inline-flex size-6 shrink-0 before:absolute before:-inset-2.5 before:content-[''] items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <InfoIcon className="size-4" />
         </TooltipPrimitive.Trigger>

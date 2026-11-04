@@ -12,6 +12,9 @@ import { createFirestoreFixedApi, createFirestoreFixedSource } from '@/fixed/fir
 import { createFirestoreMerchantsApi, createFirestoreMerchantsSource } from '@/merchants/firestoreMerchants'
 import { createFirestoreExpensesSource } from '@/expenses/expensesSource'
 import { auth, db } from '@/lib/firebase'
+import { syncSystemTheme } from '@/lib/theme'
+
+syncSystemTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
+import { ScreenError } from '@/components/ScreenError'
 import type { CardsData } from '@/cards/cardsApi'
 import type { Category } from '@/categories/types'
 import { PeriodSkeleton } from '@/components/LoadingSkeletons'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { CapsSource } from '@/home/capsApi'
-import { groupForMonth } from '@/home/homePeriods'
+import { groupForMonth, previousMonthTotal } from '@/home/homePeriods'
 import { PeriodCard } from '@/home/PeriodCard'
 import { useCaps } from '@/home/useCaps'
 import { buenosAiresDay } from '@/lib/dates'
@@ -38,9 +39,7 @@ export function MonthExpenses({
   if (views.length === 0) return <p className="py-8 text-center text-muted-foreground">{strings.gastos.noAccounts}</p>
   if (caps.status === 'error') {
     return (
-      <p role="alert" className="py-8 text-center text-destructive">
-        {caps.error}
-      </p>
+      <ScreenError>{caps.error}</ScreenError>
     )
   }
   if (caps.status === 'loading') return <PeriodSkeleton />
@@ -56,6 +55,7 @@ export function MonthExpenses({
       title={strings.gastos.periodOf(strings.gastos.monthLabel(month))}
       showBadge={false}
       alwaysShowMovements
+      previous={previousMonthTotal(views, cards.cycles, month, today)}
       headerAction={
         <Select items={items} value={month} onValueChange={(v) => v !== null && setPicked(v)}>
           <SelectTrigger aria-label={strings.gastos.monthSelectAria} className="w-44">

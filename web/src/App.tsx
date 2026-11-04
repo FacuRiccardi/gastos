@@ -1,3 +1,5 @@
+import { BarChart3Icon, CreditCardIcon, HomeIcon, LogOutIcon, PiggyBankIcon, ReceiptTextIcon, TagsIcon } from 'lucide-react'
+import { ScreenError } from '@/components/ScreenError'
 import { useState } from 'react'
 import { AuthProvider, useAuth } from '@/auth/AuthProvider'
 import type { AuthApi, AuthUser } from '@/auth/authApi'
@@ -9,6 +11,7 @@ import { CategoriesScreen } from '@/categories/CategoriesScreen'
 import { useCategories } from '@/categories/useCategories'
 import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { useCards } from '@/cards/useCards'
+import { ToastProvider } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
 import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, HomeSkeleton, PageSkeleton, PeriodSkeleton } from '@/components/LoadingSkeletons'
 import { merchantKey } from '@/merchants/merchantKey'
@@ -24,9 +27,9 @@ import { HomeScreen } from '@/home/HomeScreen'
 import { HistoryScreen } from '@/history/HistoryScreen'
 import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
 import { useFixed } from '@/fixed/useFixed'
-import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { MonthExpenses } from '@/expenses/MonthExpenses'
-import { ScrollableTabsList } from '@/expenses/ScrollableTabsList'
+import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import { useExpenses } from '@/expenses/useExpenses'
 import type { Expense } from '@/lib/expense'
@@ -71,6 +74,7 @@ export default function App({
 }: AppProps) {
   return (
     <AuthProvider api={authApi}>
+      <ToastProvider>
       <Screens
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
@@ -88,6 +92,7 @@ export default function App({
         createCapsSource={createCapsSource}
         createCapsApi={createCapsApi}
       />
+      </ToastProvider>
     </AuthProvider>
   )
 }
@@ -266,14 +271,15 @@ function Authorized({
   }
 
   return (
-    <div className="mx-auto min-w-0 max-w-3xl p-4">
+    <div className="mx-auto min-w-0 max-w-3xl p-4 max-sm:pb-24">
       <header className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold">{strings.appName}</h1>
-        <div className="flex items-center gap-2">
+        <h1 className="min-w-0 truncate text-lg font-semibold">{strings.appName}</h1>
+        <div className="flex shrink-0 items-center gap-2">
           {user.photoURL && <img src={user.photoURL} alt="" className="size-7 rounded-full" referrerPolicy="no-referrer" />}
-          <span className="text-sm text-muted-foreground">{user.displayName ?? user.email}</span>
-          <Button variant="ghost" size="sm" onClick={onSignOut}>
-            {strings.header.signOut}
+          <span className="hidden text-sm text-muted-foreground sm:inline">{user.displayName ?? user.email}</span>
+          <Button variant="ghost" size="sm" className="max-sm:min-w-11" onClick={onSignOut}>
+            <LogOutIcon className="sm:hidden" aria-hidden />
+            <span className="max-sm:sr-only">{strings.header.signOut}</span>
           </Button>
         </div>
       </header>
@@ -284,20 +290,18 @@ function Authorized({
           setOpenSection(null)
         }}
       >
-        {/* The tabs do not fit a phone: the strip scrolls sideways, with arrows. */}
+        {/* On a phone the tabs are a bar at the bottom; wider screens get a strip that scrolls sideways, with arrows. */}
         <ScrollableTabsList>
-          <TabsTrigger value="home">{strings.tabs.home}</TabsTrigger>
-          <TabsTrigger value="expenses">{strings.tabs.expenses}</TabsTrigger>
-          <TabsTrigger value="cards">{strings.tabs.cards}</TabsTrigger>
-          <TabsTrigger value="categories">{strings.tabs.categories}</TabsTrigger>
-          <TabsTrigger value="budget">{strings.tabs.budget}</TabsTrigger>
-          <TabsTrigger value="balance">{strings.tabs.balance}</TabsTrigger>
+          <NavTab value="home" icon={HomeIcon}>{strings.tabs.home}</NavTab>
+          <NavTab value="expenses" icon={ReceiptTextIcon}>{strings.tabs.expenses}</NavTab>
+          <NavTab value="cards" icon={CreditCardIcon}>{strings.tabs.cards}</NavTab>
+          <NavTab value="categories" icon={TagsIcon}>{strings.tabs.categories}</NavTab>
+          <NavTab value="budget" icon={PiggyBankIcon}>{strings.tabs.budget}</NavTab>
+          <NavTab value="balance" icon={BarChart3Icon}>{strings.tabs.balance}</NavTab>
         </ScrollableTabsList>
         <TabsContent value="home">
           {status === 'error' || cards.status === 'error' || fixed.status === 'error' || categories.status === 'error' ? (
-            <p role="alert" className="py-8 text-center text-destructive">
-              {status === 'error' ? error : cards.status === 'error' ? cards.error : fixed.status === 'error' ? fixed.error : categories.error}
-            </p>
+            <ScreenError>{status === 'error' ? error : cards.status === 'error' ? cards.error : fixed.status === 'error' ? fixed.error : categories.error}</ScreenError>
           ) : status === 'loading' || cards.status === 'loading' || fixed.status === 'loading' || categories.status === 'loading' ? (
             <HomeSkeleton />
           ) : (
@@ -322,9 +326,7 @@ function Authorized({
         </TabsContent>
         <TabsContent value="expenses">
           {status === 'error' || cards.status === 'error' || categories.status === 'error' ? (
-            <p role="alert" className="py-8 text-center text-destructive">
-              {status === 'error' ? error : cards.status === 'error' ? cards.error : categories.error}
-            </p>
+            <ScreenError>{status === 'error' ? error : cards.status === 'error' ? cards.error : categories.error}</ScreenError>
           ) : status === 'loading' || cards.status === 'loading' || categories.status === 'loading' ? (
             <PeriodSkeleton />
           ) : (
@@ -351,9 +353,7 @@ function Authorized({
           {categories.status === 'loading' || status === 'loading' ? (
             <ClosedCardsSkeleton count={3} />
           ) : categories.status === 'error' || status === 'error' ? (
-            <p role="alert" className="py-8 text-center text-destructive">
-              {categories.status === 'error' ? categories.error : error}
-            </p>
+            <ScreenError>{categories.status === 'error' ? categories.error : error}</ScreenError>
           ) : (
             <>
               {categorySaveFailed && (
@@ -388,9 +388,7 @@ function Authorized({
         </TabsContent>
         <TabsContent value="balance">
           {status === 'error' || cards.status === 'error' || fixed.status === 'error' ? (
-            <p role="alert" className="py-8 text-center text-destructive">
-              {status === 'error' ? error : cards.status === 'error' ? cards.error : fixed.error}
-            </p>
+            <ScreenError>{status === 'error' ? error : cards.status === 'error' ? cards.error : fixed.error}</ScreenError>
           ) : status === 'loading' || cards.status === 'loading' || fixed.status === 'loading' ? (
             <BalanceSkeleton />
           ) : (
@@ -435,9 +433,7 @@ function CardsTab({
   if (status === 'loading') return <CardsSkeleton />
   if (status === 'error')
     return (
-      <p role="alert" className="py-8 text-center text-destructive">
-        {error}
-      </p>
+      <ScreenError>{error}</ScreenError>
     )
   return <CardsScreen expenses={expenses} expensesStatus={expensesStatus} data={data} api={api} />
 }

@@ -300,7 +300,7 @@ function AccountSection({
             <span className="block text-sm text-muted-foreground">{s.ownerLabel(account.owner)}</span>
           </span>
         </button>
-        <div className="flex gap-2">
+        <div className="flex gap-2 max-sm:gap-4">
           <Button variant="outline" size="icon-sm" aria-label={s.edit} title={s.edit} onClick={() => setEditing(true)}>
             <PencilIcon />
           </Button>
