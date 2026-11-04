@@ -49,6 +49,14 @@ async function processIds(deps, ids) {
   for (const id of ids) {
     if (await processMessage(deps, id)) saved++;
   }
+  // A failed cap check must never change the ingestion result: the purchases are already saved.
+  if (saved > 0 && deps.capAlerts) {
+    try {
+      await deps.capAlerts.check();
+    } catch (e) {
+      deps.logger.error({ message: `Cap check failed: ${e.message}` });
+    }
+  }
   return { saved };
 }
 
