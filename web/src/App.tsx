@@ -254,8 +254,6 @@ function Authorized({
   // Per signed-in person (their own dismissals of the cap alert); the home banner uses them.
   const [capAlertSource] = useState(() => createCapAlertSource(user.uid))
   const [capAlertApi] = useState(() => createCapAlertApi(user.uid))
-  void capAlertSource // not shown yet: the home banner receives them next
-  void capAlertApi
   // The tab is controlled so the alerts of the home view can take you to the right one.
   const [tab, setTab] = useState<string>('home')
   // The card to open when an alert of the home view takes you to another tab (cleared when you change tab by hand).
@@ -347,6 +345,8 @@ function Authorized({
                 incomesSource={incomesSource}
                 capsSource={capsSource}
                 ratesSource={ratesSource}
+                capAlertSource={capAlertSource}
+                capAlertApi={capAlertApi}
                 onCategoryChange={changeCategory}
                 onNavigate={goTo}
               />

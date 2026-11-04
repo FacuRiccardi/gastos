@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CardsData } from '@/cards/cardsApi'
@@ -9,6 +9,7 @@ import type { Rates, RatesSource } from '@/balance/ratesApi'
 import { OWNERS, type Entry, type EntriesSource } from '@/money/entries'
 import { strings } from '@/strings'
 import type { Caps, CapsSource } from './capsApi'
+import type { CapAlertApi, CapAlertData, CapAlertSource } from './capAlertApi'
 import { HomeScreen } from './HomeScreen'
 
 const s = strings.home
@@ -49,6 +50,8 @@ const incomesComplete: Entry[] = OWNERS.map((owner, i) => ({ id: `i${i}`, amount
 const incomesSource = (entries: Entry[]): EntriesSource => ({ subscribe: (onData) => (onData(entries), () => {}) })
 const capsSource = (caps: Caps): CapsSource => ({ subscribe: (onData) => (onData(caps), () => {}) })
 const ratesSource = (rates: Rates = {}): RatesSource => ({ subscribe: (onData) => (onData(rates), () => {}) })
+const capAlertSource = (data: CapAlertData = { alert: null, dismissedLevel: null }): CapAlertSource => ({ subscribe: (_month, onData) => (onData(data), () => {}) })
+const capAlertApi = (): CapAlertApi => ({ dismiss: vi.fn().mockResolvedValue(undefined) })
 
 function renderHome(over: Partial<Parameters<typeof HomeScreen>[0]> = {}, incomes: Entry[] = incomesComplete, caps: Caps = { '2026-11': 1000 }) {
   const onNavigate = vi.fn()
@@ -61,6 +64,8 @@ function renderHome(over: Partial<Parameters<typeof HomeScreen>[0]> = {}, income
       incomesSource={incomesSource(incomes)}
       capsSource={capsSource(caps)}
       ratesSource={ratesSource()}
+      capAlertSource={capAlertSource()}
+      capAlertApi={capAlertApi()}
       onCategoryChange={vi.fn()}
       onNavigate={onNavigate}
       {...over}
@@ -106,6 +111,58 @@ describe('HomeScreen', () => {
   it('says there are no periods when there are no card cycles', () => {
     renderHome({ cards: { accounts: [], cards: [], cycles: [] }, expenses: [] })
     expect(screen.getByText(s.noPeriods)).toBeInTheDocument()
+  })
+
+  describe('cap alert', () => {
+    const alert = { month: '2026-11', lastLevel: 50, total: 1000000, cap: 2000000 }
+    const withAlert = (data: CapAlertData) => ({ capAlertSource: capAlertSource(data) })
+
+    it('shows the banner and dismisses it, which makes it go away', async () => {
+      let emit: (d: CapAlertData) => void = () => {}
+      const api = capAlertApi()
+      const source: CapAlertSource = {
+        subscribe: (_m, onData) => {
+          emit = onData
+          onData({ alert, dismissedLevel: null })
+          return () => {}
+        },
+      }
+      renderHome({ capAlertSource: source, capAlertApi: api })
+      expect(screen.getByRole('status')).toHaveTextContent('Superaste el 50% de tu tope')
+      await userEvent.click(screen.getByRole('button', { name: s.capAlert.dismiss }))
+      expect(api.dismiss).toHaveBeenCalledExactlyOnceWith('2026-11', 50)
+      act(() => emit({ alert, dismissedLevel: 50 }))
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
+
+    it('shows a higher level again after a lower one was dismissed', () => {
+      renderHome(withAlert({ alert: { ...alert, lastLevel: 75 }, dismissedLevel: 50 }))
+      expect(screen.getByRole('status')).toHaveTextContent('Superaste el 75%')
+    })
+
+    it('ignores an alert of another month', () => {
+      renderHome(withAlert({ alert: { ...alert, month: '2026-10' }, dismissedLevel: null }))
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
+
+    it('shows next to the existing alerts', () => {
+      renderHome({ ...withAlert({ alert, dismissedLevel: null }), fixed: { types: [{ id: 't1', name: 'Alquiler', disabled: false }], entries: [] } })
+      expect(screen.getByRole('status')).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    it('still renders the home when the alert source fails', () => {
+      renderHome({ capAlertSource: { subscribe: (_m, _d, onError) => (onError(new Error('x')), () => {}) } })
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+      expect(screen.getByRole('region', { name: s.currentTitle })).toBeInTheDocument()
+    })
+
+    it('keeps the banner when the dismissal fails', async () => {
+      const api: CapAlertApi = { dismiss: vi.fn().mockRejectedValue(new Error('x')) }
+      renderHome({ ...withAlert({ alert, dismissedLevel: null }), capAlertApi: api })
+      await userEvent.click(screen.getByRole('button', { name: s.capAlert.dismiss }))
+      expect(screen.getByRole('status')).toBeInTheDocument()
+    })
   })
 
   describe('alerts', () => {
