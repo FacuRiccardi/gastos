@@ -20,12 +20,12 @@
 <body>
   <main>
     <h1>Privacy policy</h1>
-    <p class="lead">card-expenses &middot; Last updated: November 2, 2026</p>
+    <p class="lead">card-expenses &middot; Last updated: November 3, 2026</p>
 
     <h2>What this app is</h2>
     <p>
-      card-expenses is a personal, single-user tool. It is used only by its owner, with the
-      owner's own Google account, to keep track of credit card purchases.
+      card-expenses is a personal tool for the owner and one other person authorized by the owner
+      (a family member). It is used with Google accounts to keep track of credit card purchases.
     </p>
 
     <h2>What data it accesses</h2>
@@ -36,17 +36,28 @@
       not read, search or use any other email.
     </p>
 
+    <h2>Signing in to the web app</h2>
+    <p>
+      People sign in to the web app with their Google account through Firebase Authentication,
+      which processes the account name and email address. Only accounts authorized by the owner
+      can read the data.
+    </p>
+
     <h2>What data it stores</h2>
     <p>
       From each purchase notification it extracts and stores: the purchase date, the merchant
-      name, the amount and currency, and the last four digits of the card. This data is kept in
-      a private database that only the owner can access. The content of the emails themselves is
-      not stored.
+      name, the amount and currency, the last four digits of the card, the card type (credit or
+      debit) and the first name of the card holder. In the web app the authorized people can also
+      enter account names, assign each card to a person, and record each account's statement
+      closing and due dates; this is stored too. This data is kept in a private database that
+      can only be read by the owner and by the one other person the owner authorizes in the web
+      app. The content of the emails themselves is not stored.
     </p>
 
     <h2>Sharing</h2>
     <p>
-      The data is not sold, shared, transferred or disclosed to anyone, and it is not used for
+      The data is not sold, transferred or disclosed to anyone, except that the owner lets one
+      other person (a family member) see the purchases in the web app. It is not used for
       advertising or to train any machine learning model. Use of information received from
       Google APIs adheres to the
       <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,

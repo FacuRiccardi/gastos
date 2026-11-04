@@ -8,3 +8,10 @@ terraform/build
 client_secret*.json
 *.eml
 *.log
+web/.env
+web/dist
+.firebaserc
+.firebase/
+
+Resumenes/
+*.xlsx

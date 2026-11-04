@@ -81,10 +81,66 @@ The service only loads new emails and, once a day, the last 3 days. To load olde
    ```
    Existing expenses are never overwritten. If the data model changes, delete the documents in the `expenses` collection first.
 
+## Web app (read-only tables)
+
+Manual one-time steps. Use your own project ID wherever `<project-id>` appears; never commit it.
+
+1. **Add Firebase to the existing Google Cloud project.** In the Firebase console choose *Create a project → Add Firebase to Google Cloud project*, pick `<project-id>` and confirm.
+2. **Enable Google sign-in.** In *Build → Authentication → Sign-in method* enable **Google** (choose a support email) and save. In *Authentication → Settings → Authorized domains* check that `<project-id>.web.app`, `<project-id>.firebaseapp.com` and `localhost` are listed (they are added by default).
+3. **Register the web app.** In *Project settings → Your apps* click the Web icon, give it a nickname and register it. Copy `web/.env.example` to `web/.env` and fill in the four values of the config it shows (`apiKey`, `authDomain`, `projectId`, `appId`). `web/.env` is git-ignored.
+4. **Deploy** (rules and site), from the project root in PowerShell:
+   ```powershell
+   npm --prefix web install
+   npx firebase login
+   npm run web:deploy -- --project <project-id>
+   ```
+   The command prints the Hosting URL. The rules in `firestore.rules` overwrite whatever rules the project had.
+5. **Sign in once with each account** at that URL. Both will see "Sin acceso" (no access); that is expected, it creates their Firebase accounts.
+6. **Authorize each person**, still in PowerShell from the project root (needs your gcloud credentials, see step 2 of the one-time steps above):
+   ```powershell
+   gcloud auth application-default set-quota-project <project-id>   # once; the Admin SDK needs a quota project
+   $env:GCP_PROJECT_ID = '<project-id>'
+   node scripts/grant-access.js <email-of-person>
+   ```
+   If the script fails with anything other than "No Firebase account found", the error is shown as it is (for example a credentials or quota-project problem).
+   Then press "Volver a comprobar" in the app (or sign in again) to get a token with the new claim.
+7. **Manual security check of the deployed rules** (the emulator tests can fake claims, and the app never even asks Firestore for data when someone is unauthorized, so the UI alone proves nothing about the rules). Query Firestore directly with real tokens:
+   1. Sign in to the app with a **third Google account** that has not been authorized (it sees "Sin acceso"). In the browser developer tools open *Application → IndexedDB → firebaseLocalStorageDb → firebaseLocalStorage*, open the `firebase:authUser:...` entry and copy `stsTokenManager.accessToken` (its ID token; the exact path can vary between SDK versions).
+   2. In PowerShell:
+      ```powershell
+      $token = '<the token>'
+      curl.exe -s -o NUL -w "%{http_code}`n" -H "Authorization: Bearer $token" "https://firestore.googleapis.com/v1/projects/<project-id>/databases/(default)/documents/expenses"
+      curl.exe -s -o NUL -w "%{http_code}`n" "https://firestore.googleapis.com/v1/projects/<project-id>/databases/(default)/documents/expenses"
+      ```
+      Both must print **403** (the second one is the signed-out case). Repeat the first command with the token of an **authorized** account: it must print **200**.
+   Tokens expire after one hour and are as sensitive as a password: do not paste them anywhere.
+8. **Revoking access:** `node scripts/grant-access.js --revoke <email>`. A token that was already issued keeps working for up to one hour, so the person can still read data until it expires.
+
+### Web app collections
+
+The web app writes its own collections from the browser (`accounts`, `cards`, `cycles`, `categories`, `merchantCategories`, `incomes`, `savings`, `fixedTypes`, `fixedExpenses`, `exchangeRates`, `spendingCaps`) and the category of an expense, so the updated `firestore.rules` must be deployed before using it: `npm run web:deploy -- --project <project-id>`. Set `VITE_OWNERS` in `web/.env` before building (the names of the people whose incomes are tracked).
+
+### Merchant dictionary (ingestion service)
+
+New purchases get their category from the `merchantCategories` dictionary when the merchant is already in it. That lookup runs in the ingestion function, so after changing `src/` redeploy it: from `terraform/`, run `terraform plan` (it should only replace the source object in the bucket and update the two functions) and then `terraform apply`.
+
+Manual check (same technique as step 7 above): with the token of the **third, unauthorized** account, writes must be denied. In PowerShell:
+```powershell
+$token = '<the token>'
+curl.exe -s -o NUL -w "%{http_code}`n" -X PATCH -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d "{\"fields\":{\"name\":{\"stringValue\":\"x\"},\"owner\":{\"stringValue\":\"X\"}}}" "https://firestore.googleapis.com/v1/projects/<project-id>/databases/(default)/documents/accounts/test"
+curl.exe -s -o NUL -w "%{http_code}`n" -X POST -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d "{\"fields\":{}}" "https://firestore.googleapis.com/v1/projects/<project-id>/databases/(default)/documents/cards"
+curl.exe -s -o NUL -w "%{http_code}`n" -X POST -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d "{\"fields\":{}}" "https://firestore.googleapis.com/v1/projects/<project-id>/databases/(default)/documents/cycles"
+```
+All three must print **403**. Do not repeat this with an authorized token: it could create junk documents.
+
+Local development: `npm --prefix web run dev` (uses the real Firebase project configured in `web/.env`).
+
 ## Local tests
 
 - `npm test` — parser, decoding, sync and handlers (nothing else required).
 - `npm run test:store` — data layer against the Firestore emulator (requires Java).
+- `npm run test:rules` — Firestore security rules against the emulator (requires Java).
+- `npm --prefix web test` — web app tests.
 
 ## If something fails
 
