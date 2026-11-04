@@ -14,6 +14,9 @@ beforeAll(() => {
 beforeEach(async () => {
   await db.recursiveDelete(db.collection('expenses'));
   await db.recursiveDelete(db.collection('state'));
+  for (const c of ['accounts', 'cards', 'cycles', 'exchangeRates', 'spendingCaps', 'capAlerts', 'pushTokens']) {
+    await db.recursiveDelete(db.collection(c));
+  }
 });
 
 const expense = (over = {}) => ({
@@ -81,5 +84,55 @@ describe('store', () => {
     await db.collection('expenses').doc('legacy').set({ purchaseDate: Timestamp.fromDate(new Date('2026-10-07T03:00:00Z')), amount: 40 });
     const total = await store.sumByRange(new Date('2026-10-01T03:00:00Z'), new Date('2026-11-01T03:00:00Z'));
     expect(total).toBe(140);
+  });
+
+  describe('cap alerts', () => {
+    it('raiseCapAlert only succeeds when the level is strictly greater', async () => {
+      const ref = db.collection('capAlerts').doc('2026-11');
+      expect(await store.raiseCapAlert('2026-11', { level: 50, total: 500, cap: 1000 })).toBe(true);
+      expect(await store.raiseCapAlert('2026-11', { level: 50, total: 510, cap: 1000 })).toBe(false);
+      expect(await store.raiseCapAlert('2026-11', { level: 75, total: 760, cap: 1000 })).toBe(true);
+      expect(await store.raiseCapAlert('2026-11', { level: 50, total: 999, cap: 2000 })).toBe(false);
+      const data = (await ref.get()).data();
+      expect(data).toMatchObject({ lastLevel: 75, total: 760, cap: 1000 });
+      expect(data.announcedAt).toBeDefined();
+    });
+
+    it('raiseCapAlert returns true for exactly one of two concurrent calls', async () => {
+      const results = await Promise.all([
+        store.raiseCapAlert('2026-12', { level: 75, total: 750, cap: 1000 }),
+        store.raiseCapAlert('2026-12', { level: 75, total: 750, cap: 1000 }),
+      ]);
+      expect(results.filter(Boolean)).toHaveLength(1);
+    });
+  });
+
+  it('getCapContext returns the seeded documents with Date purchase dates', async () => {
+    await store.saveExpense('a', expense({ purchaseDate: '2026-10-05', amount: 100 }));
+    await db.collection('accounts').doc('acc1').set({ name: 'Galicia', owner: 'JUAN' });
+    await db.collection('cards').doc('c1').set({ last4: '1234', type: 'credit', holder: 'JUAN', accountId: 'acc1' });
+    await db.collection('cycles').doc('cy1').set({ accountId: 'acc1', closingDate: '2026-10-20', dueDate: '2026-11-05' });
+    await db.collection('exchangeRates').doc('2026-10').set({ rate: 1200 });
+    await db.collection('spendingCaps').doc('2026-10').set({ amount: 500000 });
+    const ctx = await store.getCapContext();
+    expect(ctx.expenses).toHaveLength(1);
+    expect(ctx.expenses[0].purchaseDate).toBeInstanceOf(Date);
+    expect(ctx.expenses[0].purchaseDate.toISOString()).toBe('2026-10-05T03:00:00.000Z');
+    expect(ctx.expenses[0]).toMatchObject({ amount: 100, currency: 'ARS', cardLast4: '1234', cardType: 'credit', status: 'approved' });
+    expect(ctx.accounts).toEqual([{ id: 'acc1', name: 'Galicia', owner: 'JUAN' }]);
+    expect(ctx.cards).toEqual([{ last4: '1234', type: 'credit', holder: 'JUAN', accountId: 'acc1' }]);
+    expect(ctx.cycles).toEqual([{ accountId: 'acc1', closingDate: '2026-10-20', dueDate: '2026-11-05' }]);
+    expect(ctx.rates).toEqual({ '2026-10': 1200 });
+    expect(ctx.caps).toEqual({ '2026-10': 500000 });
+  });
+
+  it('push tokens round trip', async () => {
+    await db.collection('pushTokens').doc('t1').set({ createdAt: new Date() });
+    await db.collection('pushTokens').doc('t2').set({ createdAt: new Date() });
+    expect((await store.listPushTokens()).sort()).toEqual(['t1', 't2']);
+    await store.deletePushTokens(['t1']);
+    expect(await store.listPushTokens()).toEqual(['t2']);
+    await store.deletePushTokens([]);
+    expect(await store.listPushTokens()).toEqual(['t2']);
   });
 });
