@@ -3,8 +3,6 @@ import { Timestamp } from '@google-cloud/firestore';
 const EXPENSES = 'expenses';
 const STATE_DOC = 'state/sync';
 const MERCHANTS = 'merchantCategories';
-const CAP_ALERTS = 'capAlerts';
-const PUSH_TOKENS = 'pushTokens';
 
 export function createStore(db) {
   return {
@@ -62,48 +60,6 @@ export function createStore(db) {
         .where('purchaseDate', '<', Timestamp.fromDate(to));
       const snap = await q.select('amount', 'status').get();
       return snap.docs.reduce((total, d) => (d.data().status === 'rejected' ? total : total + d.data().amount), 0);
-    },
-
-    // Everything currentPeriodSpend needs to compute the spend against the monthly cap.
-    async getCapContext() {
-      const [expSnap, accSnap, cardSnap, cycleSnap, rateSnap, capSnap] = await Promise.all(
-        [EXPENSES, 'accounts', 'cards', 'cycles', 'exchangeRates', 'spendingCaps'].map((c) => db.collection(c).get()),
-      );
-      return {
-        expenses: expSnap.docs.map((d) => {
-          const { purchaseDate, amount, currency, cardLast4, cardType, status } = d.data();
-          return { purchaseDate: purchaseDate.toDate(), amount, currency, cardLast4, cardType, status };
-        }),
-        accounts: accSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        cards: cardSnap.docs.map((d) => d.data()),
-        cycles: cycleSnap.docs.map((d) => d.data()),
-        rates: Object.fromEntries(rateSnap.docs.map((d) => [d.id, d.data().rate])),
-        caps: Object.fromEntries(capSnap.docs.map((d) => [d.id, d.data().amount])),
-      };
-    },
-
-    // True only for the caller that raises the stored level; concurrent/duplicate calls get false.
-    async raiseCapAlert(month, { level, total, cap }) {
-      return db.runTransaction(async (tx) => {
-        const ref = db.collection(CAP_ALERTS).doc(month);
-        const snap = await tx.get(ref);
-        const last = snap.exists ? snap.data().lastLevel : undefined;
-        if (last !== undefined && level <= last) return false;
-        tx.set(ref, { lastLevel: level, total, cap, announcedAt: Timestamp.now() });
-        return true;
-      });
-    },
-
-    async listPushTokens() {
-      const snap = await db.collection(PUSH_TOKENS).get();
-      return snap.docs.map((d) => d.id);
-    },
-
-    async deletePushTokens(tokens) {
-      if (!tokens.length) return;
-      const batch = db.batch();
-      for (const t of tokens) batch.delete(db.collection(PUSH_TOKENS).doc(t));
-      await batch.commit();
     },
   };
 }

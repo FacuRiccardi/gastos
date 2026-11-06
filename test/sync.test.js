@@ -194,41 +194,4 @@ describe('renewWatch', () => {
     expect(gmail.startWatch).toHaveBeenCalledTimes(2);
   });
 });
-
-describe('cap check after ingestion', () => {
-  const withCaps = (gmail, capAlerts) => ({ ...deps(gmail), capAlerts });
-
-  it('runs once after a batch that saved purchases', async () => {
-    const capAlerts = { check: vi.fn(async () => ({})) };
-    await store.setHistoryId('400');
-    const r = await processNotification(withCaps(fakeGmail({ m1: msg('m1'), m2: msg('m2'), m3: msg('m3') }), capAlerts), notification);
-    expect(r.saved).toBe(3);
-    expect(capAlerts.check).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not run when nothing was saved (duplicate delivery)', async () => {
-    const capAlerts = { check: vi.fn(async () => ({})) };
-    await store.setHistoryId('400');
-    await store.saveExpense('m1', { merchant: 'previous' });
-    const r = await processNotification(withCaps(fakeGmail({ m1: msg('m1') }), capAlerts), notification);
-    expect(r.saved).toBe(0);
-    expect(capAlerts.check).not.toHaveBeenCalled();
-  });
-
-  it('logs and swallows a failing check without changing the result', async () => {
-    const capAlerts = { check: vi.fn(async () => { throw new Error('firestore down'); }) };
-    await store.setHistoryId('400');
-    const r = await processNotification(withCaps(fakeGmail({ m1: msg('m1') }), capAlerts), notification);
-    expect(r).toEqual({ saved: 1 });
-    expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error.mock.calls[0][0].message).toContain('firestore down');
-  });
-
-  it('runs after reconcile and renewWatch save a missed purchase', async () => {
-    const capAlerts = { check: vi.fn(async () => ({})) };
-    await reconcile(withCaps(fakeGmail({ m1: msg('m1') }), capAlerts));
-    expect(capAlerts.check).toHaveBeenCalledTimes(1);
-    await renewWatch(withCaps(fakeGmail({ m2: msg('m2') }), capAlerts));
-    expect(capAlerts.check).toHaveBeenCalledTimes(2);
-  });
-});
+

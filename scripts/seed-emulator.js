@@ -35,12 +35,6 @@ for (const name of COLLECTIONS) {
   console.log(`${name}: ${docs.length}`);
 }
 
-// One cap alert for the current month so the home banner can be seen locally.
-const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit' }).format(new Date());
-await db.recursiveDelete(db.collection('capAlerts'));
-await db.collection('capAlerts').doc(month).set({ month, lastLevel: 50, total: 1000000, cap: 2000000 });
-console.log(`capAlerts: ${month} (level 50)`);
-
 const auth = getAuth();
 for (const u of JSON.parse(readFileSync('emulator-data/auth.json', 'utf8'))) {
   let user;

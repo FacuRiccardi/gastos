@@ -17,12 +17,9 @@ import { needsCategory } from '@/merchants/ToCategorize'
 import { OWNERS, type EntriesSource } from '@/money/entries'
 import { useEntries } from '@/money/useEntries'
 import { strings } from '@/strings'
-import type { CapAlertApi, CapAlertSource } from './capAlertApi'
-import { CapAlertBanner } from './CapAlertBanner'
 import type { CapsSource } from './capsApi'
 import { buildHomePeriods, previousMonthTotal, type PeriodGroup } from './homePeriods'
 import { PeriodCard } from './PeriodCard'
-import { useCapAlert } from './useCapAlert'
 import { useCaps } from './useCaps'
 
 const s = strings.home
@@ -65,8 +62,6 @@ export function HomeScreen({
   incomesSource,
   capsSource,
   ratesSource,
-  capAlertSource,
-  capAlertApi,
   onCategoryChange,
   onNavigate,
 }: {
@@ -77,8 +72,6 @@ export function HomeScreen({
   incomesSource: EntriesSource
   capsSource: CapsSource
   ratesSource: RatesSource
-  capAlertSource: CapAlertSource
-  capAlertApi: CapAlertApi
   onCategoryChange: (expenseId: string, categoryId: string | null) => void
   onNavigate: (tab: 'toCategorize' | 'fixed' | 'money' | 'cards') => void
 }) {
@@ -91,9 +84,6 @@ export function HomeScreen({
   const month = today.slice(0, 7)
   const views = useMemo(() => buildAccountViews(expenses, cards), [expenses, cards])
   const periods = useMemo(() => buildHomePeriods(views, cards.cycles, today, rates.rates), [views, cards.cycles, today, rates.rates])
-
-  const capMonth = periods.current?.month ?? null
-  const capAlert = useCapAlert(capAlertSource, capMonth).alert
 
   const error = incomes.status === 'error' ? incomes : caps.status === 'error' ? caps : rates.status === 'error' ? rates : null
   if (error) {
@@ -124,9 +114,6 @@ export function HomeScreen({
 
   return (
     <div className="grid gap-4">
-      {capAlert && capAlert.month === capMonth && (
-        <CapAlertBanner alert={capAlert} onDismiss={() => capAlertApi.dismiss(capAlert.month, capAlert.lastLevel).catch(() => {})} />
-      )}
       {alerts.length > 0 && (
         <div className="grid gap-2" aria-label={s.alertsAria}>
           {/* On a phone several alerts would push the total to pay off the first screen: they fold into one line. */}

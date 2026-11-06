@@ -167,40 +167,6 @@ service cloud.firestore {
       allow delete: if isHousehold();
     }
 
-    // Spending-cap alerts. The ID is the month. Only the backend writes them (Admin SDK); each member
-    // dismisses an alert through their own dismissals/{uid} document.
-    match /capAlerts/{month} {
-      allow read: if isHousehold() && month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$');
-      allow write: if false;
-      match /dismissals/{uid} {
-        allow read: if isHousehold() && uid == request.auth.uid;
-        allow create, update: if isHousehold() && uid == request.auth.uid
-          && month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
-          && request.resource.data.keys().hasOnly(['level'])
-          && request.resource.data.keys().hasAll(['level'])
-          && request.resource.data.level is number && request.resource.data.level > 0;
-        allow delete: if false;
-      }
-    }
-
-    // FCM tokens registered by the web app. The ID is the token; each one belongs to a member.
-    // A member can read a document that does not exist yet (to keep createdAt on later upserts),
-    // but never another member's token.
-    match /pushTokens/{token} {
-      function validPushToken(d) {
-        return d.keys().hasOnly(['uid', 'createdAt', 'updatedAt'])
-          && d.keys().hasAll(['uid'])
-          && d.uid == request.auth.uid
-          && (!('createdAt' in d) || d.createdAt is timestamp)
-          && (!('updatedAt' in d) || d.updatedAt is timestamp);
-      }
-      allow read: if isHousehold() && (resource == null || resource.data.uid == request.auth.uid);
-      allow create: if isHousehold() && validPushToken(request.resource.data);
-      allow update: if isHousehold() && resource.data.uid == request.auth.uid
-        && validPushToken(request.resource.data);
-      allow delete: if isHousehold() && resource.data.uid == request.auth.uid;
-    }
-
     // Incomes and savings: an amount in pesos or dollars on a day, entered by hand.
     function validEntry(d) {
       return d.keys().hasOnly(['amount', 'currency', 'date'])

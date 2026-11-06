@@ -1,10 +1,6 @@
 import functions from '@google-cloud/functions-framework';
 import { Firestore } from '@google-cloud/firestore';
 import { createGmailClient } from './gmailClient.js';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getMessaging } from 'firebase-admin/messaging';
-import { createCapAlerts } from './capAlerts.js';
-import { createNotifier } from './notifier.js';
 import { createStore } from './store.js';
 import { processNotification, renewWatch } from './sync.js';
 
@@ -67,15 +63,10 @@ let depsCache;
 function deps() {
   if (!depsCache) {
     const oauth = JSON.parse(process.env.GMAIL_OAUTH_SECRET);
-    // Application Default Credentials on Cloud Functions; guarded so a rebuild never re-initializes
-    if (getApps().length === 0) initializeApp();
-    const store = createStore(new Firestore());
-    const notifier = createNotifier({ store, messaging: getMessaging(), logger });
     depsCache = {
       logger,
       config: { user: process.env.GMAIL_USER, labelName: process.env.GMAIL_LABEL_NAME },
-      store,
-      capAlerts: createCapAlerts({ store, notifier, logger }),
+      store: createStore(new Firestore()),
       gmail: createGmailClient({ ...oauth, labelId: process.env.GMAIL_LABEL_ID, topicName: process.env.PUBSUB_TOPIC }),
     };
   }

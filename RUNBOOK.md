@@ -135,26 +135,6 @@ All three must print **403**. Do not repeat this with an authorized token: it co
 
 Local development: `npm --prefix web run dev` (uses the real Firebase project configured in `web/.env`).
 
-### Cap notifications
-
-Push notifications (FCM) warn both phones when the month's spending reaches a threshold of the cap.
-
-1. **New web config values.** In the Firebase console open *Project settings → Cloud Messaging*. Copy the **Sender ID** into `VITE_FIREBASE_MESSAGING_SENDER_ID` in `web/.env`. Under *Web Push certificates* click *Generate key pair* and copy the key into `VITE_FIREBASE_VAPID_KEY`. Both are listed in `web/.env.example`.
-2. **Deploy order**, from the project root in PowerShell:
-   1. `terraform apply` in `terraform/`: enables `fcm.googleapis.com` and grants the runtime service account `roles/firebasecloudmessaging.admin` (needed to send pushes).
-   2. Redeploy the ingestion Function with the existing flow (see "Merchant dictionary (ingestion service)" above), because the cap check runs after ingestion.
-   3. `npm run web:deploy -- --project <project-id>`: publishes the site and the new rules (`capAlerts`, `dismissals`, `pushTokens`).
-
-### Cap notifications — manual verification
-
-1. Open the app on each Android phone, sign in, and accept the notification permission when asked.
-2. Set a low cap for the current month (for example, just under what has been spent so far).
-3. Ingest a purchase (a real one, or forward yourself a "Compra aprobada" email that matches the filter).
-4. Confirm the push arrives on both phones with the text `Llegaste al X% del tope`.
-5. Tap the notification: it must open the home screen.
-6. Confirm the in-app alert shows on the home screen of both phones.
-7. Dismiss the alert on one phone: it must disappear there and stay visible on the other phone.
-
 ## Local tests
 
 - `npm test` — parser, decoding, sync and handlers (nothing else required).

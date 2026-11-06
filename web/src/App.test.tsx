@@ -6,14 +6,12 @@ import type { AuthApi, AuthUser } from '@/auth/authApi'
 import type { CategoriesApi } from '@/categories/categoriesApi'
 import type { RatesApi } from '@/balance/ratesApi'
 import type { CapsApi } from '@/home/capsApi'
-import type { CapAlertApi } from '@/home/capAlertApi'
 import type { FixedApi } from '@/fixed/fixedApi'
 import type { MerchantsApi } from '@/merchants/merchantsApi'
 import type { EntriesApi } from '@/money/entries'
 import type { CardsApi, CardsData, CardsSource } from '@/cards/cardsApi'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import type { Expense } from '@/lib/expense'
-import { inertPushApi } from '@/push/pushApi'
 import { strings } from '@/strings'
 
 const person: AuthUser = { uid: 'u1', displayName: 'Persona Uno', photoURL: null, email: 'user@example.com' }
@@ -75,7 +73,6 @@ function setup({ claim = false }: { claim?: boolean } = {}) {
   render(
     <App
       authApi={authApi}
-      pushApi={inertPushApi}
       createExpensesSource={createExpensesSource}
       createCardsSource={createCardsSource}
       createCardsApi={createCardsApi}
@@ -91,8 +88,6 @@ function setup({ claim = false }: { claim?: boolean } = {}) {
       createRatesApi={() => ({}) as RatesApi}
       createCapsSource={() => ({ subscribe: (onData) => { onData({}); return () => {} } })}
       createCapsApi={() => ({}) as CapsApi}
-      createCapAlertSource={() => ({ subscribe: (_month, onData) => { onData({ alert: null, dismissedLevel: null }); return () => {} } })}
-      createCapAlertApi={() => ({}) as CapAlertApi}
     />,
   )
   return {

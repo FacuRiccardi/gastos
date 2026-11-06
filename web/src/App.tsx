@@ -23,7 +23,6 @@ import { BalanceScreen } from '@/balance/BalanceScreen'
 import type { RatesApi, RatesSource } from '@/balance/ratesApi'
 import { BudgetScreen, type BudgetSection } from '@/budget/BudgetScreen'
 import type { CapsApi, CapsSource } from '@/home/capsApi'
-import type { CapAlertApi, CapAlertSource } from '@/home/capAlertApi'
 import { HomeScreen } from '@/home/HomeScreen'
 import { HistoryScreen } from '@/history/HistoryScreen'
 import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
@@ -34,13 +33,10 @@ import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import { useExpenses } from '@/expenses/useExpenses'
 import type { Expense } from '@/lib/expense'
-import type { PushApi } from '@/push/pushApi'
-import { usePushRegistration } from '@/push/usePushRegistration'
 import { strings } from '@/strings'
 
 type AppProps = {
   authApi: AuthApi
-  pushApi: PushApi
   createExpensesSource: () => ExpensesSource
   createCardsSource: () => CardsSource
   createCardsApi: () => CardsApi
@@ -56,13 +52,10 @@ type AppProps = {
   createRatesApi: () => RatesApi
   createCapsSource: () => CapsSource
   createCapsApi: () => CapsApi
-  createCapAlertSource: (uid: string) => CapAlertSource
-  createCapAlertApi: (uid: string) => CapAlertApi
 }
 
 export default function App({
   authApi,
-  pushApi,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -78,14 +71,11 @@ export default function App({
   createRatesApi,
   createCapsSource,
   createCapsApi,
-  createCapAlertSource,
-  createCapAlertApi,
 }: AppProps) {
   return (
     <AuthProvider api={authApi}>
       <ToastProvider>
       <Screens
-        pushApi={pushApi}
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
         createCardsApi={createCardsApi}
@@ -101,8 +91,6 @@ export default function App({
         createRatesApi={createRatesApi}
         createCapsSource={createCapsSource}
         createCapsApi={createCapsApi}
-        createCapAlertSource={createCapAlertSource}
-        createCapAlertApi={createCapAlertApi}
       />
       </ToastProvider>
     </AuthProvider>
@@ -110,7 +98,6 @@ export default function App({
 }
 
 function Screens({
-  pushApi,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -126,11 +113,8 @@ function Screens({
   createRatesApi,
   createCapsSource,
   createCapsApi,
-  createCapAlertSource,
-  createCapAlertApi,
 }: Pick<
   AppProps,
-  | 'pushApi'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createCardsApi'
@@ -146,8 +130,6 @@ function Screens({
   | 'createRatesApi'
   | 'createCapsSource'
   | 'createCapsApi'
-  | 'createCapAlertSource'
-  | 'createCapAlertApi'
 >) {
   const { state, error, signIn, signOut, recheck } = useAuth()
 
@@ -167,7 +149,6 @@ function Screens({
       return (
         <Authorized
           user={state.user}
-          pushApi={pushApi}
           createExpensesSource={createExpensesSource}
           createCardsSource={createCardsSource}
           createCardsApi={createCardsApi}
@@ -183,8 +164,6 @@ function Screens({
           createRatesApi={createRatesApi}
           createCapsSource={createCapsSource}
           createCapsApi={createCapsApi}
-          createCapAlertSource={createCapAlertSource}
-          createCapAlertApi={createCapAlertApi}
           onSignOut={() => void signOut()}
         />
       )
@@ -193,7 +172,6 @@ function Screens({
 
 function Authorized({
   user,
-  pushApi,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -209,12 +187,9 @@ function Authorized({
   createRatesApi,
   createCapsSource,
   createCapsApi,
-  createCapAlertSource,
-  createCapAlertApi,
   onSignOut,
 }: Pick<
   AppProps,
-  | 'pushApi'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createCardsApi'
@@ -230,13 +205,10 @@ function Authorized({
   | 'createRatesApi'
   | 'createCapsSource'
   | 'createCapsApi'
-  | 'createCapAlertSource'
-  | 'createCapAlertApi'
 > & {
   user: AuthUser
   onSignOut: () => void
 }) {
-  usePushRegistration(pushApi, user.uid)
   const [source] = useState(createExpensesSource)
   // Created once so switching tabs never recreates them. Both subscriptions live here, shared by
   // the Gastos and Tarjetas tabs, and only exist once the user is authorized.
@@ -262,9 +234,6 @@ function Authorized({
   const [ratesApi] = useState(createRatesApi)
   const [capsSource] = useState(createCapsSource)
   const [capsApi] = useState(createCapsApi)
-  // Per signed-in person (their own dismissals of the cap alert); the home banner uses them.
-  const [capAlertSource] = useState(() => createCapAlertSource(user.uid))
-  const [capAlertApi] = useState(() => createCapAlertApi(user.uid))
   // The tab is controlled so the alerts of the home view can take you to the right one.
   const [tab, setTab] = useState<string>('home')
   // The card to open when an alert of the home view takes you to another tab (cleared when you change tab by hand).
@@ -356,8 +325,6 @@ function Authorized({
                 incomesSource={incomesSource}
                 capsSource={capsSource}
                 ratesSource={ratesSource}
-                capAlertSource={capAlertSource}
-                capAlertApi={capAlertApi}
                 onCategoryChange={changeCategory}
                 onNavigate={goTo}
               />

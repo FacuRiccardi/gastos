@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { createProcessHandler, withDeps } from '../src/index.js';
 
 const config = { user: 'user@example.com', labelName: 'card-expenses' };
@@ -51,19 +50,6 @@ describe('createProcessHandler', () => {
     await createProcessHandler(d)(body({ emailAddress: config.user, historyId: 500 }), r);
     expect(r.code).toBe(500);
     expect(d.logger.error).toHaveBeenCalled();
-  });
-
-  it('responds 204 when the cap check throws after a saved purchase', async () => {
-    const fixture = JSON.parse(readFileSync(new URL('./fixtures/gmail-message.json', import.meta.url), 'utf8'));
-    const d = {
-      ...deps({ listHistory: async () => ({ messageIds: ['m1'], historyId: '500' }), getMessage: async () => fixture }),
-      capAlerts: { check: async () => { throw new Error('boom'); } },
-    };
-    d.store.getMerchantCategory = async () => null;
-    const r = res();
-    await createProcessHandler(d)(body({ emailAddress: config.user, historyId: 500 }), r);
-    expect(r.code).toBe(204);
-    expect(d.logger.error).toHaveBeenCalledTimes(1);
   });
 });
 

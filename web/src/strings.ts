@@ -90,10 +90,6 @@ export const strings = {
     goCategorize: 'Categorizar compras',
     newCards: (n: number, cards: string) => (n === 1 ? `Hay una tarjeta nueva sin cuenta asignada: ${cards}.` : `Hay ${n} tarjetas nuevas sin cuenta asignada: ${cards}.`),
     goCards: 'Asignar cuenta',
-    capAlert: {
-      message: (level: number, total: string) => `Superaste el ${level}% de tu tope: vas gastando ${total}`,
-      dismiss: 'Entendido',
-    },
   },
   history: {
     title: 'Histórico',
