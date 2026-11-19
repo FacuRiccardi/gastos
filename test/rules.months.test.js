@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, arrayUnion, deleteField, runTransaction } from 'firebase/firestore';
 
 let testEnv;
 
@@ -94,6 +94,13 @@ describe('months', () => {
     await assertFails(updateDoc(doc(db, 'months/2026-10'), { 'purchases.p1.amount': 1 }));
     await assertFails(updateDoc(doc(db, 'months/2026-10'), { 'purchases.p2': { merchant: 'Z', amount: 1 } }));
     await assertFails(updateDoc(doc(db, 'months/2026-10'), { purchases: {} }));
+    await assertFails(setDoc(doc(db, 'months/2026-10'), { purchases: { p1: { amount: 1 } } }, { merge: true }));
+    await assertFails(setDoc(doc(db, 'months/2026-10'), emptyMonth()));
+    const ref = doc(db, 'months/2026-10');
+    await assertFails(runTransaction(db, async (tx) => {
+      await tx.get(ref);
+      tx.set(ref, emptyMonth());
+    }));
   });
 
   it('does not let the household create a month with purchases', async () => {
@@ -126,6 +133,12 @@ describe('months', () => {
     await assertSucceeds(updateDoc(ref, { capInherited: true }));
   });
 
+  it('handles deleteField: allowed on edits, denied on purchases', async () => {
+    const ref = doc(household(), 'months/2026-10');
+    await assertSucceeds(updateDoc(ref, { 'edits.p1.note': deleteField() }));
+    await assertFails(updateDoc(ref, { 'purchases.p1': deleteField() }));
+  });
+
   it('lets the household create an empty month with the full shape', async () => {
     await assertSucceeds(setDoc(doc(household(), 'months/2026-11'), emptyMonth()));
   });
@@ -145,6 +158,7 @@ describe('config/cards', () => {
     const ref = doc(db, 'config/cards');
     await assertFails(updateDoc(ref, { 'seenCards.9999_debit': { last4: '9999', type: 'debit', holder: 'B', lastSeen: '2026-10-02' } }));
     await assertFails(updateDoc(ref, { 'seenCards.1234_credit.lastSeen': '2026-10-09' }));
+    await assertFails(updateDoc(ref, { 'seenCards.1234_credit': deleteField() }));
     await assertFails(setDoc(ref, { seenCards: { x: {} } }, { merge: true }));
   });
 
