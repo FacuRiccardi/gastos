@@ -148,6 +148,7 @@ describe.skipIf(!existsSync(dumpPath))('parity between the old collections and t
   });
 
   it('home matches for every closing day, the day after, mid-period and 2026-11-04', () => {
+    const compared = { current: 0, closed: 0 };
     for (const today of todays) {
       const ids = homeMonths(config.cards, config.months, today);
       const side = newSide(ids);
@@ -158,27 +159,33 @@ describe.skipIf(!existsSync(dumpPath))('parity between the old collections and t
         const n = after[kind];
         expect(groupSummary(n), `${today} ${kind}`).toEqual(groupSummary(o));
         if (!o || !n) continue;
+        compared[kind]++;
         expect(previousMonthTotal(side.views, config.cards.cycles, n.month, today, side.rates), `${today} ${kind} previous`).toEqual(
           previousMonthTotal(oldViews, old.cards.cycles, o.month, today, old.rates),
         );
         expect(capFor(n.month, side.caps)?.amount ?? null, `${today} ${kind} cap`).toBe(capFor(o.month, old.caps)?.amount ?? null);
       }
     }
+    expect(compared.current).toBeGreaterThan(0);
+    expect(compared.closed).toBeGreaterThan(0);
   });
 
   it('gastos matches for every offered month', () => {
     const offered = offeredMonths(config.cards, config.months, DUMP_DAY);
     expect(offered.length).toBeGreaterThan(0);
+    let compared = 0;
     for (const month of offered) {
       const side = newSide(groupMonths(config.cards, month, config.months));
       const o = groupForMonth(oldViews, old.cards.cycles, month, DUMP_DAY, old.rates);
       const n = groupForMonth(side.views, config.cards.cycles, month, DUMP_DAY, side.rates);
       expect(groupSummary(n), month).toEqual(groupSummary(o));
+      if (o && n) compared++;
       expect(previousMonthTotal(side.views, config.cards.cycles, month, DUMP_DAY, side.rates), `${month} previous`).toEqual(
         previousMonthTotal(oldViews, old.cards.cycles, month, DUMP_DAY, old.rates),
       );
       expect(breakdownSummary(n, config.categories), `${month} breakdown`).toEqual(breakdownSummary(o, old.categories));
     }
+    expect(compared).toBeGreaterThan(0);
   });
 
   it('balance matches for every existing month', () => {
