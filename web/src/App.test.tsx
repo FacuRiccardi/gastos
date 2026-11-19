@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -335,6 +335,22 @@ describe('App home with month documents', () => {
     await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
     expect(await screen.findByText(strings.cards.unassignedHeading)).toBeInTheDocument()
     expect(screen.getByRole('listitem', { name: '····4321' })).toBeInTheDocument()
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('assigning a seen card to an account moves it into the account without reading', async () => {
+    const { backend } = await openHome({ seenCards: [{ last4: '4321', type: 'credit', holder: 'ANA', lastSeen: '2026-10-20' }] })
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
+    const row = await screen.findByRole('listitem', { name: '····4321' })
+    await userEvent.click(within(row).getByRole('combobox', { name: strings.cards.assignAria('4321') }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Banco Uno' }))
+
+    await waitFor(() => expect(screen.queryByText(strings.cards.unassignedHeading)).not.toBeInTheDocument())
+    const section = screen.getByRole('region', { name: strings.cards.accountTitle('Banco Uno') })
+    await userEvent.click(within(section).getByRole('button', { name: new RegExp(strings.cards.accountTitle('Banco Uno')) }))
+    await userEvent.click(within(section).getByRole('button', { name: strings.cards.cardsHeading }))
+    expect(within(section).getByText('····4321')).toBeInTheDocument()
+    expect(within(section).getByText('····1234')).toBeInTheDocument()
     expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
   })
 

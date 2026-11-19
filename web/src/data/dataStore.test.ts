@@ -227,3 +227,122 @@ describe('DataStore', () => {
     expect(store.getState().months.get('2026-10')?.error).toBeTruthy()
   })
 })
+
+describe('DataStore cardsApi', () => {
+  const seededCards = () =>
+    createFakeBackend({
+      config: {
+        cards: {
+          accounts: [
+            { id: 'a1', name: 'Banco Uno', owner: 'ANA' },
+            { id: 'a2', name: 'Banco Dos', owner: 'LUIS' },
+          ],
+          cards: [
+            { last4: '1111', type: 'credit', holder: 'ANA', accountId: 'a1' },
+            { last4: '2222', type: 'debit', holder: 'LUIS', accountId: 'a2' },
+          ],
+          cycles: [
+            { accountId: 'a1', closingDate: '2026-09-05', dueDate: '2026-09-15' },
+            { accountId: 'a1', closingDate: '2026-10-05', dueDate: null },
+            { accountId: 'a2', closingDate: '2026-10-07', dueDate: '2026-10-17' },
+          ],
+        },
+      },
+    })
+
+  async function open() {
+    const backend = seededCards()
+    const store = new DataStore(backend)
+    await store.loadConfig()
+    const reads = [...backend.reads]
+    const cardsOf = () => store.getState().config.data?.cards
+    // What a fresh read of the same backend returns: the store must match it.
+    const persisted = async () => {
+      const fresh = new DataStore(backend)
+      await fresh.loadConfig()
+      return fresh.getState().config.data?.cards
+    }
+    return { backend, store, reads, cardsOf, persisted }
+  }
+
+  it('createAccount adds the account without reading', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    const id = await store.cardsApi.createAccount({ name: 'Banco Tres', owner: 'ANA' })
+    expect(cardsOf()?.accounts).toContainEqual({ id, name: 'Banco Tres', owner: 'ANA' })
+    expect(cardsOf()?.accounts).toHaveLength(3)
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+
+  it('updateAccount changes name and owner without reading', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    await store.cardsApi.updateAccount('a1', { name: 'Banco Nuevo', owner: 'LUIS' })
+    expect(cardsOf()?.accounts).toEqual([
+      { id: 'a1', name: 'Banco Nuevo', owner: 'LUIS' },
+      { id: 'a2', name: 'Banco Dos', owner: 'LUIS' },
+    ])
+    expect(cardsOf()?.cards).toHaveLength(2)
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+
+  it('deleteAccount removes the account with its cards and cycles and keeps the others', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    await store.cardsApi.deleteAccount('a1')
+    expect(cardsOf()).toEqual({
+      accounts: [{ id: 'a2', name: 'Banco Dos', owner: 'LUIS' }],
+      cards: [{ last4: '2222', type: 'debit', holder: 'LUIS', accountId: 'a2' }],
+      cycles: [{ accountId: 'a2', closingDate: '2026-10-07', dueDate: '2026-10-17' }],
+    })
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+
+  it('saveCard adds a new card and moves an existing one to another account', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    await store.cardsApi.saveCard({ last4: '3333', type: 'credit', holder: 'ANA', accountId: 'a2' })
+    await store.cardsApi.saveCard({ last4: '1111', type: 'credit', holder: 'ANA NUEVA', accountId: 'a2' })
+    expect(cardsOf()?.cards).toEqual([
+      { last4: '1111', type: 'credit', holder: 'ANA NUEVA', accountId: 'a2' },
+      { last4: '2222', type: 'debit', holder: 'LUIS', accountId: 'a2' },
+      { last4: '3333', type: 'credit', holder: 'ANA', accountId: 'a2' },
+    ])
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+
+  it('removeCard drops only that card', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    await store.cardsApi.removeCard({ last4: '1111', type: 'credit' })
+    expect(cardsOf()?.cards).toEqual([{ last4: '2222', type: 'debit', holder: 'LUIS', accountId: 'a2' }])
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+
+  it('addCycles adds new cycles and replaces one with the same closing date', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    await store.cardsApi.addCycles('a1', [
+      { closingDate: '2026-11-05', dueDate: '2026-11-15' },
+      { closingDate: '2026-10-05', dueDate: '2026-10-16' },
+    ])
+    expect(cardsOf()?.cycles).toEqual([
+      { accountId: 'a1', closingDate: '2026-09-05', dueDate: '2026-09-15' },
+      { accountId: 'a1', closingDate: '2026-10-05', dueDate: '2026-10-16' },
+      { accountId: 'a1', closingDate: '2026-11-05', dueDate: '2026-11-15' },
+      { accountId: 'a2', closingDate: '2026-10-07', dueDate: '2026-10-17' },
+    ])
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+
+  it('deleteCycle drops only that cycle', async () => {
+    const { backend, store, reads, cardsOf, persisted } = await open()
+    await store.cardsApi.deleteCycle('a1', '2026-10-05')
+    expect(cardsOf()?.cycles).toEqual([
+      { accountId: 'a1', closingDate: '2026-09-05', dueDate: '2026-09-15' },
+      { accountId: 'a2', closingDate: '2026-10-07', dueDate: '2026-10-17' },
+    ])
+    expect(backend.reads).toEqual(reads)
+    expect(cardsOf()).toEqual(await persisted())
+  })
+})
