@@ -1,6 +1,7 @@
 # Features a trabajar en el futuro
 
-- Cuotas y compromisos futuros
+- Cuotas y compromisos futuros - Importante
+- Notificacion de nueva compra sin categoria
 - Gasto diario permitido y tarjeta fija arriba del Inicio
 - Comparativa mes a mes por categoría
 - Tasa de ahorro
