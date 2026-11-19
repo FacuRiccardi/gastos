@@ -23,6 +23,7 @@ const expense = (over: Partial<Expense> = {}): Expense => ({
   id: `m${++n}`,
   purchaseDate: new Date('2026-03-15T03:00:00Z'),
   receivedAt: new Date('2026-03-15T18:30:00Z'),
+  month: '2026-03',
   merchant: 'COMERCIO',
   amount: 100,
   currency: 'ARS',

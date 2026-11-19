@@ -7,6 +7,7 @@ function expense(over: Partial<Expense> & { id: string }): Expense {
   return {
     purchaseDate: new Date('2026-03-10T12:00:00Z'),
     receivedAt: new Date('2026-03-10T12:00:00Z'),
+    month: '2026-03',
     merchant: 'Test Shop',
     amount: 100,
     currency: 'ARS',

@@ -1,5 +1,7 @@
 export type Expense = {
   id: string
+  // Its month document: the Buenos Aires month of `purchaseDate` ('YYYY-MM').
+  month: string
   purchaseDate: Date
   receivedAt: Date
   merchant: string

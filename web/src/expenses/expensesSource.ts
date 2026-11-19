@@ -1,4 +1,5 @@
 import { collection, onSnapshot, orderBy, query, Timestamp, type Firestore } from 'firebase/firestore'
+import { monthOfInstant } from '@/data/months'
 import type { Expense } from '@/lib/expense'
 
 // Where the expenses come from. Components receive it through props so tests can use a fake.
@@ -20,6 +21,7 @@ export function createFirestoreExpensesSource(db: Firestore): ExpensesSource {
               const d = doc.data()
               return {
                 id: doc.id,
+                month: monthOfInstant((d.purchaseDate as Timestamp).toDate()),
                 purchaseDate: (d.purchaseDate as Timestamp).toDate(),
                 receivedAt: (d.receivedAt as Timestamp).toDate(),
                 merchant: d.merchant,

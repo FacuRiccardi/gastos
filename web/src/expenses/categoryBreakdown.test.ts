@@ -7,6 +7,7 @@ const expense = (over: Partial<Expense> = {}): Expense => ({
   id: `e${++n}`,
   purchaseDate: new Date('2026-10-08T15:00:00Z'),
   receivedAt: new Date('2026-10-08T15:30:00Z'),
+  month: '2026-10',
   merchant: 'COMERCIO',
   amount: 100,
   currency: 'ARS',
@@ -17,10 +18,10 @@ const expense = (over: Partial<Expense> = {}): Expense => ({
   ...over,
 })
 const categories = [
-  { id: 'food', name: 'Comida', color: '#111111' },
-  { id: 'fun', name: 'Ocio', color: '#222222' },
-  { id: 'tiny', name: 'Chico', color: '#333333' },
-  { id: 'tiny2', name: 'Chico dos', color: '#444444' },
+  { id: 'food', name: 'Comida', color: '#111111', archived: false },
+  { id: 'fun', name: 'Ocio', color: '#222222', archived: false },
+  { id: 'tiny', name: 'Chico', color: '#333333', archived: false },
+  { id: 'tiny2', name: 'Chico dos', color: '#444444', archived: false },
 ]
 const labels = { uncategorized: 'Sin categorizar', minor: 'Otras' }
 const run = (list: Expense[]) => buildBreakdown(list, categories, labels)

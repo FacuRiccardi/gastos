@@ -89,6 +89,7 @@ const exp = (iso: string, amount: number, over: Partial<Expense> = {}): Expense 
   id: `e${++seq}`,
   purchaseDate: new Date(iso),
   receivedAt: new Date(iso),
+  month: iso.slice(0, 7),
   merchant: 'COMERCIO EJEMPLO',
   amount,
   currency: 'ARS',

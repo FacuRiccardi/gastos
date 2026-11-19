@@ -20,6 +20,7 @@ const expense: Expense = {
   id: 'm1',
   purchaseDate: new Date('2026-03-15T03:00:00Z'),
   receivedAt: new Date('2026-03-15T18:30:00Z'),
+  month: '2026-03',
   merchant: 'RECARGAS EJEMPLO',
   amount: 12500,
   currency: 'ARS',

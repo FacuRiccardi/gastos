@@ -11,7 +11,7 @@ export function createFirestoreCategoriesSource(db: Firestore): CategoriesSource
         (snapshot) =>
           onData(
             snapshot.docs
-              .map((d): Category => ({ id: d.id, name: d.data().name as string, color: d.data().color as string }))
+              .map((d): Category => ({ id: d.id, name: d.data().name as string, color: d.data().color as string, archived: d.data().archived ?? false }))
               .sort((a, b) => a.name.localeCompare(b.name, 'es-AR')),
           ),
         (error) => onError(error),

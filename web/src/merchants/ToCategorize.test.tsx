@@ -10,6 +10,7 @@ const expense = (over: Partial<Expense> = {}): Expense => ({
   id: `e${++n}`,
   purchaseDate: new Date('2026-10-20T15:00:00Z'),
   receivedAt: new Date('2026-10-20T15:30:00Z'),
+  month: '2026-10',
   merchant: `COMERCIO ${n}`,
   amount: 100,
   currency: 'ARS',
@@ -19,7 +20,7 @@ const expense = (over: Partial<Expense> = {}): Expense => ({
   status: 'approved',
   ...over,
 })
-const categories: Category[] = [{ id: 'food', name: 'Comida', color: '#111111' }]
+const categories: Category[] = [{ id: 'food', name: 'Comida', color: '#111111', archived: false }]
 
 describe('needsCategory', () => {
   it('is true for a purchase with no category', () => {
