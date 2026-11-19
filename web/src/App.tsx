@@ -6,24 +6,16 @@ import { LoginScreen } from '@/auth/LoginScreen'
 import { NoAccessScreen } from '@/auth/NoAccessScreen'
 import { CardsTab } from '@/cards/CardsTab'
 import { CategoriesTab } from '@/categories/CategoriesTab'
-import type { CategoriesApi, CategoriesSource } from '@/categories/categoriesApi'
-import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
 import { PageSkeleton } from '@/components/LoadingSkeletons'
-import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
-import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
 import { BalanceTab } from '@/balance/BalanceTab'
-import type { RatesApi, RatesSource } from '@/balance/ratesApi'
 import type { BudgetSection } from '@/budget/BudgetScreen'
 import { BudgetTab } from '@/budget/BudgetTab'
-import type { CapsApi, CapsSource } from '@/home/capsApi'
 import { HomeTab } from '@/home/HomeTab'
-import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { ExpensesTab } from '@/expenses/ExpensesTab'
 import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
-import type { ExpensesSource } from '@/expenses/expensesSource'
 import type { Backend } from '@/data/backend'
 import { DataProvider } from '@/data/DataProvider'
 import { DataStore } from '@/data/dataStore'
@@ -33,21 +25,6 @@ import { strings } from '@/strings'
 type AppProps = {
   authApi: AuthApi
   createBackend: () => Backend
-  createExpensesSource: () => ExpensesSource
-  createCardsSource: () => CardsSource
-  createCardsApi: () => CardsApi
-  createCategoriesSource: () => CategoriesSource
-  createCategoriesApi: () => CategoriesApi
-  createEntriesSource: (kind: EntryKind) => EntriesSource
-  createEntriesApi: (kind: EntryKind) => EntriesApi
-  createMerchantsApi: () => MerchantsApi
-  createMerchantsSource: () => MerchantsSource
-  createFixedSource: () => FixedSource
-  createFixedApi: () => FixedApi
-  createRatesSource: () => RatesSource
-  createRatesApi: () => RatesApi
-  createCapsSource: () => CapsSource
-  createCapsApi: () => CapsApi
 }
 
 export default function App({ authApi, createBackend }: AppProps) {

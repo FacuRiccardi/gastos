@@ -3,11 +3,6 @@ import type { Account, Card, Cycle, NewCycle } from './types'
 
 export type CardsData = { accounts: Account[]; cards: Card[]; cycles: Cycle[] }
 
-// Where the cards data comes from. Components receive it through props so tests can use a fake.
-export interface CardsSource {
-  subscribe(onData: (data: CardsData) => void, onError: (error: Error) => void): () => void
-}
-
 // The write operations of the Cards section.
 export interface CardsApi {
   createAccount(input: { name: string; owner: string }): Promise<string>

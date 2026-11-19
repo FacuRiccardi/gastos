@@ -3,14 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import type { AuthApi, AuthUser } from '@/auth/authApi'
-import type { CategoriesApi } from '@/categories/categoriesApi'
-import type { RatesApi } from '@/balance/ratesApi'
-import type { CapsApi } from '@/home/capsApi'
-import type { FixedApi } from '@/fixed/fixedApi'
-import type { MerchantsApi } from '@/merchants/merchantsApi'
-import type { EntriesApi } from '@/money/entries'
-import type { CardsApi, CardsData, CardsSource } from '@/cards/cardsApi'
-import type { ExpensesSource } from '@/expenses/expensesSource'
 import type { Expense } from '@/lib/expense'
 import type { Backend } from '@/data/backend'
 import { createFakeBackend } from '@/data/fakeBackend'
@@ -37,25 +29,6 @@ const expense: Expense = {
 function setup({ claim = false, backend = createFakeBackend() }: { claim?: boolean; backend?: Backend } = {}) {
   const createBackend = vi.fn(() => backend)
   let authListener: ((user: AuthUser | null) => void) | undefined
-  let onData: (expenses: Expense[]) => void = () => {}
-  let onError: (error: Error) => void = () => {}
-  const subscribe = vi.fn((data: (e: Expense[]) => void, error: (e: Error) => void) => {
-    onData = data
-    onError = error
-    return () => {}
-  })
-  const source: ExpensesSource = { subscribe }
-  const createExpensesSource = vi.fn(() => source)
-  let onCards: (data: CardsData) => void = () => {}
-  let onCardsError: (error: Error) => void = () => {}
-  const cardsSubscribe = vi.fn((data: (d: CardsData) => void, error: (e: Error) => void) => {
-    onCards = data
-    onCardsError = error
-    return () => {}
-  })
-  const cardsSource: CardsSource = { subscribe: cardsSubscribe }
-  const createCardsSource = vi.fn(() => cardsSource)
-  const createCardsApi = vi.fn(() => ({}) as CardsApi)
   const authApi: AuthApi = {
     onAuthChange: vi.fn((cb) => {
       authListener = cb
@@ -71,35 +44,11 @@ function setup({ claim = false, backend = createFakeBackend() }: { claim?: boole
     <App
       authApi={authApi}
       createBackend={createBackend}
-      createExpensesSource={createExpensesSource}
-      createCardsSource={createCardsSource}
-      createCardsApi={createCardsApi}
-      createCategoriesSource={() => ({ subscribe: (onData) => { onData([]); return () => {} } })}
-      createCategoriesApi={() => ({}) as CategoriesApi}
-      createEntriesSource={() => ({ subscribe: (onData) => { onData([]); return () => {} } })}
-      createEntriesApi={() => ({}) as EntriesApi}
-      createMerchantsApi={() => ({}) as MerchantsApi}
-      createMerchantsSource={() => ({ subscribe: (onData) => { onData([]); return () => {} } })}
-      createFixedSource={() => ({ subscribe: (onData) => { onData({ types: [], entries: [] }); return () => {} } })}
-      createFixedApi={() => ({}) as FixedApi}
-      createRatesSource={() => ({ subscribe: (onData) => { onData({}); return () => {} } })}
-      createRatesApi={() => ({}) as RatesApi}
-      createCapsSource={() => ({ subscribe: (onData) => { onData({}); return () => {} } })}
-      createCapsApi={() => ({}) as CapsApi}
     />,
   )
   return {
     createBackend,
-    createExpensesSource,
-    createCardsSource,
-    createCardsApi,
-    subscribe,
-    cardsSubscribe,
-    emitCards: (d: CardsData) => act(() => onCards(d)),
-    failCards: (e: Error) => act(() => onCardsError(e)),
     signInAs: (user: AuthUser | null) => act(async () => authListener?.(user)),
-    emitExpenses: (e: Expense[]) => act(() => onData(e)),
-    failExpenses: (e: Error) => act(() => onError(e)),
   }
 }
 
@@ -123,40 +72,22 @@ describe('App', () => {
     expect(screen.getByText(strings.noAccess.message)).toBeInTheDocument()
   })
 
-  it('never creates or subscribes to the expenses source unless authorized', async () => {
+  it('never creates the backend unless authorized', async () => {
     const app = setup({ claim: false })
-    // loading
-    expect(app.createExpensesSource).not.toHaveBeenCalled()
-    // signed out
+    expect(app.createBackend).not.toHaveBeenCalled()
     await app.signInAs(null)
-    expect(app.createExpensesSource).not.toHaveBeenCalled()
-    // signed in without the claim
+    expect(app.createBackend).not.toHaveBeenCalled()
     await app.signInAs(person)
-    expect(app.createExpensesSource).not.toHaveBeenCalled()
-    expect(app.subscribe).not.toHaveBeenCalled()
     expect(app.createBackend).not.toHaveBeenCalled()
   })
 
   it('the header sign-out button returns to the login screen', async () => {
     const app = setup({ claim: true })
     await app.signInAs(person)
-    app.emitExpenses([expense])
 
     await userEvent.click(screen.getByRole('button', { name: strings.header.signOut }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: strings.login.button })).toBeInTheDocument())
-  })
-
-  it('never creates the cards source or the cards api unless authorized', async () => {
-    const app = setup({ claim: false })
-    expect(app.createCardsSource).not.toHaveBeenCalled()
-    expect(app.createCardsApi).not.toHaveBeenCalled()
-    await app.signInAs(null)
-    expect(app.createCardsSource).not.toHaveBeenCalled()
-    expect(app.createCardsApi).not.toHaveBeenCalled()
-    await app.signInAs(person)
-    expect(app.createCardsSource).not.toHaveBeenCalled()
-    expect(app.createCardsApi).not.toHaveBeenCalled()
   })
 
   it('an authorized app reads through the backend only, on every tab', async () => {
@@ -165,17 +96,9 @@ describe('App', () => {
     for (const tab of [strings.tabs.expenses, strings.tabs.cards, strings.tabs.budget, strings.tabs.balance]) {
       await userEvent.click(screen.getByRole('tab', { name: tab }))
     }
-    expect(app.createExpensesSource).not.toHaveBeenCalled()
-    expect(app.createCardsSource).not.toHaveBeenCalled()
     expect(app.createBackend).toHaveBeenCalledTimes(1)
   })
 
-  it('never subscribes to the cards source unless authorized', async () => {
-    const app = setup({ claim: false })
-    await app.signInAs(null)
-    await app.signInAs(person)
-    expect(app.cardsSubscribe).not.toHaveBeenCalled()
-  })
 })
 
 describe('App home with month documents', () => {

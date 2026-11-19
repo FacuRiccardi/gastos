@@ -7,10 +7,6 @@ export type FixedType = { id: string; name: string; disabled: boolean }
 export type FixedEntry = { typeId: string; month: string; amount: number }
 export type FixedData = { types: FixedType[]; entries: FixedEntry[] }
 
-export interface FixedSource {
-  subscribe(onData: (data: FixedData) => void, onError: (error: Error) => void): () => void
-}
-
 export interface FixedApi {
   addType(name: string): Promise<string>
   renameType(id: string, name: string): Promise<void>

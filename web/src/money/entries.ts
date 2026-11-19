@@ -12,10 +12,6 @@ export const OWNERS: Owner[] = ((import.meta.env.VITE_OWNERS as string | undefin
 export type Entry = { id: string; amount: number; currency: Currency; date: string; owner?: Owner }
 export type NewEntry = Omit<Entry, 'id'>
 
-export interface EntriesSource {
-  subscribe(onData: (entries: Entry[]) => void, onError: (error: Error) => void): () => void
-}
-
 export interface EntriesApi {
   add(entry: NewEntry): Promise<string>
   remove(entry: Entry): Promise<void>
