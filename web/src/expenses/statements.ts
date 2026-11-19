@@ -122,13 +122,6 @@ export type TotalToPayResult = {
   excluded: Account[]
 }
 
-/** Months ('YYYY-MM') in which at least one account has a closing date with a period, newest first. */
-export function availableMonths(views: AccountView[]): string[] {
-  const months = new Set<string>()
-  for (const view of views) for (const tab of view.tabs) if (tab.period) months.add(tab.period.end.slice(0, 7))
-  return [...months].sort().reverse()
-}
-
 /** The month shown by default: the current one when it has periods, else the newest. */
 export function defaultMonth(months: string[], today: string): string | null {
   const current = today.slice(0, 7)

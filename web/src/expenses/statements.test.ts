@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Account, Card, Cycle } from '@/cards/types'
 import type { Expense } from '@/lib/expense'
-import { buildAccountViews, buildPeriods, computeTotalToPay, periodTabId, tabIdFor } from './statements'
+import { buildAccountViews, buildPeriods, computeTotalToPay, defaultMonth, periodTabId, tabIdFor } from './statements'
 
 const CLOSINGS = ['2026-09-15', '2026-10-15', '2026-11-15']
 
@@ -241,6 +241,14 @@ describe('buildAccountViews', () => {
     expect(view.creditCardCount).toBe(0)
     expect(view.tabs.length).toBeGreaterThan(0)
     expect(view.tabs.every((t) => t.count === 0 && Object.keys(t.totals).length === 0)).toBe(true)
+  })
+})
+
+describe('defaultMonth', () => {
+  it('prefers the current month, else the first offered one', () => {
+    expect(defaultMonth(['2026-11', '2026-10'], '2026-10-20')).toBe('2026-10')
+    expect(defaultMonth(['2026-09', '2026-08'], '2026-10-20')).toBe('2026-09')
+    expect(defaultMonth([], '2026-10-20')).toBeNull()
   })
 })
 

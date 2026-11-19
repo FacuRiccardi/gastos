@@ -13,7 +13,7 @@ import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { useCards } from '@/cards/useCards'
 import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
-import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, PageSkeleton, PeriodSkeleton } from '@/components/LoadingSkeletons'
+import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, PageSkeleton } from '@/components/LoadingSkeletons'
 import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
 import { useMerchants } from '@/merchants/useMerchants'
 import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
@@ -26,7 +26,7 @@ import { HistoryScreen } from '@/history/HistoryScreen'
 import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
 import { useFixed } from '@/fixed/useFixed'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { MonthExpenses } from '@/expenses/MonthExpenses'
+import { ExpensesTab } from '@/expenses/ExpensesTab'
 import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import { useExpenses } from '@/expenses/useExpenses'
@@ -313,27 +313,12 @@ function Authorized({
           <HomeTab onCategoryChange={changeCategory} onNavigate={goTo} />
         </TabsContent>
         <TabsContent value="expenses">
-          {status === 'error' || cards.status === 'error' || categories.status === 'error' ? (
-            <ScreenError>{status === 'error' ? error : cards.status === 'error' ? cards.error : categories.error}</ScreenError>
-          ) : status === 'loading' || cards.status === 'loading' || categories.status === 'loading' ? (
-            <PeriodSkeleton />
-          ) : (
-            <>
-              {categorySaveFailed && (
-                <p role="alert" className="mb-3 rounded-md border border-destructive p-3 text-destructive">
-                  {strings.categories.saveError}
-                </p>
-              )}
-              <MonthExpenses
-                expenses={expenses}
-                cards={cards.data}
-                categories={categories.categories}
-                onCategoryChange={changeCategory}
-                capsSource={capsSource}
-                ratesSource={ratesSource}
-              />
-            </>
+          {categorySaveFailed && (
+            <p role="alert" className="mb-3 rounded-md border border-destructive p-3 text-destructive">
+              {strings.categories.saveError}
+            </p>
           )}
+          <ExpensesTab onCategoryChange={changeCategory} />
         </TabsContent>
         <TabsContent value="cards">
           <CardsTab state={cards} api={cardsApi} expenses={expenses} expensesStatus={status} />

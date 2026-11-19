@@ -280,6 +280,7 @@ export const strings = {
       return `${names[Number(m) - 1]} ${year}`
     },
     monthSelectAria: 'Mes del total a pagar',
+    emptyMonth: 'No hay compras en este período.',
     moreData: 'Más datos',
     periodOf: (month: string) => `Período de ${month}`,
     byCategory: 'Gasto por categoría',

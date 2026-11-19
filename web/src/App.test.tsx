@@ -146,73 +146,6 @@ describe('App', () => {
     expect(app.createBackend).not.toHaveBeenCalled()
   })
 
-  it('the Gastos tab shows the period card with the month selector and the total to pay', async () => {
-    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-04-10T12:00:00Z') })
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-
-    app.emitExpenses([expense])
-    app.emitCards(cardsData)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-
-    expect(screen.getByRole('combobox', { name: strings.gastos.monthSelectAria })).toBeInTheDocument()
-    expect(screen.getByText(/Período de /)).toBeInTheDocument()
-    expect(screen.getByTestId('home-total')).toHaveTextContent('12.500,00')
-    expect(screen.getByText(person.displayName as string)).toBeInTheDocument()
-  })
-
-  it('Gastos shows loading until both expenses and cards arrive', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-    expect(screen.getByText(strings.loading)).toBeInTheDocument()
-
-    app.emitExpenses([expense])
-    expect(screen.getByText(strings.loading)).toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: strings.gastos.monthSelectAria })).not.toBeInTheDocument()
-
-    app.emitCards(cardsData)
-    expect(screen.queryByText(strings.loading)).not.toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: strings.gastos.monthSelectAria })).toBeInTheDocument()
-  })
-
-  it('Gastos shows an error and no totals when the cards subscription fails (permission-denied)', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    app.emitExpenses([expense])
-
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-    app.failCards(new Error('permission-denied'))
-
-    expect(screen.getByRole('alert')).toHaveTextContent(strings.cards.error)
-    expect(screen.queryByRole('combobox', { name: strings.gastos.monthSelectAria })).not.toBeInTheDocument()
-  })
-
-  it('shows an error message when the expenses subscription fails after being authorized', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    app.emitExpenses([expense])
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-
-    app.failExpenses(new Error('permission-denied'))
-
-    expect(screen.getByText(strings.expenses.error)).toBeInTheDocument()
-    expect(screen.queryByText(/RECARGAS EJEMPLO/)).not.toBeInTheDocument()
-  })
-
-  it('Gastos shows an error and no totals when the expenses subscription fails even if the cards arrived', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    app.emitCards(cardsData)
-    app.emitExpenses([expense])
-
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-    app.failExpenses(new Error('permission-denied'))
-
-    expect(screen.getByRole('alert')).toHaveTextContent(strings.expenses.error)
-    expect(screen.queryByRole('combobox', { name: strings.gastos.monthSelectAria })).not.toBeInTheDocument()
-  })
-
   it('the header sign-out button returns to the login screen', async () => {
     const app = setup({ claim: true })
     await app.signInAs(person)
@@ -444,5 +377,24 @@ describe('App home with month documents', () => {
     const app = setup({ claim: true, backend })
     await app.signInAs(person)
     expect(await screen.findByText(strings.loadError)).toBeInTheDocument()
+  })
+  it('the Gastos tab shows the period card of the month documents with the month selector and the total', async () => {
+    const { backend } = await openHome()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
+    expect(await screen.findByText(strings.gastos.periodOf('Noviembre 2026'))).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: strings.gastos.monthSelectAria })).toBeInTheDocument()
+    expect(screen.getByTestId('home-total')).toHaveTextContent('12.500,00')
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('changing a category in Gastos updates the screen without reading', async () => {
+    const { backend } = await openHome()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
+    await screen.findByText(strings.gastos.periodOf('Noviembre 2026'))
+    await userEvent.click(screen.getByRole('button', { name: /····1234/ }))
+    await userEvent.click(screen.getByRole('combobox', { name: strings.categories.changeAria('SUPER EJEMPLO') }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Comida' }))
+    await waitFor(() => expect(screen.getByRole('combobox', { name: strings.categories.changeAria('SUPER EJEMPLO') })).toHaveTextContent('Comida'))
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
   })
 })
