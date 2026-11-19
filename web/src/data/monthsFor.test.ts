@@ -38,8 +38,15 @@ describe('monthsFor', () => {
 
   it('groupMonths for 2026-10 returns 2026-08, 2026-09 and 2026-10', () => {
     const cards = cardsWith({ A: ['2026-08-23', ...base.A], B: ['2026-08-25', ...base.B] })
-    const existing = ['2026-07', '2026-08', '2026-09', '2026-10', '2026-11']
+    const existing = ['2026-07', '2026-08', '2026-09', '2026-10']
     expect(groupMonths(cards, '2026-10', existing)).toEqual(['2026-08', '2026-09', '2026-10'])
+  })
+
+  it('groupMonths includes the newest existing month so rateFor can fall back to the latest rate', () => {
+    const existing = Array.from({ length: 11 }, (_, i) => `2026-${String(i + 1).padStart(2, '0')}`)
+    const cards = cardsWith({ A: ['2026-01-23', '2026-02-23', '2026-03-23'] })
+    expect(groupMonths(cards, '2026-03', existing)).toContain('2026-11')
+    expect(homeMonths(cards, existing, '2026-03-10')).toContain('2026-11')
   })
 
   it('offeredMonths keeps the current period even if its closing month does not exist and skips a future closing that touches no existing month', () => {

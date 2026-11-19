@@ -17,7 +17,9 @@ const mapOf = (value: unknown): Record<string, Raw> => (value && typeof value ==
 const byKey = (map: Record<string, Raw>) => Object.entries(map).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
 const dateOf = (value: unknown) => (value as TimestampLike).toDate()
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'es-AR')
-const newestExpenseFirst = (a: Expense, b: Expense) => b.purchaseDate.getTime() - a.purchaseDate.getTime()
+// Same order as the old `orderBy('purchaseDate', 'desc')`: ties go by id, descending.
+const newestFirst = (a: { id: string; purchaseDate: Date }, b: { id: string; purchaseDate: Date }) =>
+  b.purchaseDate.getTime() - a.purchaseDate.getTime() || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0)
 const newestEntryFirst = (a: Entry, b: Entry) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)
 
 function toEntry(id: string, d: Raw): Entry {
@@ -44,7 +46,7 @@ export function toMonthData(id: MonthId, raw: Raw): MonthData {
   )
   return {
     id,
-    expenses: expenses.sort(newestExpenseFirst),
+    expenses: expenses.sort(newestFirst),
     incomes: Object.entries(mapOf(raw.incomes)).map(([entryId, d]) => toEntry(entryId, d)).sort(newestEntryFirst),
     savings: Object.entries(mapOf(raw.savings)).map(([entryId, d]) => toEntry(entryId, d)).sort(newestEntryFirst),
     fixed: { ...(raw.fixed as Record<string, number> | undefined) },
@@ -105,7 +107,7 @@ export function toUncategorized(raw: Raw | null | undefined): UncategorizedItem[
         cardHolder: d.cardHolder as string,
       }),
     )
-    .sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime())
+    .sort(newestFirst)
 }
 
 export function uncategorizedToExpense(item: UncategorizedItem): Expense {
@@ -127,7 +129,7 @@ export function expenseToUncategorized(e: Expense): UncategorizedItem {
 }
 
 export function expensesOf(months: MonthData[]): Expense[] {
-  return months.flatMap((m) => m.expenses).sort(newestExpenseFirst)
+  return months.flatMap((m) => m.expenses).sort(newestFirst)
 }
 
 export function ratesOf(months: MonthData[]): Rates {

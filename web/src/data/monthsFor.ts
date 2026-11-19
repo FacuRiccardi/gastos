@@ -47,12 +47,13 @@ const periodsClosingIn = (accounts: AccountPeriods[], month: MonthId): Period[] 
   accounts.flatMap(({ periods }) => periods.find((p) => p.end.startsWith(month)) ?? [])
 
 // The months whose purchases fall in `ranges`, plus the months (or the earlier month they inherit from)
-// whose rate and cap the groups of `groupMonths` use.
-function collect(existing: MonthId[], ranges: Range[], groupMonths: MonthId[]): MonthId[] {
+// whose rate and cap the groups use. The newest month is always read: `rateFor` falls back to the latest rate at all.
+function collect(existing: MonthId[], ranges: Range[], rateMonths: MonthId[]): MonthId[] {
   const have = new Set(existing)
-  const months = new Set<MonthId>()
+  const newest = [...existing].sort().pop()
+  const months = new Set<MonthId>(newest ? [newest] : [])
   for (const range of ranges) for (const m of monthsOfRange(range)) if (have.has(m)) months.add(m)
-  for (const m of groupMonths) {
+  for (const m of rateMonths) {
     const source = have.has(m) ? m : inheritSource(existing, m)
     if (source) months.add(source)
   }

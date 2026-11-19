@@ -7,6 +7,7 @@ import {
   ratesOf,
   toAppConfig,
   toMonthData,
+  toUncategorized,
   uncategorizedToExpense,
 } from './monthDoc'
 
@@ -48,6 +49,15 @@ describe('monthDoc', () => {
       status: 'approved',
       categoryId: 'Super',
     })
+  })
+
+  it('sorts same-day purchases by id descending', () => {
+    const day = '2026-10-02T03:00:00Z'
+    const month = toMonthData('2026-10', { ...emptyMonth, purchases: { a: purchase(day), c: purchase(day), b: purchase(day) } })
+    expect(month.expenses.map((e) => e.id)).toEqual(['c', 'b', 'a'])
+    expect(expensesOf([month, toMonthData('2026-10', { ...emptyMonth, purchases: { d: purchase(day) } })]).map((e) => e.id)).toEqual(['d', 'c', 'b', 'a'])
+    const item = { month: '2026-10', merchant: 'SHOP', amount: 1, currency: 'ARS', purchaseDate: ts(day), cardLast4: '1234', cardType: 'credit', cardHolder: 'ANA' }
+    expect(toUncategorized({ items: { a: item, c: item, b: item } }).map((i) => i.id)).toEqual(['c', 'b', 'a'])
   })
 
   it('a purchase without edits has categoryId null', () => {
