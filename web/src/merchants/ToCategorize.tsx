@@ -1,25 +1,22 @@
 import type { Category } from '@/categories/types'
+import { newestFirst, uncategorizedToExpense } from '@/data/monthDoc'
+import type { UncategorizedItem } from '@/data/types'
 import type { Expense } from '@/lib/expense'
 import { PurchasesTable } from '@/expenses/PurchasesTable'
 import { strings } from '@/strings'
 
-// A purchase needs a category when it has none, or when its category no longer exists.
-export function needsCategory(expense: Expense, categories: Category[]): boolean {
-  return expense.status !== 'rejected' && !(expense.categoryId && categories.some((c) => c.id === expense.categoryId))
-}
-
-// "Compras a categorizar": the purchases without a category, newest first. Choosing a category here
-// is also remembered for the merchant (the caller saves it in the dictionary).
+// "Compras a categorizar": every purchase of `meta/uncategorized`, of any month, newest first. Choosing a
+// category here is also remembered for the merchant (the caller saves it in the dictionary).
 export function ToCategorize({
-  expenses,
+  items,
   categories,
   onCategorize,
 }: {
-  expenses: Expense[]
+  items: UncategorizedItem[]
   categories: Category[]
   onCategorize: (expense: Expense, categoryId: string | null) => void
 }) {
-  const pending = expenses.filter((e) => needsCategory(e, categories)).sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime())
+  const pending = [...items].sort(newestFirst).map(uncategorizedToExpense)
   return (
     <div className="grid gap-3">
       {pending.length === 0 ? (

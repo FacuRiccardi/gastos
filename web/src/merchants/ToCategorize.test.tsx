@@ -1,79 +1,55 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { Category } from '@/categories/types'
-import type { Expense } from '@/lib/expense'
+import type { UncategorizedItem } from '@/data/types'
 import { strings } from '@/strings'
-import { needsCategory, ToCategorize } from './ToCategorize'
+import { ToCategorize } from './ToCategorize'
 
 let n = 0
-const expense = (over: Partial<Expense> = {}): Expense => ({
-  id: `e${++n}`,
-  purchaseDate: new Date('2026-10-20T15:00:00Z'),
-  receivedAt: new Date('2026-10-20T15:30:00Z'),
+const item = (over: Partial<UncategorizedItem> = {}): UncategorizedItem => ({
+  id: `p${++n}`,
   month: '2026-10',
   merchant: `COMERCIO ${n}`,
   amount: 100,
   currency: 'ARS',
+  purchaseDate: new Date('2026-10-20T03:00:00Z'),
   cardLast4: '1234',
   cardType: 'credit',
   cardHolder: 'JUAN',
-  status: 'approved',
   ...over,
 })
 const categories: Category[] = [{ id: 'food', name: 'Comida', color: '#111111', archived: false }]
 
-describe('needsCategory', () => {
-  it('is true for a purchase with no category', () => {
-    expect(needsCategory(expense(), categories)).toBe(true)
-    expect(needsCategory(expense({ categoryId: null }), categories)).toBe(true)
-    expect(needsCategory(expense({ categoryId: '' }), categories)).toBe(true)
-  })
-
-  it('is true when the category no longer exists', () => {
-    expect(needsCategory(expense({ categoryId: 'deleted' }), categories)).toBe(true)
-    expect(needsCategory(expense({ categoryId: 'food' }), [])).toBe(true)
-  })
-
-  it('is false when the category exists', () => {
-    expect(needsCategory(expense({ categoryId: 'food' }), categories)).toBe(false)
-  })
-
-  it('is false for a rejected purchase, with or without category', () => {
-    expect(needsCategory(expense({ status: 'rejected' }), categories)).toBe(false)
-    expect(needsCategory(expense({ status: 'rejected', categoryId: 'food' }), categories)).toBe(false)
-  })
-})
-
 describe('ToCategorize', () => {
-  it('says there is nothing to categorize when every purchase has a category', () => {
-    render(<ToCategorize expenses={[expense({ categoryId: 'food' })]} categories={categories} onCategorize={vi.fn()} />)
+  it('says so when the list is empty', () => {
+    render(<ToCategorize items={[]} categories={categories} onCategorize={vi.fn()} />)
     expect(screen.getByText(strings.toCategorize.empty)).toBeInTheDocument()
   })
 
-  it('says so with no purchases at all', () => {
-    render(<ToCategorize expenses={[]} categories={categories} onCategorize={vi.fn()} />)
-    expect(screen.getByText(strings.toCategorize.empty)).toBeInTheDocument()
-  })
-
-  it('lists only the purchases that need a category, newest first', () => {
+  it('lists every uncategorized item, however old', () => {
     render(
       <ToCategorize
-        expenses={[
-          expense({ merchant: 'VIEJA SIN', purchaseDate: new Date('2026-10-01T15:00:00Z') }),
-          expense({ merchant: 'CON CATEGORIA', categoryId: 'food' }),
-          expense({ merchant: 'NUEVA SIN', purchaseDate: new Date('2026-10-25T15:00:00Z') }),
-          expense({ merchant: 'RECHAZADA', status: 'rejected' }),
+        items={[
+          item({ merchant: 'MUY VIEJA', month: '2024-01', purchaseDate: new Date('2024-01-10T03:00:00Z') }),
+          item({ merchant: 'NUEVA', month: '2026-11', purchaseDate: new Date('2026-11-02T03:00:00Z') }),
+          item({ merchant: 'DEL MES PASADO', month: '2026-10', purchaseDate: new Date('2026-10-05T03:00:00Z') }),
         ]}
         categories={categories}
         onCategorize={vi.fn()}
       />,
     )
-    expect(screen.queryByText('CON CATEGORIA')).not.toBeInTheDocument()
-    expect(screen.queryByText('RECHAZADA')).not.toBeInTheDocument()
     const rows = screen.getAllByRole('row').map((r) => r.textContent ?? '')
-    const iNew = rows.findIndex((t) => t.includes('NUEVA SIN'))
-    const iOld = rows.findIndex((t) => t.includes('VIEJA SIN'))
-    expect(iNew).toBeGreaterThan(-1)
-    expect(iNew).toBeLessThan(iOld)
+    const order = ['NUEVA', 'DEL MES PASADO', 'MUY VIEJA'].map((m) => rows.findIndex((t) => t.includes(m)))
+    expect(order.every((i) => i > -1)).toBe(true)
+    expect(order).toEqual([...order].sort((a, b) => a - b))
+  })
+
+  it('categorizing passes the purchase as an expense with its id, month and merchant', async () => {
+    const onCategorize = vi.fn()
+    render(<ToCategorize items={[item({ id: 'x1', merchant: 'SUPER' })]} categories={categories} onCategorize={onCategorize} />)
+    await userEvent.click(screen.getByRole('combobox', { name: strings.categories.changeAria('SUPER') }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Comida' }))
+    expect(onCategorize).toHaveBeenCalledWith(expect.objectContaining({ id: 'x1', merchant: 'SUPER', month: '2026-10' }), 'food')
   })
 })

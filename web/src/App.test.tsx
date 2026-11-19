@@ -330,6 +330,26 @@ describe('App home with month documents', () => {
     expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
   })
 
+  it('the categories tab reads no month', async () => {
+    const { backend } = await openHome()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.categories }))
+    const card = await screen.findByRole('region', { name: `${strings.tabs.toCategorize} (1)` })
+    await userEvent.click(within(card).getByRole('button', { name: `${strings.tabs.toCategorize} (1)` }))
+    expect(within(card).getByText('SUPER EJEMPLO')).toBeInTheDocument()
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('categorizing from the categories tab empties the list without reading', async () => {
+    const { backend } = await openHome()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.categories }))
+    const card = await screen.findByRole('region', { name: `${strings.tabs.toCategorize} (1)` })
+    await userEvent.click(within(card).getByRole('button', { name: `${strings.tabs.toCategorize} (1)` }))
+    await userEvent.click(within(card).getByRole('combobox', { name: strings.categories.changeAria('SUPER EJEMPLO') }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Comida' }))
+    expect(await screen.findByRole('region', { name: strings.tabs.toCategorize })).toBeInTheDocument()
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
   it('the cards tab lists a seen card without an account from config.seenCards', async () => {
     const { backend } = await openHome({ seenCards: [{ last4: '4321', type: 'credit', holder: 'ANA', lastSeen: '2026-10-20' }] })
     await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))

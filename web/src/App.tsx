@@ -6,16 +6,14 @@ import type { AuthApi, AuthUser } from '@/auth/authApi'
 import { LoginScreen } from '@/auth/LoginScreen'
 import { NoAccessScreen } from '@/auth/NoAccessScreen'
 import { CardsTab } from '@/cards/CardsTab'
+import { CategoriesTab } from '@/categories/CategoriesTab'
 import type { CategoriesApi, CategoriesSource } from '@/categories/categoriesApi'
-import { CategoriesScreen } from '@/categories/CategoriesScreen'
-import { useCategories } from '@/categories/useCategories'
 import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { useCards } from '@/cards/useCards'
 import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
-import { BalanceSkeleton, ClosedCardsSkeleton, PageSkeleton } from '@/components/LoadingSkeletons'
+import { BalanceSkeleton, PageSkeleton } from '@/components/LoadingSkeletons'
 import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
-import { useMerchants } from '@/merchants/useMerchants'
 import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
 import { BalanceScreen } from '@/balance/BalanceScreen'
 import type { RatesApi, RatesSource } from '@/balance/ratesApi'
@@ -61,12 +59,8 @@ export default function App({
   createBackend,
   createExpensesSource,
   createCardsSource,
-  createCategoriesSource,
-  createCategoriesApi,
   createEntriesSource,
   createEntriesApi,
-  createMerchantsApi,
-  createMerchantsSource,
   createFixedSource,
   createFixedApi,
   createRatesSource,
@@ -81,12 +75,8 @@ export default function App({
         createBackend={createBackend}
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
-        createCategoriesSource={createCategoriesSource}
-        createCategoriesApi={createCategoriesApi}
         createEntriesSource={createEntriesSource}
         createEntriesApi={createEntriesApi}
-        createMerchantsApi={createMerchantsApi}
-        createMerchantsSource={createMerchantsSource}
         createFixedSource={createFixedSource}
         createFixedApi={createFixedApi}
         createRatesSource={createRatesSource}
@@ -103,12 +93,8 @@ function Screens({
   createBackend,
   createExpensesSource,
   createCardsSource,
-  createCategoriesSource,
-  createCategoriesApi,
   createEntriesSource,
   createEntriesApi,
-  createMerchantsApi,
-  createMerchantsSource,
   createFixedSource,
   createFixedApi,
   createRatesSource,
@@ -120,12 +106,8 @@ function Screens({
   | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
-  | 'createCategoriesSource'
-  | 'createCategoriesApi'
   | 'createEntriesSource'
   | 'createEntriesApi'
-  | 'createMerchantsApi'
-  | 'createMerchantsSource'
   | 'createFixedSource'
   | 'createFixedApi'
   | 'createRatesSource'
@@ -154,12 +136,8 @@ function Screens({
           createBackend={createBackend}
           createExpensesSource={createExpensesSource}
           createCardsSource={createCardsSource}
-          createCategoriesSource={createCategoriesSource}
-          createCategoriesApi={createCategoriesApi}
           createEntriesSource={createEntriesSource}
           createEntriesApi={createEntriesApi}
-          createMerchantsApi={createMerchantsApi}
-          createMerchantsSource={createMerchantsSource}
           createFixedSource={createFixedSource}
           createFixedApi={createFixedApi}
           createRatesSource={createRatesSource}
@@ -177,12 +155,8 @@ function Authorized({
   createBackend,
   createExpensesSource,
   createCardsSource,
-  createCategoriesSource,
-  createCategoriesApi,
   createEntriesSource,
   createEntriesApi,
-  createMerchantsApi,
-  createMerchantsSource,
   createFixedSource,
   createFixedApi,
   createRatesSource,
@@ -195,12 +169,8 @@ function Authorized({
   | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
-  | 'createCategoriesSource'
-  | 'createCategoriesApi'
   | 'createEntriesSource'
   | 'createEntriesApi'
-  | 'createMerchantsApi'
-  | 'createMerchantsSource'
   | 'createFixedSource'
   | 'createFixedApi'
   | 'createRatesSource'
@@ -221,17 +191,11 @@ function Authorized({
   const [cardsSource] = useState(createCardsSource)
   const { status, expenses, error } = useExpenses(source)
   const cards = useCards(cardsSource)
-  const [categoriesSource] = useState(createCategoriesSource)
-  const [categoriesApi] = useState(createCategoriesApi)
-  const categories = useCategories(categoriesSource)
   // The four sources/apis of incomes and savings are created once, so switching tabs never recreates them.
   const [incomesSource] = useState(() => createEntriesSource('incomes'))
   const [incomesApi] = useState(() => createEntriesApi('incomes'))
   const [savingsSource] = useState(() => createEntriesSource('savings'))
   const [savingsApi] = useState(() => createEntriesApi('savings'))
-  const [merchantsApi] = useState(createMerchantsApi)
-  const [merchantsSource] = useState(createMerchantsSource)
-  const merchants = useMerchants(merchantsSource)
   const [fixedSource] = useState(createFixedSource)
   const [fixedApi] = useState(createFixedApi)
   const fixed = useFixed(fixedSource)
@@ -315,28 +279,12 @@ function Authorized({
           <CardsTab />
         </TabsContent>
         <TabsContent value="categories">
-          {categories.status === 'loading' || status === 'loading' ? (
-            <ClosedCardsSkeleton count={3} />
-          ) : categories.status === 'error' || status === 'error' ? (
-            <ScreenError>{categories.status === 'error' ? categories.error : error}</ScreenError>
-          ) : (
-            <>
-              {categorySaveFailed && (
-                <p role="alert" className="mb-3 rounded-md border border-destructive p-3 text-destructive">
-                  {strings.categories.saveError}
-                </p>
-              )}
-              <CategoriesScreen
-                expenses={expenses}
-                categories={categories.categories}
-                api={categoriesApi}
-                merchants={merchants}
-                merchantsApi={merchantsApi}
-                onCategorize={categorize}
-                initialOpen={openSection === 'toCategorize' ? 'toCategorize' : null}
-              />
-            </>
+          {categorySaveFailed && (
+            <p role="alert" className="mb-3 rounded-md border border-destructive p-3 text-destructive">
+              {strings.categories.saveError}
+            </p>
           )}
+          <CategoriesTab onCategorize={categorize} initialOpen={openSection === 'toCategorize' ? 'toCategorize' : null} />
         </TabsContent>
         <TabsContent value="budget">
           <BudgetScreen

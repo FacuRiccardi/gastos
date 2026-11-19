@@ -1,4 +1,4 @@
-import { Trash2Icon } from 'lucide-react'
+import { ArchiveIcon } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   AlertDialog,
@@ -14,10 +14,11 @@ import { Button } from '@/components/ui/button'
 import { CollapsibleCard } from '@/components/CollapsibleCard'
 import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
+import type { UncategorizedItem } from '@/data/types'
 import type { Expense } from '@/lib/expense'
 import { MerchantDictionary } from '@/merchants/MerchantDictionary'
 import type { MerchantEntry, MerchantsApi } from '@/merchants/merchantsApi'
-import { needsCategory, ToCategorize } from '@/merchants/ToCategorize'
+import { ToCategorize } from '@/merchants/ToCategorize'
 import { strings } from '@/strings'
 import type { CategoriesApi } from './categoriesApi'
 import { CategoryTag } from './CategoryTag'
@@ -53,7 +54,7 @@ function ColorInput({ value, onCommit, label }: { value: string; onCommit: (colo
 function CategoryRow({ category, api, onError }: { category: Category; api: CategoriesApi; onError: () => void }) {
   const toast = useToast()
   const [name, setName] = useState(category.name)
-  const [deleting, setDeleting] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   useEffect(() => setName(category.name), [category.name])
   // The colour picker saves while you drag it, so only a rename confirms with a toast.
   const save = (patch: Partial<{ name: string; color: string }>, notify = false) =>
@@ -66,6 +67,26 @@ function CategoryRow({ category, api, onError }: { category: Category; api: Cate
     const clean = name.trim()
     if (!clean) return setName(category.name)
     if (clean !== category.name) void save({ name: clean }, true)
+  }
+
+  // Like a disabled fixed type: it stays at the end of the list, greyed out, with a button to bring it back.
+  if (category.archived) {
+    return (
+      <li className="flex items-center gap-2 rounded-md border border-dashed bg-muted/40 p-2 opacity-60">
+        <CategoryTag category={category} />
+        <span className="min-w-0 flex-1" />
+        <span className="rounded-full border px-2 text-xs">{s.archivedBadge}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          className="opacity-100"
+          aria-label={s.unarchiveAria(category.name)}
+          onClick={() => void api.setArchived(category.id, false).then(() => toast(strings.saved)).catch(onError)}
+        >
+          {s.unarchive}
+        </Button>
+      </li>
+    )
   }
 
   return (
@@ -81,18 +102,18 @@ function CategoryRow({ category, api, onError }: { category: Category; api: Cate
         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
       />
       <CategoryTag category={category} />
-      <Button variant="outline" size="icon-sm" aria-label={s.deleteAria(category.name)} title={s.delete} onClick={() => setDeleting(true)}>
-        <Trash2Icon />
+      <Button variant="outline" size="icon-sm" aria-label={s.archiveAria(category.name)} title={s.archive} onClick={() => setArchiving(true)}>
+        <ArchiveIcon />
       </Button>
-      <AlertDialog open={deleting} onOpenChange={setDeleting}>
+      <AlertDialog open={archiving} onOpenChange={setArchiving}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{s.deleteTitle(category.name)}</AlertDialogTitle>
-            <AlertDialogDescription>{s.deleteText}</AlertDialogDescription>
+            <AlertDialogTitle>{s.archiveTitle(category.name)}</AlertDialogTitle>
+            <AlertDialogDescription>{s.archiveText}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{s.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void api.setArchived(category.id, true).then(() => toast(strings.deleted)).catch(onError)}>{s.delete}</AlertDialogAction>
+            <AlertDialogAction onClick={() => void api.setArchived(category.id, true).then(() => toast(strings.saved)).catch(onError)}>{s.archive}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -133,10 +154,10 @@ function NewCategory({ api, onError }: { api: CategoriesApi; onError: () => void
   )
 }
 
-// "Categorías": the purchases that still need one, the categories themselves (add, rename, recolour, delete)
+// "Categorías": the purchases that still need one, the categories themselves (add, rename, recolour, archive)
 // and the merchant -> category dictionary. Each part is a card that opens and closes.
 export function CategoriesScreen({
-  expenses,
+  uncategorized,
   categories,
   api,
   merchants,
@@ -144,10 +165,10 @@ export function CategoriesScreen({
   onCategorize,
   initialOpen,
 }: {
-  expenses: Expense[]
+  uncategorized: UncategorizedItem[]
   categories: Category[]
   api: CategoriesApi
-  merchants: { status: 'loading' | 'ready' | 'error'; merchants: MerchantEntry[]; error: string | null }
+  merchants: MerchantEntry[]
   merchantsApi: MerchantsApi
   onCategorize: (expense: Expense, categoryId: string | null) => void
   // The card to open on arrival (the alert of the home view points to the purchases to categorize).
@@ -155,7 +176,8 @@ export function CategoriesScreen({
 }) {
   const [failed, setFailed] = useState(false)
   const onError = () => setFailed(true)
-  const pending = expenses.filter((e) => needsCategory(e, categories)).length
+  const pending = uncategorized.length
+  const ordered = [...categories.filter((c) => !c.archived), ...categories.filter((c) => c.archived)]
   return (
     <div className="grid gap-4">
       {failed && (
@@ -168,7 +190,7 @@ export function CategoriesScreen({
         tooltip={strings.toCategorize.intro}
         defaultOpen={initialOpen === 'toCategorize'}
       >
-        <ToCategorize expenses={expenses} categories={categories} onCategorize={onCategorize} />
+        <ToCategorize items={uncategorized} categories={categories} onCategorize={onCategorize} />
       </CollapsibleCard>
       <CollapsibleCard title={s.cardTitle} tooltip={s.intro}>
         <NewCategory api={api} onError={onError} />
@@ -176,20 +198,20 @@ export function CategoriesScreen({
           <p className="text-muted-foreground">{s.empty}</p>
         ) : (
           <ul className="grid gap-2">
-            {categories.map((c) => (
+            {ordered.map((c) => (
               <CategoryRow key={c.id} category={c} api={api} onError={onError} />
             ))}
           </ul>
         )}
       </CollapsibleCard>
       <CollapsibleCard
-        title={`${s.dictionary.title}${merchants.status === 'ready' ? ` (${merchants.merchants.length})` : ''}`}
+        title={`${s.dictionary.title} (${merchants.length})`}
         tooltip={s.dictionary.intro}
       >
         <MerchantDictionary
-          merchants={merchants.merchants}
-          status={merchants.status}
-          error={merchants.error}
+          merchants={merchants}
+          status="ready"
+          error={null}
           categories={categories}
           api={merchantsApi}
           onError={onError}

@@ -23,7 +23,9 @@ export function CategoryPicker({
   onChange: (categoryId: string | null) => void
 }) {
   const current = categories.find((c) => c.id === categoryId) ?? null
-  const items = [{ value: NONE, label: strings.categories.uncategorized }, ...categories.map((c) => ({ value: c.id, label: c.name }))]
+  // Archived categories are not offered, but a purchase that already has one keeps showing it.
+  const offered = categories.filter((c) => !c.archived || c.id === current?.id)
+  const items = [{ value: NONE, label: strings.categories.uncategorized }, ...offered.map((c) => ({ value: c.id, label: c.name }))]
   return (
     <Select items={items} value={current?.id ?? NONE} onValueChange={(v) => onChange(v === NONE || v === null ? null : v)}>
       <SelectTrigger
