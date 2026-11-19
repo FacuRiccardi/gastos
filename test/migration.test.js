@@ -122,6 +122,20 @@ describe('migrate', () => {
     });
   });
 
+  it('keeps installment, originalDate and source when present and omits them when absent', () => {
+    const out = migrate(base({
+      expenses: [
+        expense('full', { installment: '02/03', originalDate: '2026-10-06', source: 'excel' }),
+        expense('plain'),
+      ],
+    }));
+    const { purchases } = out.months['2026-10'];
+    expect(purchases.full).toMatchObject({ installment: '02/03', originalDate: '2026-10-06', source: 'excel' });
+    expect(Object.keys(purchases.plain).sort()).toEqual([
+      'amount', 'cardHolder', 'cardLast4', 'cardType', 'currency', 'merchant', 'purchaseDate', 'receivedAt', 'status',
+    ]);
+  });
+
   it('shapes incomes, savings, fixed and config documents', () => {
     const out = migrate(base({
       accounts: [{ id: 'acc', data: { name: 'BBVA', owner: 'FACUNDO' } }],

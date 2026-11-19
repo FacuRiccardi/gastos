@@ -4,9 +4,11 @@ import { monthOfDay, monthOfInstant, inheritSource } from '../../src/months.js';
 const BANK_FIELDS = [
   'purchaseDate', 'receivedAt', 'merchant', 'amount', 'currency', 'cardLast4', 'cardType', 'cardHolder', 'status',
 ];
+const OPTIONAL_FIELDS = ['installment', 'originalDate', 'source'];
 const UNCATEGORIZED_FIELDS = ['merchant', 'amount', 'currency', 'purchaseDate', 'cardLast4', 'cardType', 'cardHolder'];
 
 const pick = (data, fields) => Object.fromEntries(fields.map((f) => [f, data[f]]));
+const pickPresent = (data, fields) => pick(data, fields.filter((f) => data[f] !== undefined));
 const byId = (docs, build) => Object.fromEntries(docs.map(({ id, data }) => [id, build(data)]));
 const dayOfInstant = (date) => new Date(date.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -24,7 +26,7 @@ export function migrate(collections) {
 
   for (const { id, data } of read('expenses')) {
     const key = monthOfInstant(data.purchaseDate.toDate());
-    month(key).purchases[id] = pick(data, BANK_FIELDS);
+    month(key).purchases[id] = { ...pick(data, BANK_FIELDS), ...pickPresent(data, OPTIONAL_FIELDS) };
 
     if (categoryIds.has(data.categoryId)) {
       month(key).edits[id] = { category: data.categoryId };
