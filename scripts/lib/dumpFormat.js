@@ -2,10 +2,11 @@
 // written as {"__ts": "<ISO>"} and restored on load; everything else is plain JSON.
 import { Timestamp } from 'firebase-admin/firestore';
 
-export const COLLECTIONS = [
+export const OLD_COLLECTIONS = [
   'expenses', 'categories', 'accounts', 'cards', 'cycles', 'merchantCategories',
   'fixedTypes', 'fixedExpenses', 'exchangeRates', 'spendingCaps', 'incomes', 'savings',
 ];
+export const COLLECTIONS = [...OLD_COLLECTIONS, 'months', 'config', 'meta'];
 
 export function encode(value) {
   if (value instanceof Timestamp) return { __ts: value.toDate().toISOString() };

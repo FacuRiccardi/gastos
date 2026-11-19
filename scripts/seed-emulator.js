@@ -22,10 +22,11 @@ const db = getFirestore();
 const data = JSON.parse(readFileSync('emulator-data/firestore.json', 'utf8'));
 
 // Start from a clean slate so running the seed twice does not leave stale documents.
-for (const name of COLLECTIONS) {
+const names = [...new Set([...COLLECTIONS, ...Object.keys(data)])];
+for (const name of names) {
   await db.recursiveDelete(db.collection(name));
 }
-for (const name of COLLECTIONS) {
+for (const name of names) {
   const docs = data[name] ?? [];
   for (let i = 0; i < docs.length; i += 400) {
     const batch = db.batch();

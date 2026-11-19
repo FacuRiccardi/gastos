@@ -16,6 +16,7 @@
     "dev:dump": "node scripts/dump-prod.js",
     "dev:emulators": "firebase emulators:start --only auth,firestore --project demo-gastos --import=emulator-state --export-on-exit",
     "dev:seed": "node scripts/seed-emulator.js",
+    "migrate": "node scripts/migrate-to-months.js",
     "dev:web": "npm --prefix web run dev -- --mode emulator"
   },
   "dependencies": {
