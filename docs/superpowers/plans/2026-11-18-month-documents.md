@@ -80,7 +80,7 @@ Casos que el spec implica y que ninguna tarea cubriría por defecto. Cada uno ti
 
 ## Etapa 1 — Contrato y migración (sin efecto en la app)
 
-### Tarea 1: Funciones de mes gemelas (Node y web)
+### Task 1: Funciones de mes gemelas (Node y web)
 
 **Archivos:**
 - Crear: `src/months.js`, `web/src/data/months.ts`
@@ -102,7 +102,7 @@ Casos que el spec implica y que ninguna tarea cubriría por defecto. Cada uno ti
 - [ ] **Paso 4:** `npm test -- test/months.twin.test.js` → PASA.
 - [ ] **Paso 5:** commit `feat: shared month helpers for ingestion and web`.
 
-### Tarea 2: Migración pura
+### Task 2: Migración pura
 
 **Archivos:**
 - Crear: `scripts/lib/migration.js`
@@ -141,7 +141,7 @@ Reglas de la migración (del spec):
 
 ## Etapa 2 — Ingesta
 
-### Tarea 3: `store.js` sobre documentos por mes
+### Task 3: `store.js` sobre documentos por mes
 
 **Archivos:**
 - Modificar: `src/store.js`
@@ -170,7 +170,7 @@ Reglas de la migración (del spec):
 - [ ] **Paso 4:** `npm run test:store` → PASA.
 - [ ] **Paso 5:** commit `feat(ingestion): save purchases into month documents`.
 
-### Tarea 4: `sync.js` usa `savePurchase`
+### Task 4: `sync.js` usa `savePurchase`
 
 **Archivos:**
 - Modificar: `src/sync.js:31-33`
@@ -189,7 +189,7 @@ Reglas de la migración (del spec):
 
 ## Etapa 3 — Reglas
 
-### Tarea 5: `firestore.rules` nuevas
+### Task 5: `firestore.rules` nuevas
 
 **Archivos:**
 - Modificar: `firestore.rules` (reemplazar todos los `match` de colecciones viejas; se mantienen `isHousehold()` y el denegado final)
@@ -219,7 +219,7 @@ Reglas (de "Reglas de seguridad" del spec):
 
 ## Etapa 4 — Capa de datos de la web
 
-### Tarea 6: Tipos, conversión y meses necesarios
+### Task 6: Tipos, conversión y meses necesarios
 
 **Archivos:**
 - Crear: `web/src/data/types.ts`, `web/src/data/monthDoc.ts`, `web/src/data/monthsFor.ts`
@@ -264,7 +264,7 @@ export type UncategorizedItem = { id: string; month: MonthId; merchant: string; 
 - [ ] **Paso 4:** `npm --prefix web test` y `npm --prefix web run build` → PASAN.
 - [ ] **Paso 5:** commit `feat(web): month data types, conversion and months per screen`.
 
-### Tarea 7: Paridad sobre el volcado de producción
+### Task 7: Paridad sobre el volcado de producción
 
 **Archivos:**
 - Crear: `test/parity.months.test.ts`
@@ -282,7 +282,7 @@ Fuente: `emulator-data/firestore.json`. Si no existe, `describe.skip`. Si el vol
 - [ ] **Paso 2:** `npm test -- test/parity.months.test.ts` → PASA. Si falla, la diferencia es un error de las Tareas 2 o 6: corregirlo ahí, nunca en el test.
 - [ ] **Paso 3:** commit `test: parity between collections and month documents`.
 
-### Tarea 8: Interfaz `Backend`, backend falso y backend de Firestore
+### Task 8: Interfaz `Backend`, backend falso y backend de Firestore
 
 **Archivos:**
 - Crear: `web/src/data/backend.ts`, `web/src/data/fakeBackend.ts`, `web/src/data/firestoreBackend.ts`
@@ -337,7 +337,7 @@ export interface Backend {
 - [ ] **Paso 4:** los dos comandos → PASAN; `npm --prefix web run build` → OK.
 - [ ] **Paso 5:** commit `feat(web): Backend interface with fake and Firestore implementations`.
 
-### Tarea 9: `DataStore` y hooks
+### Task 9: `DataStore` y hooks
 
 **Archivos:**
 - Crear: `web/src/data/dataStore.ts`, `web/src/data/DataProvider.tsx`
@@ -395,7 +395,7 @@ Patrón para todas las pestañas: un contenedor `…Tab.tsx` usa los hooks, calc
 
 Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web run build` y `npm --prefix web run lint` → OK, y commit.
 
-### Tarea 10: `App` con `DataStore` e Inicio
+### Task 10: `App` con `DataStore` e Inicio
 
 **Archivos:**
 - Modificar: `web/src/App.tsx`, `web/src/main.tsx`, `web/src/home/HomeScreen.tsx`, `web/src/cards/cardLogic.ts`, `web/src/strings.ts`
@@ -420,7 +420,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
 - [ ] **Paso 3:** implementar. En `main.tsx`, `createBackend={() => createFirestoreBackend(db)}`.
 - [ ] **Paso 4 y 5:** verificación y commit `feat(web): home reads month documents`.
 
-### Tarea 11: Gastos
+### Task 11: Gastos
 
 **Archivos:**
 - Modificar: `web/src/expenses/MonthExpenses.tsx`, `web/src/expenses/statements.ts` (borrar `availableMonths`, que ya no se usa), `web/src/strings.ts`
@@ -436,7 +436,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
   - `an offered month without purchases shows the empty state`
 - [ ] **Pasos 2 a 5:** implementar, verificar y commit `feat(web): Gastos reads month documents`.
 
-### Tarea 12: Tarjetas
+### Task 12: Tarjetas
 
 **Archivos:**
 - Modificar: `web/src/cards/CardsScreen.tsx`, `web/src/App.tsx` (`CardsTab`)
@@ -448,7 +448,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
 - [ ] **Paso 1: test que falla:** `the cards tab reads no month`, y ajustar los tests existentes a las props nuevas.
 - [ ] **Pasos 2 a 5:** implementar, verificar y commit `feat(web): Tarjetas uses config/cards`.
 
-### Tarea 13: Categorías (lista de sin categorizar y archivar)
+### Task 13: Categorías (lista de sin categorizar y archivar)
 
 **Archivos:**
 - Modificar: `web/src/categories/CategoriesScreen.tsx`, `web/src/categories/CategoryPicker.tsx`, `web/src/merchants/ToCategorize.tsx` (borrar `needsCategory`), `web/src/strings.ts`
@@ -468,7 +468,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
   - `the categories tab reads no month`
 - [ ] **Pasos 2 a 5:** implementar, verificar y commit `feat(web): Categorías uses the uncategorized list and archives categories`.
 
-### Tarea 14: Presupuesto por mes
+### Task 14: Presupuesto por mes
 
 **Archivos:**
 - Modificar: `web/src/budget/BudgetScreen.tsx`, `web/src/fixed/FixedScreen.tsx`, `web/src/money/MoneyScreen.tsx`, `web/src/money/EntrySection.tsx`, `web/src/home/CapsScreen.tsx`, `web/src/strings.ts`
@@ -488,7 +488,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
   - `removing an entry passes the entry`
 - [ ] **Pasos 2 a 5:** implementar, verificar y commit `feat(web): Presupuesto edits month documents`.
 
-### Tarea 15: Balance e Histórico
+### Task 15: Balance e Histórico
 
 **Archivos:**
 - Modificar: `web/src/balance/BalanceScreen.tsx`, `web/src/history/HistoryScreen.tsx`, `web/src/balance/balance.ts`, `web/src/strings.ts`
@@ -506,7 +506,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
   - `saving the rate clears the inherited note`
 - [ ] **Pasos 2 a 5:** implementar, verificar y commit `feat(web): Balance and Histórico read month documents`.
 
-### Tarea 16: Retirar la capa vieja
+### Task 16: Retirar la capa vieja
 
 **Archivos:**
 - Borrar: `web/src/expenses/expensesSource.ts`, `useExpenses.ts`, `useExpenses.test.tsx`; `web/src/cards/firestoreCards.ts`, `useCards.ts`, `useCards.test.tsx`; `web/src/categories/firestoreCategories.ts`, `useCategories.ts`; `web/src/merchants/firestoreMerchants.ts`, `useMerchants.ts`; `web/src/money/firestoreEntries.ts`, `useEntries.ts`; `web/src/fixed/firestoreFixed.ts`, `useFixed.ts`; `web/src/balance/firestoreRates.ts`, `useRates.ts`; `web/src/home/firestoreCaps.ts`, `useCaps.ts`
@@ -521,7 +521,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
 
 ## Etapa 6 — Migración y corte
 
-### Tarea 17: Script de migración, volcado y siembra
+### Task 17: Script de migración, volcado y siembra
 
 **Archivos:**
 - Crear: `scripts/migrate-to-months.js`
@@ -536,7 +536,7 @@ Cada tarea de esta etapa termina con: `npm --prefix web test`, `npm --prefix web
 - [ ] **Paso 3:** `npm run dev:web`: la app abre sobre el emulador migrado; el Inicio, Gastos, Balance e Histórico muestran los mismos números que la versión de `main` sobre el volcado sin migrar.
 - [ ] **Paso 4:** commit `feat(scripts): migrate to month documents and dump/seed the new collections`.
 
-### Tarea 18: Runbook del corte
+### Task 18: Runbook del corte
 
 **Archivos:**
 - Modificar: `RUNBOOK.md` (sección nueva "Corte a documentos por mes" y actualizar "Web app collections" y "Merchant dictionary" con la estructura nueva)
