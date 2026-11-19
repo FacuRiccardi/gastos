@@ -4,6 +4,7 @@ export const strings = {
   loading: 'Cargando…',
   moreInfo: 'Más información',
   retry: 'Reintentar',
+  loadError: 'No se pudieron cargar los datos. Revisá tu conexión y volvé a intentar.',
   saved: 'Guardado',
   deleted: 'Eliminado',
   login: {

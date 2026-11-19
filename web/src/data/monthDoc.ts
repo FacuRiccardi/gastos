@@ -18,9 +18,9 @@ const byKey = (map: Record<string, Raw>) => Object.entries(map).sort(([a], [b]) 
 const dateOf = (value: unknown) => (value as TimestampLike).toDate()
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'es-AR')
 // Same order as the old `orderBy('purchaseDate', 'desc')`: ties go by id, descending.
-const newestFirst = (a: { id: string; purchaseDate: Date }, b: { id: string; purchaseDate: Date }) =>
+export const newestFirst = (a: { id: string; purchaseDate: Date }, b: { id: string; purchaseDate: Date }) =>
   b.purchaseDate.getTime() - a.purchaseDate.getTime() || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0)
-const newestEntryFirst = (a: Entry, b: Entry) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)
+export const newestEntryFirst = (a: Entry, b: Entry) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)
 
 function toEntry(id: string, d: Raw): Entry {
   return { id, amount: d.amount as number, currency: d.currency as Entry['currency'], date: d.date as string, ...(d.owner ? { owner: d.owner as string } : {}) }
