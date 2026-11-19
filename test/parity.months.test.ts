@@ -203,8 +203,8 @@ describe.skipIf(!existsSync(dumpPath))('parity between the old collections and t
       savedUntilNow: b.savedUntilNow,
     });
     for (const month of config.months) {
-      const o = buildBalance({ month, incomes: old.incomes, savings: old.savings, fixed: old.fixed, rates: old.rates, views: oldViews, cycles: old.cards.cycles });
-      const n = buildBalance({ month, incomes, savings, fixed, rates: side.rates, views: side.views, cycles: config.cards.cycles });
+      const o = buildBalance({ month, incomes: old.incomes, savings: old.savings, fixed: old.fixed, rates: old.rates, rateInherited: false, views: oldViews, cycles: old.cards.cycles });
+      const n = buildBalance({ month, incomes, savings, fixed, rates: side.rates, rateInherited: false, views: side.views, cycles: config.cards.cycles });
       expect(pick(n), month).toEqual(pick(o));
     }
   });

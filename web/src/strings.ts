@@ -96,6 +96,7 @@ export const strings = {
     savings: 'Ahorro (USD)',
     balance: 'Balance',
     noRate: 'sin TC',
+    inheritedRate: 'TC heredado, sin confirmar',
     ofIncome: 'de los ingresos del mes',
     note: 'Los dólares se pasan a pesos con el TC de cada mes. Los meses sin resumen de tarjeta cargado no incluyen ese gasto. El ahorro es lo que se sumó en el mes, no el saldo. El color del balance es más fuerte cuanto mayor es su porcentaje sobre los ingresos del mes.',
   },

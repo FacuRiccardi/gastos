@@ -48,6 +48,7 @@ function run(over: Args = {}, list: Expense[] = [], cyc: CardsData['cycles'] = [
     savings: [],
     fixed: noFixed,
     rates: {},
+    rateInherited: false,
     views: buildAccountViews(list, data),
     cycles: cyc,
     ...over,
@@ -99,6 +100,14 @@ describe('buildBalance incomes', () => {
     expect(b.rate).toBeNull()
     expect(b.incomeTotal).toBe(1000)
     expect(b.missingRate).toBe(true)
+  })
+
+  it('buildBalance reports an inherited rate', () => {
+    const incomes = [entry({ owner: 'Ana', amount: 10, currency: 'USD' })]
+    const inherited = run({ incomes, rates: { '2026-11': 1200 }, rateInherited: true })
+    expect(inherited.rateInherited).toBe(true)
+    expect(inherited.incomeTotal).toBe(12000)
+    expect(run({ incomes, rates: { '2026-11': 1200 } }).rateInherited).toBe(false)
   })
 
   it('does not report missingRate when there are no dollar incomes', () => {

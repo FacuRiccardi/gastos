@@ -2,19 +2,17 @@ import { ChevronDownIcon } from 'lucide-react'
 import { useMemo, useState, type CSSProperties } from 'react'
 import type { CardsData } from '@/cards/cardsApi'
 import { CollapsibleCard } from '@/components/CollapsibleCard'
-import { ListSkeleton } from '@/components/LoadingSkeletons'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buildBalance, dueMonthOf, type Balance } from '@/balance/balance'
-import { useRates } from '@/balance/useRates'
-import type { RatesSource } from '@/balance/ratesApi'
+import type { Rates } from '@/balance/ratesApi'
+import type { MonthId } from '@/data/types'
 import { buildAccountViews } from '@/expenses/statements'
 import { addMonths, type FixedData } from '@/fixed/fixedApi'
 import { buenosAiresDay } from '@/lib/dates'
 import type { Expense } from '@/lib/expense'
 import { formatMoney } from '@/lib/format'
 import { useIsPhone } from '@/lib/useMediaQuery'
-import { OWNERS, type EntriesSource, type Owner } from '@/money/entries'
-import { useEntries } from '@/money/useEntries'
+import { OWNERS, type Entry, type Owner } from '@/money/entries'
 import { strings } from '@/strings'
 
 const s = strings.history
@@ -43,6 +41,9 @@ const balanceColor = (balance: number, income: number): { className: string; sty
 const incomeOf = (b: Balance, owner: Owner) =>
   b.incomeLines.filter((l) => l.owner === owner).reduce((sum, l) => sum + (l.currency === 'ARS' ? l.amount : b.rate ? l.amount * b.rate : 0), 0)
 
+// The note under the income total: no rate, or a rate copied from an earlier month that nobody confirmed.
+const rateNote = (b: Balance) => (b.missingRate ? s.noRate : b.rateInherited && b.usdIncome > 0 ? s.inheritedRate : null)
+
 const money = (amount: number, currency: 'ARS' | 'USD' = 'ARS') => (amount === 0 ? '—' : formatMoney(amount, currency))
 
 const balanceCell = (b: Balance) => {
@@ -56,20 +57,19 @@ export function HistoryScreen({
   expenses,
   cards,
   fixed,
-  incomesSource,
-  savingsSource,
-  ratesSource,
+  incomes,
+  savings,
+  rates,
+  inheritedRates,
 }: {
   expenses: Expense[]
   cards: CardsData
   fixed: FixedData
-  incomesSource: EntriesSource
-  savingsSource: EntriesSource
-  ratesSource: RatesSource
+  incomes: Entry[]
+  savings: Entry[]
+  rates: Rates
+  inheritedRates: Set<MonthId>
 }) {
-  const incomes = useEntries(incomesSource)
-  const savings = useEntries(savingsSource)
-  const rates = useRates(ratesSource)
   const views = useMemo(() => buildAccountViews(expenses, cards), [expenses, cards])
   const phone = useIsPhone()
   const [openMonth, setOpenMonth] = useState<string | null>(null)
@@ -77,8 +77,8 @@ export function HistoryScreen({
   const rows = useMemo(() => {
     const current = buenosAiresDay(new Date()).slice(0, 7)
     const found = new Set<string>()
-    for (const i of incomes.entries) found.add(i.date.slice(0, 7))
-    for (const e of savings.entries) found.add(e.date.slice(0, 7))
+    for (const i of incomes) found.add(i.date.slice(0, 7))
+    for (const e of savings) found.add(e.date.slice(0, 7))
     for (const e of fixed.entries) found.add(e.month)
     for (const view of views) {
       for (const tab of view.tabs) {
@@ -96,22 +96,13 @@ export function HistoryScreen({
     return all
       .reverse()
       .map((month) =>
-        buildBalance({ month, incomes: incomes.entries, savings: savings.entries, fixed, rates: rates.rates, views, cycles: cards.cycles }),
+        buildBalance({ month, incomes, savings, fixed, rates, rateInherited: inheritedRates.has(month), views, cycles: cards.cycles }),
       )
-  }, [incomes.entries, savings.entries, fixed, rates.rates, views, cards.cycles])
-
-  const failed = [incomes, savings, rates].find((x) => x.status === 'error')
-  const loading = incomes.status === 'loading' || savings.status === 'loading' || rates.status === 'loading'
+  }, [incomes, savings, fixed, rates, inheritedRates, views, cards.cycles])
 
   return (
     <CollapsibleCard title={s.title} tooltip={`${s.intro} ${s.note}`}>
-      {failed ? (
-        <p role="alert" className="text-center text-destructive">
-          {failed.error}
-        </p>
-      ) : loading ? (
-        <ListSkeleton rows={5} />
-      ) : rows.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-center text-muted-foreground">{s.empty}</p>
       ) : phone ? (
         // On a phone the wide table does not fit: one card per month, the balance on top and the rest when it is tapped.
@@ -145,7 +136,7 @@ export function HistoryScreen({
                         <dd className="tabular-nums">{value}</dd>
                       </div>
                     ))}
-                    {b.missingRate && <p className="text-xs text-amber-700 dark:text-amber-400">{s.noRate}</p>}
+                    {rateNote(b) && <p className="text-xs text-amber-700 dark:text-amber-400">{rateNote(b)}</p>}
                   </dl>
                 )}
               </li>
@@ -181,7 +172,7 @@ export function HistoryScreen({
                 ))}
                 <TableCell className="text-right tabular-nums">
                   {money(b.incomeTotal)}
-                  {b.missingRate && <span className="block text-xs text-amber-700 dark:text-amber-400">{s.noRate}</span>}
+                  {rateNote(b) && <span className="block text-xs text-amber-700 dark:text-amber-400">{rateNote(b)}</span>}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{money(b.fixedTotal)}</TableCell>
                 <TableCell className="text-right tabular-nums">{money(b.cardsTotal)}</TableCell>

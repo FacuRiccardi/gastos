@@ -16,6 +16,8 @@ export type Balance = {
   month: string
   incomeLines: IncomeLine[]
   rate: number | null
+  // The rate was copied from an earlier month when this one was created and nobody confirmed it.
+  rateInherited: boolean
   usdIncome: number
   // Pesos income plus the dollar income at the month's rate. Without a rate the dollars are left out.
   incomeTotal: number
@@ -51,6 +53,7 @@ export function buildBalance({
   savings,
   fixed,
   rates,
+  rateInherited,
   views,
   cycles,
 }: {
@@ -59,6 +62,7 @@ export function buildBalance({
   savings: Entry[]
   fixed: FixedData
   rates: Rates
+  rateInherited: boolean
   views: AccountView[]
   cycles: CardsData['cycles']
 }): Balance {
@@ -110,6 +114,7 @@ export function buildBalance({
     month,
     incomeLines,
     rate,
+    rateInherited,
     usdIncome,
     incomeTotal,
     missingRate,

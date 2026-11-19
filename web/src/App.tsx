@@ -1,5 +1,4 @@
 import { BarChart3Icon, CreditCardIcon, HomeIcon, LogOutIcon, PiggyBankIcon, ReceiptTextIcon, TagsIcon } from 'lucide-react'
-import { ScreenError } from '@/components/ScreenError'
 import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/auth/AuthProvider'
 import type { AuthApi, AuthUser } from '@/auth/authApi'
@@ -9,26 +8,22 @@ import { CardsTab } from '@/cards/CardsTab'
 import { CategoriesTab } from '@/categories/CategoriesTab'
 import type { CategoriesApi, CategoriesSource } from '@/categories/categoriesApi'
 import type { CardsApi, CardsSource } from '@/cards/cardsApi'
-import { useCards } from '@/cards/useCards'
 import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
-import { BalanceSkeleton, PageSkeleton } from '@/components/LoadingSkeletons'
+import { PageSkeleton } from '@/components/LoadingSkeletons'
 import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
 import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
-import { BalanceScreen } from '@/balance/BalanceScreen'
+import { BalanceTab } from '@/balance/BalanceTab'
 import type { RatesApi, RatesSource } from '@/balance/ratesApi'
 import type { BudgetSection } from '@/budget/BudgetScreen'
 import { BudgetTab } from '@/budget/BudgetTab'
 import type { CapsApi, CapsSource } from '@/home/capsApi'
 import { HomeTab } from '@/home/HomeTab'
-import { HistoryScreen } from '@/history/HistoryScreen'
 import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
-import { useFixed } from '@/fixed/useFixed'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { ExpensesTab } from '@/expenses/ExpensesTab'
 import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
 import type { ExpensesSource } from '@/expenses/expensesSource'
-import { useExpenses } from '@/expenses/useExpenses'
 import type { Backend } from '@/data/backend'
 import { DataProvider } from '@/data/DataProvider'
 import { DataStore } from '@/data/dataStore'
@@ -55,51 +50,17 @@ type AppProps = {
   createCapsApi: () => CapsApi
 }
 
-export default function App({
-  authApi,
-  createBackend,
-  createExpensesSource,
-  createCardsSource,
-  createEntriesSource,
-  createFixedSource,
-  createRatesSource,
-  createRatesApi,
-}: AppProps) {
+export default function App({ authApi, createBackend }: AppProps) {
   return (
     <AuthProvider api={authApi}>
       <ToastProvider>
-      <Screens
-        createBackend={createBackend}
-        createExpensesSource={createExpensesSource}
-        createCardsSource={createCardsSource}
-        createEntriesSource={createEntriesSource}
-        createFixedSource={createFixedSource}
-        createRatesSource={createRatesSource}
-        createRatesApi={createRatesApi}
-      />
+      <Screens createBackend={createBackend} />
       </ToastProvider>
     </AuthProvider>
   )
 }
 
-function Screens({
-  createBackend,
-  createExpensesSource,
-  createCardsSource,
-  createEntriesSource,
-  createFixedSource,
-  createRatesSource,
-  createRatesApi,
-}: Pick<
-  AppProps,
-  | 'createBackend'
-  | 'createExpensesSource'
-  | 'createCardsSource'
-  | 'createEntriesSource'
-  | 'createFixedSource'
-  | 'createRatesSource'
-  | 'createRatesApi'
->) {
+function Screens({ createBackend }: Pick<AppProps, 'createBackend'>) {
   const { state, error, signIn, signOut, recheck } = useAuth()
 
   switch (state.status) {
@@ -114,63 +75,17 @@ function Screens({
     case 'unauthorized':
       return <NoAccessScreen onCheckAgain={() => void recheck()} onSignOut={() => void signOut()} error={error} />
     case 'authorized':
-      // Only this branch creates the sources and the api, so nothing is read before authorization.
-      return (
-        <Authorized
-          user={state.user}
-          createBackend={createBackend}
-          createExpensesSource={createExpensesSource}
-          createCardsSource={createCardsSource}
-          createEntriesSource={createEntriesSource}
-          createFixedSource={createFixedSource}
-          createRatesSource={createRatesSource}
-          createRatesApi={createRatesApi}
-          onSignOut={() => void signOut()}
-        />
-      )
+      // Only this branch creates the backend, so nothing is read before authorization.
+      return <Authorized user={state.user} createBackend={createBackend} onSignOut={() => void signOut()} />
   }
 }
 
-function Authorized({
-  user,
-  createBackend,
-  createExpensesSource,
-  createCardsSource,
-  createEntriesSource,
-  createFixedSource,
-  createRatesSource,
-  createRatesApi,
-  onSignOut,
-}: Pick<
-  AppProps,
-  | 'createBackend'
-  | 'createExpensesSource'
-  | 'createCardsSource'
-  | 'createEntriesSource'
-  | 'createFixedSource'
-  | 'createRatesSource'
-  | 'createRatesApi'
-> & {
-  user: AuthUser
-  onSignOut: () => void
-}) {
+function Authorized({ user, createBackend, onSignOut }: Pick<AppProps, 'createBackend'> & { user: AuthUser; onSignOut: () => void }) {
   const [store] = useState(() => new DataStore(createBackend()))
   useEffect(() => {
     void store.loadConfig()
     void store.loadUncategorized()
   }, [store])
-  const [source] = useState(createExpensesSource)
-  // Created once so switching tabs never recreates them; they only exist once the user is authorized.
-  const [cardsSource] = useState(createCardsSource)
-  const { status, expenses, error } = useExpenses(source)
-  const cards = useCards(cardsSource)
-  // The sources of incomes and savings are created once, so switching tabs never recreates them.
-  const [incomesSource] = useState(() => createEntriesSource('incomes'))
-  const [savingsSource] = useState(() => createEntriesSource('savings'))
-  const [fixedSource] = useState(createFixedSource)
-  const fixed = useFixed(fixedSource)
-  const [ratesSource] = useState(createRatesSource)
-  const [ratesApi] = useState(createRatesApi)
   // The tab is controlled so the alerts of the home view can take you to the right one.
   const [tab, setTab] = useState<string>('home')
   // The card to open when an alert of the home view takes you to another tab (cleared when you change tab by hand).
@@ -258,31 +173,7 @@ function Authorized({
           <BudgetTab initialOpen={(openSection as BudgetSection | null) ?? null} />
         </TabsContent>
         <TabsContent value="balance">
-          {status === 'error' || cards.status === 'error' || fixed.status === 'error' ? (
-            <ScreenError>{status === 'error' ? error : cards.status === 'error' ? cards.error : fixed.error}</ScreenError>
-          ) : status === 'loading' || cards.status === 'loading' || fixed.status === 'loading' ? (
-            <BalanceSkeleton />
-          ) : (
-            <div className="grid gap-4">
-              <BalanceScreen
-                expenses={expenses}
-                cards={cards.data}
-                fixed={fixed.data}
-                incomesSource={incomesSource}
-                savingsSource={savingsSource}
-                ratesSource={ratesSource}
-                ratesApi={ratesApi}
-              />
-              <HistoryScreen
-                expenses={expenses}
-                cards={cards.data}
-                fixed={fixed.data}
-                incomesSource={incomesSource}
-                savingsSource={savingsSource}
-                ratesSource={ratesSource}
-              />
-            </div>
-          )}
+          <BalanceTab />
         </TabsContent>
       </Tabs>
     </div>

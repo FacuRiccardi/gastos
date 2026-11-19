@@ -1,9 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
-import { ScreenError } from '@/components/ScreenError'
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { CardsData } from '@/cards/cardsApi'
 import { Button } from '@/components/ui/button'
-import { BalanceSkeleton } from '@/components/LoadingSkeletons'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/Toast'
 import { Input } from '@/components/ui/input'
@@ -13,12 +11,11 @@ import { addMonths, type FixedData } from '@/fixed/fixedApi'
 import { buenosAiresDay } from '@/lib/dates'
 import type { Expense } from '@/lib/expense'
 import { formatMoney } from '@/lib/format'
-import { parseAmount, type Currency, type EntriesSource } from '@/money/entries'
-import { useEntries } from '@/money/useEntries'
+import type { MonthId } from '@/data/types'
+import { parseAmount, type Currency, type Entry } from '@/money/entries'
 import { strings } from '@/strings'
 import { buildBalance, type Balance } from './balance'
-import type { RatesApi, RatesSource } from './ratesApi'
-import { useRates } from './useRates'
+import type { Rates, RatesApi } from './ratesApi'
 
 const s = strings.balance
 const monthLabel = strings.gastos.monthLabel
@@ -129,6 +126,11 @@ function Incomes({ b, api, onError }: { b: Balance; api: RatesApi; onError: () =
           )}
         </>
       )}
+      {b.rateInherited && (
+        <p role="status" className="text-amber-700 dark:text-amber-400">
+          {strings.history.inheritedRate}
+        </p>
+      )}
       <Total label={s.totalIncomes} tone="income">
         {formatMoney(b.incomeTotal, 'ARS')}
       </Total>
@@ -186,39 +188,28 @@ export function BalanceScreen({
   expenses,
   cards,
   fixed,
-  incomesSource,
-  savingsSource,
-  ratesSource,
+  incomes,
+  savings,
+  rates,
+  inheritedRates,
   ratesApi,
 }: {
   expenses: Expense[]
   cards: CardsData
   fixed: FixedData
-  incomesSource: EntriesSource
-  savingsSource: EntriesSource
-  ratesSource: RatesSource
+  incomes: Entry[]
+  savings: Entry[]
+  rates: Rates
+  inheritedRates: Set<MonthId>
   ratesApi: RatesApi
 }) {
-  const incomes = useEntries(incomesSource)
-  const savings = useEntries(savingsSource)
-  const rates = useRates(ratesSource)
   const [month, setMonth] = useState(() => buenosAiresDay(new Date()).slice(0, 7))
   const [failed, setFailed] = useState(false)
   const views = useMemo(() => buildAccountViews(expenses, cards), [expenses, cards])
   const balance = useMemo(
-    () => buildBalance({ month, incomes: incomes.entries, savings: savings.entries, fixed, rates: rates.rates, views, cycles: cards.cycles }),
-    [month, incomes.entries, savings.entries, fixed, rates.rates, views, cards.cycles],
+    () => buildBalance({ month, incomes, savings, fixed, rates, rateInherited: inheritedRates.has(month), views, cycles: cards.cycles }),
+    [month, incomes, savings, fixed, rates, inheritedRates, views, cards.cycles],
   )
-
-  const error = [incomes, savings, rates].find((x) => x.status === 'error')
-  if (error) {
-    return (
-      <ScreenError>{error.error}</ScreenError>
-    )
-  }
-  if (incomes.status === 'loading' || savings.status === 'loading' || rates.status === 'loading') {
-    return <BalanceSkeleton withHistory={false} />
-  }
 
   return (
     <Card role="region" aria-label={s.title}>

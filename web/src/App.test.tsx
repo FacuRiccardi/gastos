@@ -34,15 +34,6 @@ const expense: Expense = {
   status: 'approved',
 }
 
-const cardsData: CardsData = {
-  accounts: [{ id: 'a1', name: 'Banco Uno', owner: 'JUAN' }],
-  cards: [{ last4: '1234', type: 'credit', holder: 'JUAN', accountId: 'a1' }],
-  cycles: [
-    { accountId: 'a1', closingDate: '2026-03-01', dueDate: null },
-    { accountId: 'a1', closingDate: '2026-04-01', dueDate: null },
-  ],
-}
-
 function setup({ claim = false, backend = createFakeBackend() }: { claim?: boolean; backend?: Backend } = {}) {
   const createBackend = vi.fn(() => backend)
   let authListener: ((user: AuthUser | null) => void) | undefined
@@ -168,16 +159,15 @@ describe('App', () => {
     expect(app.createCardsApi).not.toHaveBeenCalled()
   })
 
-  it('expenses and cards are each subscribed once, also after switching tabs', async () => {
+  it('an authorized app reads through the backend only, on every tab', async () => {
     const app = setup({ claim: true })
     await app.signInAs(person)
-    app.emitExpenses([expense])
-    app.emitCards(cardsData)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    expect(app.subscribe).toHaveBeenCalledTimes(1)
-    expect(app.cardsSubscribe).toHaveBeenCalledTimes(1)
+    for (const tab of [strings.tabs.expenses, strings.tabs.cards, strings.tabs.budget, strings.tabs.balance]) {
+      await userEvent.click(screen.getByRole('tab', { name: tab }))
+    }
+    expect(app.createExpensesSource).not.toHaveBeenCalled()
+    expect(app.createCardsSource).not.toHaveBeenCalled()
+    expect(app.createBackend).toHaveBeenCalledTimes(1)
   })
 
   it('never subscribes to the cards source unless authorized', async () => {
@@ -185,16 +175,6 @@ describe('App', () => {
     await app.signInAs(null)
     await app.signInAs(person)
     expect(app.cardsSubscribe).not.toHaveBeenCalled()
-  })
-
-  it('creates the cards source exactly once when authorized, even after switching tabs', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    expect(app.createCardsSource).toHaveBeenCalledTimes(1)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    expect(app.createCardsSource).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -328,6 +308,16 @@ describe('App home with month documents', () => {
     expect(screen.getByRole('tab', { name: strings.tabs.cards })).toHaveAttribute('aria-selected', 'true')
     expect(await screen.findByRole('region', { name: strings.cards.accountTitle('Banco Uno') })).toBeInTheDocument()
     expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('the balance tab reads the months home did not read, once', async () => {
+    const { backend } = await openHome()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.balance }))
+    expect(await screen.findByRole('region', { name: strings.balance.title })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.home }))
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.balance }))
+    await screen.findByRole('region', { name: strings.balance.title })
+    expect(sorted(backend.reads)).toEqual(sorted([...expectedReads, 'month:2026-07', 'month:2026-08']))
   })
 
   it('the categories tab reads no month', async () => {
