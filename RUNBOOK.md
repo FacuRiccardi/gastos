@@ -171,9 +171,9 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
 
 ### Corte (producción)
 
-5. **Frenar la ingesta y la app.** Cerrar la app y avisarle a la otra persona del hogar que no la use hasta que termine el paso 9: la app vieja sigue escribiendo en las colecciones viejas y esos cambios no llegarían a los documentos por mes. Anotar la hora. Esto convierte la suscripción push en pull (los avisos quedan retenidos en la suscripción, hasta 24 h: `message_retention_duration = 86400s`) y pausa el job diario. Ejecutarlo en **Git Bash**: PowerShell 5.1 descarta el argumento vacío `""`.
-   ```bash
-   gcloud pubsub subscriptions modify-push-config gmail-notifications-push --push-endpoint=""
+5. **Frenar la ingesta y la app.** Cerrar la app y avisarle a la otra persona del hogar que no la use hasta que termine el paso 9: la app vieja sigue escribiendo en las colecciones viejas y esos cambios no llegarían a los documentos por mes. Anotar la hora. Esto convierte la suscripción push en pull (los avisos quedan retenidos en la suscripción, hasta 24 h: `message_retention_duration = 86400s`) y pausa el job diario. Ejecutarlo en **PowerShell** (en Git Bash `gcloud` no encuentra Python); `--push-endpoint=` va sin valor y sin comillas.
+   ```powershell
+   gcloud pubsub subscriptions modify-push-config gmail-notifications-push --push-endpoint=
    gcloud scheduler jobs pause renew-watch-daily --location=us-central1
    ```
    Comprobar que no queda endpoint (debe imprimir una línea vacía) y que el job figura `PAUSED`:
