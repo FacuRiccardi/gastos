@@ -1,6 +1,5 @@
 import type { SeenCard } from '@/data/types'
-import type { Expense } from '@/lib/expense'
-import { buenosAiresDay, parseDisplayDate } from '@/lib/dates'
+import { parseDisplayDate } from '@/lib/dates'
 import { cardKey } from './types'
 import type { Account, Card, DetectedCard, NewCycle } from './types'
 
@@ -19,17 +18,6 @@ export function findUnassignedCards(seen: SeenCard[], cards: Card[], accounts: A
   }
 
   return result.sort((a, b) => a.holder.localeCompare(b.holder) || a.last4.localeCompare(b.last4))
-}
-
-// Until the Tarjetas tab reads `config.seenCards` (Task 12): the cards seen in a list of expenses, holder of the latest one.
-export function seenCardsOf(expenses: Expense[]): SeenCard[] {
-  const latest = new Map<string, Expense>()
-  for (const e of expenses) {
-    const key = cardKey({ last4: e.cardLast4, type: e.cardType })
-    const current = latest.get(key)
-    if (!current || e.purchaseDate.getTime() > current.purchaseDate.getTime()) latest.set(key, e)
-  }
-  return [...latest.values()].map((e) => ({ last4: e.cardLast4, type: e.cardType, holder: e.cardHolder, lastSeen: buenosAiresDay(e.purchaseDate) }))
 }
 
 export type CycleLineError = {

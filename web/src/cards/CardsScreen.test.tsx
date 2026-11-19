@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { Expense } from '@/lib/expense'
+import type { SeenCard } from '@/data/types'
 import { strings } from '@/strings'
 import type { CardsApi, CardsData } from './cardsApi'
 import { CardsScreen } from './CardsScreen'
@@ -18,19 +18,11 @@ const fakeApi = (): CardsApi => ({
   deleteCycle: vi.fn().mockResolvedValue(undefined),
 })
 
-let n = 0
-const expense = (over: Partial<Expense> = {}): Expense => ({
-  id: `m${++n}`,
-  purchaseDate: new Date('2026-03-15T03:00:00Z'),
-  receivedAt: new Date('2026-03-15T18:30:00Z'),
-  month: '2026-03',
-  merchant: 'COMERCIO',
-  amount: 100,
-  currency: 'ARS',
-  cardLast4: '1234',
-  cardType: 'credit',
-  cardHolder: 'JUAN',
-  status: 'approved',
+const seen = (over: Partial<SeenCard> = {}): SeenCard => ({
+  last4: '1234',
+  type: 'credit',
+  holder: 'JUAN',
+  lastSeen: '2026-03-15',
   ...over,
 })
 
@@ -46,10 +38,10 @@ const twoAccounts = [
   { id: 'a2', name: 'Banco Dos', owner: 'MARIA' },
 ]
 
-const setup = (d: CardsData, expenses: Expense[] = []) => {
+const setup = (d: CardsData, seenCards: SeenCard[] = []) => {
   const api = fakeApi()
   const user = userEvent.setup()
-  render(<CardsScreen expenses={expenses} data={d} api={api} />)
+  render(<CardsScreen seenCards={seenCards} data={d} api={api} />)
   return { api, user }
 }
 
@@ -130,11 +122,8 @@ describe('CardsScreen', () => {
     expect(within(section).getByText(s.cyclesHeading)).toBeInTheDocument()
   })
 
-  it('detected cards without an account are listed and assigning one calls saveCard with the holder taken from the expenses', async () => {
-    const { api, user } = setup(data({ accounts: twoAccounts }), [
-      expense({ cardLast4: '4321', cardHolder: 'MARIA', purchaseDate: new Date('2026-01-01T03:00:00Z') }),
-      expense({ cardLast4: '4321', cardHolder: 'ANA', purchaseDate: new Date('2026-04-01T03:00:00Z') }),
-    ])
+  it('seen cards without an account are listed and assigning one calls saveCard with the seen holder', async () => {
+    const { api, user } = setup(data({ accounts: twoAccounts }), [seen({ last4: '4321', holder: 'ANA', lastSeen: '2026-04-01' })])
     const row = screen.getByRole('listitem', { name: '····4321' })
     expect(within(row).getByText('ANA')).toBeInTheDocument()
     await user.click(within(row).getByRole('combobox', { name: s.assignAria('4321') }))
@@ -232,7 +221,7 @@ describe('CardsScreen', () => {
     const api = fakeApi()
     vi.mocked(api.createAccount).mockRejectedValue(new Error('denied'))
     const user = userEvent.setup()
-    render(<CardsScreen expenses={[]} data={data()} api={api} />)
+    render(<CardsScreen seenCards={[]} data={data()} api={api} />)
     await openNewAccount(user)
     await user.type(screen.getByLabelText(s.nameLabel), 'Banco Uno')
     await user.type(screen.getByLabelText(s.ownerInputLabel), 'juan')
@@ -244,7 +233,7 @@ describe('CardsScreen', () => {
     const api = fakeApi()
     vi.mocked(api.createAccount).mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
-    render(<CardsScreen expenses={[]} data={data()} api={api} />)
+    render(<CardsScreen seenCards={[]} data={data()} api={api} />)
     await openNewAccount(user)
     await user.type(screen.getByLabelText(s.nameLabel), 'Banco Uno')
     await user.type(screen.getByLabelText(s.ownerInputLabel), 'juan')
@@ -262,7 +251,7 @@ describe('CardsScreen', () => {
     const user = userEvent.setup()
     render(
       <CardsScreen
-        expenses={[]}
+        seenCards={[]}
         data={data({
           accounts: twoAccounts,
           cards: [{ last4: '1234', type: 'credit', holder: 'JUAN', accountId: 'a1' }],
@@ -293,7 +282,7 @@ describe('CardsScreen', () => {
     const api = fakeApi()
     vi.mocked(api.updateAccount).mockRejectedValue(new Error('denied'))
     const user = userEvent.setup()
-    render(<CardsScreen expenses={[]} data={data({ accounts: twoAccounts })} api={api} />)
+    render(<CardsScreen seenCards={[]} data={data({ accounts: twoAccounts })} api={api} />)
     const section = screen.getByRole('region', { name: s.accountTitle('Banco Uno') })
     await user.click(within(section).getByRole('button', { name: s.edit }))
     const dialog = await screen.findByRole('dialog', { name: s.editAccountTitle })
@@ -308,7 +297,7 @@ describe('CardsScreen', () => {
     const user = userEvent.setup()
     render(
       <CardsScreen
-        expenses={[]}
+        seenCards={[]}
         data={data({
           accounts: twoAccounts,
           cards: [{ last4: '1234', type: 'credit', holder: 'JUAN', accountId: 'a1' }],
@@ -333,7 +322,7 @@ describe('CardsScreen', () => {
       }),
     )
     const user = userEvent.setup()
-    render(<CardsScreen expenses={[]} data={data({ accounts: twoAccounts })} api={api} />)
+    render(<CardsScreen seenCards={[]} data={data({ accounts: twoAccounts })} api={api} />)
     const section = screen.getByRole('region', { name: s.accountTitle('Banco Uno') })
     await user.click(within(section).getByRole('button', { name: s.delete }))
     const dialog = await screen.findByRole('alertdialog')

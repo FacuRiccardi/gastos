@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from '@/auth/AuthProvider'
 import type { AuthApi, AuthUser } from '@/auth/authApi'
 import { LoginScreen } from '@/auth/LoginScreen'
 import { NoAccessScreen } from '@/auth/NoAccessScreen'
-import { CardsScreen } from '@/cards/CardsScreen'
+import { CardsTab } from '@/cards/CardsTab'
 import type { CategoriesApi, CategoriesSource } from '@/categories/categoriesApi'
 import { CategoriesScreen } from '@/categories/CategoriesScreen'
 import { useCategories } from '@/categories/useCategories'
@@ -13,7 +13,7 @@ import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { useCards } from '@/cards/useCards'
 import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
-import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, PageSkeleton } from '@/components/LoadingSkeletons'
+import { BalanceSkeleton, ClosedCardsSkeleton, PageSkeleton } from '@/components/LoadingSkeletons'
 import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
 import { useMerchants } from '@/merchants/useMerchants'
 import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
@@ -61,7 +61,6 @@ export default function App({
   createBackend,
   createExpensesSource,
   createCardsSource,
-  createCardsApi,
   createCategoriesSource,
   createCategoriesApi,
   createEntriesSource,
@@ -82,7 +81,6 @@ export default function App({
         createBackend={createBackend}
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
-        createCardsApi={createCardsApi}
         createCategoriesSource={createCategoriesSource}
         createCategoriesApi={createCategoriesApi}
         createEntriesSource={createEntriesSource}
@@ -105,7 +103,6 @@ function Screens({
   createBackend,
   createExpensesSource,
   createCardsSource,
-  createCardsApi,
   createCategoriesSource,
   createCategoriesApi,
   createEntriesSource,
@@ -123,7 +120,6 @@ function Screens({
   | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
-  | 'createCardsApi'
   | 'createCategoriesSource'
   | 'createCategoriesApi'
   | 'createEntriesSource'
@@ -158,7 +154,6 @@ function Screens({
           createBackend={createBackend}
           createExpensesSource={createExpensesSource}
           createCardsSource={createCardsSource}
-          createCardsApi={createCardsApi}
           createCategoriesSource={createCategoriesSource}
           createCategoriesApi={createCategoriesApi}
           createEntriesSource={createEntriesSource}
@@ -182,7 +177,6 @@ function Authorized({
   createBackend,
   createExpensesSource,
   createCardsSource,
-  createCardsApi,
   createCategoriesSource,
   createCategoriesApi,
   createEntriesSource,
@@ -201,7 +195,6 @@ function Authorized({
   | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
-  | 'createCardsApi'
   | 'createCategoriesSource'
   | 'createCategoriesApi'
   | 'createEntriesSource'
@@ -224,10 +217,8 @@ function Authorized({
     void store.loadUncategorized()
   }, [store])
   const [source] = useState(createExpensesSource)
-  // Created once so switching tabs never recreates them. Both subscriptions live here, shared by
-  // the Gastos and Tarjetas tabs, and only exist once the user is authorized.
+  // Created once so switching tabs never recreates them; they only exist once the user is authorized.
   const [cardsSource] = useState(createCardsSource)
-  const [cardsApi] = useState(createCardsApi)
   const { status, expenses, error } = useExpenses(source)
   const cards = useCards(cardsSource)
   const [categoriesSource] = useState(createCategoriesSource)
@@ -321,7 +312,7 @@ function Authorized({
           <ExpensesTab onCategoryChange={changeCategory} />
         </TabsContent>
         <TabsContent value="cards">
-          <CardsTab state={cards} api={cardsApi} expenses={expenses} expensesStatus={status} />
+          <CardsTab />
         </TabsContent>
         <TabsContent value="categories">
           {categories.status === 'loading' || status === 'loading' ? (
@@ -391,24 +382,4 @@ function Authorized({
     </div>
     </DataProvider>
   )
-}
-
-function CardsTab({
-  state,
-  api,
-  expenses,
-  expensesStatus,
-}: {
-  state: ReturnType<typeof useCards>
-  api: CardsApi
-  expenses: Expense[]
-  expensesStatus: 'loading' | 'ready' | 'error'
-}) {
-  const { status, data, error } = state
-  if (status === 'loading') return <CardsSkeleton />
-  if (status === 'error')
-    return (
-      <ScreenError>{error}</ScreenError>
-    )
-  return <CardsScreen expenses={expenses} expensesStatus={expensesStatus} data={data} api={api} />
 }

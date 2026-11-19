@@ -30,10 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Expense } from '@/lib/expense'
+import type { SeenCard } from '@/data/types'
 import { strings } from '@/strings'
 import type { CardsApi, CardsData } from './cardsApi'
-import { findUnassignedCards, normalizeOwner, seenCardsOf } from './cardLogic'
+import { findUnassignedCards, normalizeOwner } from './cardLogic'
 import { CyclesSection } from './CyclesSection'
 import { Disclosure } from './Disclosure'
 import { usePending, type Run } from './usePending'
@@ -465,15 +465,12 @@ function NewAccountForm({ run, api }: { run: Run; api: CardsApi }) {
 }
 
 export function CardsScreen({
-  expenses,
-  expensesStatus = 'ready',
   data,
+  seenCards,
   api,
 }: {
-  expenses: Expense[]
-  // Unassigned cards are detected from the expenses, so they are only known once those are ready.
-  expensesStatus?: 'loading' | 'ready' | 'error'
   data: CardsData
+  seenCards: SeenCard[]
   api: CardsApi
 }) {
   const toast = useToast()
@@ -492,7 +489,7 @@ export function CardsScreen({
   }
 
   const accountIds = new Set(data.accounts.map((a) => a.id))
-  const unassigned = findUnassignedCards(seenCardsOf(expenses), data.cards, data.accounts)
+  const unassigned = findUnassignedCards(seenCards, data.cards, data.accounts)
 
   return (
     <div className="grid gap-6">
@@ -517,7 +514,7 @@ export function CardsScreen({
         />
       ))}
 
-      {expensesStatus === 'ready' && unassigned.length > 0 && (
+      {unassigned.length > 0 && (
         <Card role="region" aria-labelledby="unassigned-heading">
           <CardHeader>
             <CardTitle id="unassigned-heading">{s.unassignedHeading}</CardTitle>

@@ -168,44 +168,6 @@ describe('App', () => {
     expect(app.createCardsApi).not.toHaveBeenCalled()
   })
 
-  it('shows the Inicio tab by default and switches to Tarjetas', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    app.emitExpenses([expense])
-    app.emitCards(cardsData)
-    expect(screen.getByRole('tab', { name: strings.tabs.home })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.queryByRole('region', { name: strings.cards.accountTitle('Banco Uno') })).not.toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-
-    expect(screen.getByRole('tab', { name: strings.tabs.cards })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tab', { name: strings.tabs.home })).toHaveAttribute('aria-selected', 'false')
-    expect(screen.getByRole('region', { name: strings.cards.accountTitle('Banco Uno') })).toBeInTheDocument()
-  })
-
-  it('the Tarjetas tab shows the accounts from the source', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    app.emitExpenses([expense])
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    expect(screen.getByText(strings.loading)).toBeInTheDocument()
-
-    app.emitCards({ accounts: [{ id: 'a1', name: 'Banco Uno', owner: 'JUAN' }], cards: [], cycles: [] })
-
-    expect(await screen.findByText(/Banco Uno/)).toBeInTheDocument()
-  })
-
-  it('shows an error message in the Tarjetas tab when its subscription fails (permission-denied)', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    app.emitExpenses([expense])
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-
-    app.failCards(new Error('permission-denied'))
-
-    expect(screen.getByRole('alert')).toHaveTextContent(strings.cards.error)
-  })
-
   it('expenses and cards are each subscribed once, also after switching tabs', async () => {
     const app = setup({ claim: true })
     await app.signInAs(person)
@@ -225,52 +187,14 @@ describe('App', () => {
     expect(app.cardsSubscribe).not.toHaveBeenCalled()
   })
 
-  it('does not show the unassigned cards section while the expenses are loading', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-
-    app.emitCards({ accounts: [{ id: 'a1', name: 'Banco Uno', owner: 'JUAN' }], cards: [], cycles: [] })
-
-    expect(await screen.findByText(/Banco Uno/)).toBeInTheDocument()
-    expect(screen.queryByText(strings.cards.unassignedHeading)).not.toBeInTheDocument()
-    expect(screen.queryByText(strings.cards.noUnassigned)).not.toBeInTheDocument()
-  })
-
-  it('does not show the unassigned cards section when the expenses fail', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    app.failExpenses(new Error('permission-denied'))
-
-    app.emitCards({ accounts: [{ id: 'a1', name: 'Banco Uno', owner: 'JUAN' }], cards: [], cycles: [] })
-
-    expect(await screen.findByText(/Banco Uno/)).toBeInTheDocument()
-    expect(screen.queryByText(strings.cards.unassignedHeading)).not.toBeInTheDocument()
-    expect(screen.queryByText(strings.cards.noUnassigned)).not.toBeInTheDocument()
-  })
-
-  it('shows the unassigned cards section once the expenses are ready and a card has no account', async () => {
-    const app = setup({ claim: true })
-    await app.signInAs(person)
-    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
-    app.emitCards({ accounts: [{ id: 'a1', name: 'Banco Uno', owner: 'JUAN' }], cards: [], cycles: [] })
-    app.emitExpenses([{ ...expense, cardLast4: '4321' }])
-
-    expect(await screen.findByText(strings.cards.unassignedHeading)).toBeInTheDocument()
-    expect(screen.getByRole('listitem', { name: '····4321' })).toBeInTheDocument()
-  })
-
-  it('creates the cards source and api exactly once when authorized, even after switching tabs', async () => {
+  it('creates the cards source exactly once when authorized, even after switching tabs', async () => {
     const app = setup({ claim: true })
     await app.signInAs(person)
     expect(app.createCardsSource).toHaveBeenCalledTimes(1)
-    expect(app.createCardsApi).toHaveBeenCalledTimes(1)
     await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
     await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))
     await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
     expect(app.createCardsSource).toHaveBeenCalledTimes(1)
-    expect(app.createCardsApi).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -310,9 +234,9 @@ describe('App home with month documents', () => {
     receivedAt: new Date('2026-11-03T15:00:00Z'),
     categoryId: null,
   }
-  const seeded = () =>
+  const seeded = (extra: Partial<AppConfig> = {}) =>
     createFakeBackend({
-      config,
+      config: { ...config, ...extra },
       months: ['2026-07', '2026-08', '2026-09', '2026-10'].map((id) => month(id)).concat(month('2026-11', { expenses: [purchase] })),
       uncategorized: [
         {
@@ -331,9 +255,9 @@ describe('App home with month documents', () => {
   const expectedReads = ['config', 'config', 'config', 'config', 'config', 'uncategorized', 'month:2026-09', 'month:2026-10', 'month:2026-11']
   const sorted = (list: string[]) => [...list].sort()
 
-  async function openHome() {
+  async function openHome(extra: Partial<AppConfig> = {}) {
     vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-06T15:00:00Z') })
-    const backend = seeded()
+    const backend = seeded(extra)
     const app = setup({ claim: true, backend })
     await app.signInAs(person)
     await screen.findByRole('region', { name: strings.home.closedTitle })
@@ -396,5 +320,32 @@ describe('App home with month documents', () => {
     await userEvent.click(await screen.findByRole('option', { name: 'Comida' }))
     await waitFor(() => expect(screen.getByRole('combobox', { name: strings.categories.changeAria('SUPER EJEMPLO') })).toHaveTextContent('Comida'))
     expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('the cards tab reads no month', async () => {
+    const { backend } = await openHome()
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
+    expect(screen.getByRole('tab', { name: strings.tabs.cards })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('region', { name: strings.cards.accountTitle('Banco Uno') })).toBeInTheDocument()
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('the cards tab lists a seen card without an account from config.seenCards', async () => {
+    const { backend } = await openHome({ seenCards: [{ last4: '4321', type: 'credit', holder: 'ANA', lastSeen: '2026-10-20' }] })
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
+    expect(await screen.findByText(strings.cards.unassignedHeading)).toBeInTheDocument()
+    expect(screen.getByRole('listitem', { name: '····4321' })).toBeInTheDocument()
+    expect(sorted(backend.reads)).toEqual(sorted(expectedReads))
+  })
+
+  it('the cards tab shows an error when the config cannot be read', async () => {
+    const backend = seeded()
+    backend.readConfig = async () => {
+      throw new Error('permission-denied')
+    }
+    const app = setup({ claim: true, backend })
+    await app.signInAs(person)
+    await userEvent.click(screen.getByRole('tab', { name: strings.tabs.cards }))
+    expect(await screen.findByText(strings.loadError)).toBeInTheDocument()
   })
 })

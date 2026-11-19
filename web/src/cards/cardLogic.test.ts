@@ -1,23 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Expense } from '@/lib/expense'
 import type { Account, Card } from './types'
 import type { SeenCard } from '@/data/types'
-import { findUnassignedCards, normalizeOwner, parseCyclesText, seenCardsOf } from './cardLogic'
-
-function expense(over: Partial<Expense> & { id: string }): Expense {
-  return {
-    purchaseDate: new Date('2026-03-10T12:00:00Z'),
-    receivedAt: new Date('2026-03-10T12:00:00Z'),
-    month: '2026-03',
-    merchant: 'Test Shop',
-    amount: 100,
-    currency: 'ARS',
-    cardLast4: '1111',
-    cardType: 'credit',
-    cardHolder: 'ANA TEST',
-    ...over,
-  }
-}
+import { findUnassignedCards, normalizeOwner, parseCyclesText } from './cardLogic'
 
 const accounts: Account[] = [{ id: 'acc1', name: 'Main', owner: 'ANA TEST' }]
 
@@ -59,26 +43,6 @@ describe('findUnassignedCards', () => {
       accounts,
     )
     expect(result.map((c) => `${c.holder}${c.last4}`)).toEqual(['ANA2222', 'ANA9999', 'ZOE1111'])
-  })
-})
-
-describe('seenCardsOf', () => {
-  it('detects each distinct card once', () => {
-    const result = seenCardsOf([
-      expense({ id: 'a' }),
-      expense({ id: 'b' }),
-      expense({ id: 'c', cardType: 'debit' }),
-      expense({ id: 'd', cardLast4: '2222' }),
-    ])
-    expect(result.map((c) => `${c.last4}_${c.type}`).sort()).toEqual(['1111_credit', '1111_debit', '2222_credit'])
-  })
-
-  it('uses the holder of the most recent expense', () => {
-    const result = seenCardsOf([
-      expense({ id: 'old', cardHolder: 'OLD HOLDER', purchaseDate: new Date('2026-01-01T12:00:00Z') }),
-      expense({ id: 'new', cardHolder: 'NEW HOLDER', purchaseDate: new Date('2026-04-01T12:00:00Z') }),
-    ])
-    expect(result).toEqual([{ last4: '1111', type: 'credit', holder: 'NEW HOLDER', lastSeen: '2026-04-01' }])
   })
 })
 
