@@ -27,7 +27,7 @@ export function MonthExpenses({
   expenses: Expense[]
   cards: CardsData
   categories: Category[]
-  onCategoryChange: (expenseId: string, categoryId: string | null) => void
+  onCategoryChange: (expense: Expense, categoryId: string | null) => void
   capsSource: CapsSource
   ratesSource: RatesSource
 }) {

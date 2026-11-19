@@ -33,7 +33,7 @@ import {
 import type { Expense } from '@/lib/expense'
 import { strings } from '@/strings'
 import type { CardsApi, CardsData } from './cardsApi'
-import { findUnassignedCards, normalizeOwner } from './cardLogic'
+import { findUnassignedCards, normalizeOwner, seenCardsOf } from './cardLogic'
 import { CyclesSection } from './CyclesSection'
 import { Disclosure } from './Disclosure'
 import { usePending, type Run } from './usePending'
@@ -492,7 +492,7 @@ export function CardsScreen({
   }
 
   const accountIds = new Set(data.accounts.map((a) => a.id))
-  const unassigned = findUnassignedCards(expenses, data.cards, data.accounts)
+  const unassigned = findUnassignedCards(seenCardsOf(expenses), data.cards, data.accounts)
 
   return (
     <div className="grid gap-6">

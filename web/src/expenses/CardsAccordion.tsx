@@ -1,5 +1,6 @@
 import type { Category } from '@/categories/types'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import type { Expense } from '@/lib/expense'
 import { strings } from '@/strings'
 import { PurchasesTable } from './PurchasesTable'
 import type { TabView } from './statements'
@@ -13,7 +14,7 @@ export function CardsAccordion({
 }: {
   tab: TabView
   categories?: Category[]
-  onCategoryChange?: (expenseId: string, categoryId: string | null) => void
+  onCategoryChange?: (expense: Expense, categoryId: string | null) => void
 }) {
   return (
   <Accordion multiple>

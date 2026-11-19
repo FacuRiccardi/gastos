@@ -1,26 +1,20 @@
 import { AlertTriangleIcon, ChevronDownIcon } from 'lucide-react'
-import { ScreenError } from '@/components/ScreenError'
 import { useMemo, useState, type ReactNode } from 'react'
 import type { CardsData } from '@/cards/cardsApi'
-import type { RatesSource } from '@/balance/ratesApi'
-import { useRates } from '@/balance/useRates'
-import { findUnassignedCards } from '@/cards/cardLogic'
+import type { Rates } from '@/balance/ratesApi'
+import type { DetectedCard } from '@/cards/types'
 import type { Category } from '@/categories/types'
-import { HomeSkeleton } from '@/components/LoadingSkeletons'
 import { Button } from '@/components/ui/button'
 import { buildAccountViews } from '@/expenses/statements'
 import type { FixedData } from '@/fixed/fixedApi'
 import { buenosAiresDay } from '@/lib/dates'
 import { useIsPhone } from '@/lib/useMediaQuery'
 import type { Expense } from '@/lib/expense'
-import { needsCategory } from '@/merchants/ToCategorize'
-import { OWNERS, type EntriesSource } from '@/money/entries'
-import { useEntries } from '@/money/useEntries'
+import { OWNERS, type Entry } from '@/money/entries'
 import { strings } from '@/strings'
-import type { CapsSource } from './capsApi'
+import type { Caps } from './capsApi'
 import { buildHomePeriods, previousMonthTotal, type PeriodGroup } from './homePeriods'
 import { PeriodCard } from './PeriodCard'
-import { useCaps } from './useCaps'
 
 const s = strings.home
 
@@ -59,9 +53,11 @@ export function HomeScreen({
   cards,
   fixed,
   categories,
-  incomesSource,
-  capsSource,
-  ratesSource,
+  incomes,
+  caps,
+  rates,
+  uncategorizedCount,
+  newCards,
   onCategoryChange,
   onNavigate,
 }: {
@@ -69,35 +65,24 @@ export function HomeScreen({
   cards: CardsData
   fixed: FixedData
   categories: Category[]
-  incomesSource: EntriesSource
-  capsSource: CapsSource
-  ratesSource: RatesSource
-  onCategoryChange: (expenseId: string, categoryId: string | null) => void
+  incomes: Entry[]
+  caps: Caps
+  rates: Rates
+  uncategorizedCount: number
+  newCards: DetectedCard[]
+  onCategoryChange: (expense: Expense, categoryId: string | null) => void
   onNavigate: (tab: 'toCategorize' | 'fixed' | 'money' | 'cards') => void
 }) {
-  const incomes = useEntries(incomesSource)
-  const caps = useCaps(capsSource)
-  const rates = useRates(ratesSource)
   const phone = useIsPhone()
   const [alertsOpen, setAlertsOpen] = useState(false)
   const today = buenosAiresDay(new Date())
   const month = today.slice(0, 7)
   const views = useMemo(() => buildAccountViews(expenses, cards), [expenses, cards])
-  const periods = useMemo(() => buildHomePeriods(views, cards.cycles, today, rates.rates), [views, cards.cycles, today, rates.rates])
-
-  const error = incomes.status === 'error' ? incomes : caps.status === 'error' ? caps : rates.status === 'error' ? rates : null
-  if (error) {
-    return (
-      <ScreenError>{error.error}</ScreenError>
-    )
-  }
-  if (incomes.status === 'loading' || caps.status === 'loading' || rates.status === 'loading') return <HomeSkeleton />
+  const periods = useMemo(() => buildHomePeriods(views, cards.cycles, today, rates), [views, cards.cycles, today, rates])
 
   // ---- what is missing
   const missingFixed = fixed.types.filter((t) => !t.disabled && !fixed.entries.some((e) => e.typeId === t.id && e.month === month))
-  const missingIncome = OWNERS.filter((owner) => !incomes.entries.some((i) => i.owner === owner && i.date.startsWith(month)))
-  const uncategorized = expenses.filter((e) => needsCategory(e, categories)).length
-  const newCards = findUnassignedCards(expenses, cards.cards, cards.accounts)
+  const missingIncome = OWNERS.filter((owner) => !incomes.some((i) => i.owner === owner && i.date.startsWith(month)))
   const list = (names: string[]) => (names.length > 3 ? `${names.slice(0, 3).join(', ')} ${s.andMore(names.length - 3)}` : names.join(', '))
 
   const alerts: { id: string; level: AlertLevel; short: string; message: ReactNode; action: string; go: () => void }[] = []
@@ -105,8 +90,8 @@ export function HomeScreen({
     alerts.push({ id: 'fixed', level: 'high', short: s.shortFixed, message: s.missingFixed(strings.gastos.monthLabel(month), list(missingFixed.map((t) => t.name))), action: s.goFixed, go: () => onNavigate('fixed') })
   if (missingIncome.length > 0)
     alerts.push({ id: 'income', level: 'high', short: s.shortIncome, message: s.missingIncome(strings.gastos.monthLabel(month), list(missingIncome)), action: s.goIncome, go: () => onNavigate('money') })
-  if (uncategorized > 0)
-    alerts.push({ id: 'categorize', level: 'medium', short: s.shortCategorize(uncategorized), message: s.uncategorized(uncategorized), action: s.goCategorize, go: () => onNavigate('toCategorize') })
+  if (uncategorizedCount > 0)
+    alerts.push({ id: 'categorize', level: 'medium', short: s.shortCategorize(uncategorizedCount), message: s.uncategorized(uncategorizedCount), action: s.goCategorize, go: () => onNavigate('toCategorize') })
   if (newCards.length > 0)
     alerts.push({ id: 'cards', level: 'low', short: s.shortCards, message: s.newCards(newCards.length, list(newCards.map((c) => `····${c.last4}`))), action: s.goCards, go: () => onNavigate('cards') })
 
@@ -140,10 +125,10 @@ export function HomeScreen({
           <PeriodCard
             key={g.kind}
             group={g}
-            caps={caps.caps}
+            caps={caps}
             categories={categories}
             onCategoryChange={onCategoryChange}
-            previous={previousMonthTotal(views, cards.cycles, g.month, today, rates.rates)}
+            previous={previousMonthTotal(views, cards.cycles, g.month, today, rates)}
           />
         ))
       )}

@@ -149,7 +149,7 @@ export function CategoriesScreen({
   api: CategoriesApi
   merchants: { status: 'loading' | 'ready' | 'error'; merchants: MerchantEntry[]; error: string | null }
   merchantsApi: MerchantsApi
-  onCategorize: (expenseId: string, categoryId: string | null) => void
+  onCategorize: (expense: Expense, categoryId: string | null) => void
   // The card to open on arrival (the alert of the home view points to the purchases to categorize).
   initialOpen?: CategoriesSection | null
 }) {

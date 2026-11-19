@@ -1,6 +1,6 @@
 import { BarChart3Icon, CreditCardIcon, HomeIcon, LogOutIcon, PiggyBankIcon, ReceiptTextIcon, TagsIcon } from 'lucide-react'
 import { ScreenError } from '@/components/ScreenError'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/auth/AuthProvider'
 import type { AuthApi, AuthUser } from '@/auth/authApi'
 import { LoginScreen } from '@/auth/LoginScreen'
@@ -13,17 +13,15 @@ import type { CardsApi, CardsSource } from '@/cards/cardsApi'
 import { useCards } from '@/cards/useCards'
 import { ToastProvider, useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
-import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, HomeSkeleton, PageSkeleton, PeriodSkeleton } from '@/components/LoadingSkeletons'
-import { merchantKey } from '@/merchants/merchantKey'
+import { BalanceSkeleton, CardsSkeleton, ClosedCardsSkeleton, PageSkeleton, PeriodSkeleton } from '@/components/LoadingSkeletons'
 import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
 import { useMerchants } from '@/merchants/useMerchants'
-import { needsCategory } from '@/merchants/ToCategorize'
 import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
 import { BalanceScreen } from '@/balance/BalanceScreen'
 import type { RatesApi, RatesSource } from '@/balance/ratesApi'
 import { BudgetScreen, type BudgetSection } from '@/budget/BudgetScreen'
 import type { CapsApi, CapsSource } from '@/home/capsApi'
-import { HomeScreen } from '@/home/HomeScreen'
+import { HomeTab } from '@/home/HomeTab'
 import { HistoryScreen } from '@/history/HistoryScreen'
 import type { FixedApi, FixedSource } from '@/fixed/fixedApi'
 import { useFixed } from '@/fixed/useFixed'
@@ -32,11 +30,15 @@ import { MonthExpenses } from '@/expenses/MonthExpenses'
 import { NavTab, ScrollableTabsList } from '@/expenses/ScrollableTabsList'
 import type { ExpensesSource } from '@/expenses/expensesSource'
 import { useExpenses } from '@/expenses/useExpenses'
+import type { Backend } from '@/data/backend'
+import { DataProvider } from '@/data/DataProvider'
+import { DataStore } from '@/data/dataStore'
 import type { Expense } from '@/lib/expense'
 import { strings } from '@/strings'
 
 type AppProps = {
   authApi: AuthApi
+  createBackend: () => Backend
   createExpensesSource: () => ExpensesSource
   createCardsSource: () => CardsSource
   createCardsApi: () => CardsApi
@@ -56,6 +58,7 @@ type AppProps = {
 
 export default function App({
   authApi,
+  createBackend,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -76,6 +79,7 @@ export default function App({
     <AuthProvider api={authApi}>
       <ToastProvider>
       <Screens
+        createBackend={createBackend}
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
         createCardsApi={createCardsApi}
@@ -98,6 +102,7 @@ export default function App({
 }
 
 function Screens({
+  createBackend,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -115,6 +120,7 @@ function Screens({
   createCapsApi,
 }: Pick<
   AppProps,
+  | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createCardsApi'
@@ -149,6 +155,7 @@ function Screens({
       return (
         <Authorized
           user={state.user}
+          createBackend={createBackend}
           createExpensesSource={createExpensesSource}
           createCardsSource={createCardsSource}
           createCardsApi={createCardsApi}
@@ -172,6 +179,7 @@ function Screens({
 
 function Authorized({
   user,
+  createBackend,
   createExpensesSource,
   createCardsSource,
   createCardsApi,
@@ -190,6 +198,7 @@ function Authorized({
   onSignOut,
 }: Pick<
   AppProps,
+  | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createCardsApi'
@@ -209,6 +218,11 @@ function Authorized({
   user: AuthUser
   onSignOut: () => void
 }) {
+  const [store] = useState(() => new DataStore(createBackend()))
+  useEffect(() => {
+    void store.loadConfig()
+    void store.loadUncategorized()
+  }, [store])
   const [source] = useState(createExpensesSource)
   // Created once so switching tabs never recreates them. Both subscriptions live here, shared by
   // the Gastos and Tarjetas tabs, and only exist once the user is authorized.
@@ -252,33 +266,16 @@ function Authorized({
   }
   const toast = useToast()
   const [categorySaveFailed, setCategorySaveFailed] = useState(false)
-  // From "Compras a categorizar": also remember the choice for the merchant (for its future purchases)
-  // and apply it to the other pending purchases of the same merchant.
-  const categorize = (expenseId: string, categoryId: string | null) => {
-    const expense = expenses.find((e) => e.id === expenseId)
-    if (!expense || !categoryId) return changeCategory(expenseId, categoryId)
+  const saveCategory = (save: Promise<void>) => {
     setCategorySaveFailed(false)
-    const key = merchantKey(expense.merchant)
-    const same = expenses.filter((e) => e.id !== expenseId && key !== '' && merchantKey(e.merchant) === key && needsCategory(e, categories.categories))
-    Promise.all([
-      categoriesApi.setExpenseCategory(expense, categoryId),
-      merchantsApi.remember(expense.merchant, categoryId),
-      ...same.map((e) => categoriesApi.setExpenseCategory(e, categoryId)),
-    ])
-      .then(() => toast(strings.saved))
-      .catch(() => setCategorySaveFailed(true))
+    save.then(() => toast(strings.saved)).catch(() => setCategorySaveFailed(true))
   }
-  const changeCategory = (expenseId: string, categoryId: string | null) => {
-    const expense = expenses.find((e) => e.id === expenseId)
-    if (!expense) return
-    setCategorySaveFailed(false)
-    categoriesApi
-      .setExpenseCategory(expense, categoryId)
-      .then(() => toast(strings.saved))
-      .catch(() => setCategorySaveFailed(true))
-  }
+  // From "Compras a categorizar": also remember the choice for the merchant and apply it to its other pending purchases.
+  const categorize = (expense: Expense, categoryId: string | null) => saveCategory(store.categorize(expense, categoryId))
+  const changeCategory = (expense: Expense, categoryId: string | null) => saveCategory(store.categoriesApi.setExpenseCategory(expense, categoryId))
 
   return (
+    <DataProvider store={store}>
     <div className="mx-auto min-w-0 max-w-3xl p-4 max-sm:pb-24">
       <header className="mb-4 flex items-center justify-between gap-3">
         <h1 className="min-w-0 truncate text-lg font-semibold">{strings.appName}</h1>
@@ -308,30 +305,12 @@ function Authorized({
           <NavTab value="balance" icon={BarChart3Icon}>{strings.tabs.balance}</NavTab>
         </ScrollableTabsList>
         <TabsContent value="home">
-          {status === 'error' || cards.status === 'error' || fixed.status === 'error' || categories.status === 'error' ? (
-            <ScreenError>{status === 'error' ? error : cards.status === 'error' ? cards.error : fixed.status === 'error' ? fixed.error : categories.error}</ScreenError>
-          ) : status === 'loading' || cards.status === 'loading' || fixed.status === 'loading' || categories.status === 'loading' ? (
-            <HomeSkeleton />
-          ) : (
-            <>
-              {categorySaveFailed && (
-                <p role="alert" className="mb-3 rounded-md border border-destructive p-3 text-destructive">
-                  {strings.categories.saveError}
-                </p>
-              )}
-              <HomeScreen
-                expenses={expenses}
-                cards={cards.data}
-                fixed={fixed.data}
-                categories={categories.categories}
-                incomesSource={incomesSource}
-                capsSource={capsSource}
-                ratesSource={ratesSource}
-                onCategoryChange={changeCategory}
-                onNavigate={goTo}
-              />
-            </>
+          {categorySaveFailed && (
+            <p role="alert" className="mb-3 rounded-md border border-destructive p-3 text-destructive">
+              {strings.categories.saveError}
+            </p>
           )}
+          <HomeTab onCategoryChange={changeCategory} onNavigate={goTo} />
         </TabsContent>
         <TabsContent value="expenses">
           {status === 'error' || cards.status === 'error' || categories.status === 'error' ? (
@@ -425,6 +404,7 @@ function Authorized({
         </TabsContent>
       </Tabs>
     </div>
+    </DataProvider>
   )
 }
 

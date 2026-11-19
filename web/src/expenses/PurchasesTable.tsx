@@ -15,7 +15,7 @@ export function PurchasesTable({
   expenses: Expense[]
   // When given, each purchase shows its category tag (click it to change it).
   categories?: Category[]
-  onCategoryChange?: (expenseId: string, categoryId: string | null) => void
+  onCategoryChange?: (expense: Expense, categoryId: string | null) => void
 }) {
   return (
     <Table className="max-sm:block">
@@ -46,7 +46,7 @@ export function PurchasesTable({
                       categories={categories}
                       categoryId={expense.categoryId}
                       merchant={expense.merchant}
-                      onChange={(categoryId) => onCategoryChange?.(expense.id, categoryId)}
+                      onChange={(categoryId) => onCategoryChange?.(expense, categoryId)}
                     />
                   )}
                 </div>

@@ -8,6 +8,7 @@ import { buildBreakdown } from '@/expenses/categoryBreakdown'
 import { CardsAccordion } from '@/expenses/CardsAccordion'
 import { CategoryCharts } from '@/expenses/CategoryCharts'
 import { formatCalendarDate } from '@/lib/dates'
+import type { Expense } from '@/lib/expense'
 import { formatMoney } from '@/lib/format'
 import { strings } from '@/strings'
 import { capFor, capLevel, type CapLevel, type PeriodGroup } from './homePeriods'
@@ -101,7 +102,7 @@ export function PeriodCard({
   group: PeriodGroup
   caps: Record<string, number>
   categories: Category[]
-  onCategoryChange: (expenseId: string, categoryId: string | null) => void
+  onCategoryChange: (expense: Expense, categoryId: string | null) => void
   // A custom title (Gastos names the card after the month); by default "Período actual" / "Período cerrado".
   title?: string
   // Whether to mark a closed period with the "Cerrado" label (defaults to yes for closed ones).

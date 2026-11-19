@@ -1,38 +1,35 @@
+import type { SeenCard } from '@/data/types'
 import type { Expense } from '@/lib/expense'
-import { parseDisplayDate } from '@/lib/dates'
+import { buenosAiresDay, parseDisplayDate } from '@/lib/dates'
 import { cardKey } from './types'
 import type { Account, Card, DetectedCard, NewCycle } from './types'
 
 /**
- * Cards that still need an account: cards seen in the expenses that have no stored card, plus
- * stored cards whose account no longer exists. Sorted by holder, then last 4.
+ * Cards that still need an account: seen cards that have no stored card, plus stored cards whose
+ * account no longer exists. Sorted by holder, then last 4.
  */
-export function findUnassignedCards(
-  expenses: Expense[],
-  cards: Card[],
-  accounts: Account[],
-): DetectedCard[] {
+export function findUnassignedCards(seen: SeenCard[], cards: Card[], accounts: Account[]): DetectedCard[] {
   const storedKeys = new Set(cards.map(cardKey))
   const accountIds = new Set(accounts.map((a) => a.id))
-  const latest = new Map<string, Expense>()
-
-  for (const e of expenses) {
-    const key = cardKey({ last4: e.cardLast4, type: e.cardType })
-    if (storedKeys.has(key)) continue
-    const current = latest.get(key)
-    if (!current || e.purchaseDate.getTime() > current.purchaseDate.getTime()) latest.set(key, e)
-  }
-
-  const result: DetectedCard[] = [...latest.values()].map((e) => ({
-    last4: e.cardLast4,
-    type: e.cardType,
-    holder: e.cardHolder,
-  }))
+  const result: DetectedCard[] = seen
+    .filter((c) => !storedKeys.has(cardKey(c)))
+    .map((c) => ({ last4: c.last4, type: c.type, holder: c.holder }))
   for (const c of cards) {
     if (!accountIds.has(c.accountId)) result.push({ last4: c.last4, type: c.type, holder: c.holder })
   }
 
   return result.sort((a, b) => a.holder.localeCompare(b.holder) || a.last4.localeCompare(b.last4))
+}
+
+// Until the Tarjetas tab reads `config.seenCards` (Task 12): the cards seen in a list of expenses, holder of the latest one.
+export function seenCardsOf(expenses: Expense[]): SeenCard[] {
+  const latest = new Map<string, Expense>()
+  for (const e of expenses) {
+    const key = cardKey({ last4: e.cardLast4, type: e.cardType })
+    const current = latest.get(key)
+    if (!current || e.purchaseDate.getTime() > current.purchaseDate.getTime()) latest.set(key, e)
+  }
+  return [...latest.values()].map((e) => ({ last4: e.cardLast4, type: e.cardType, holder: e.cardHolder, lastSeen: buenosAiresDay(e.purchaseDate) }))
 }
 
 export type CycleLineError = {

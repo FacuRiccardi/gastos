@@ -5,10 +5,9 @@ import type { CardsData } from '@/cards/cardsApi'
 import type { Category } from '@/categories/types'
 import type { FixedData } from '@/fixed/fixedApi'
 import type { Expense } from '@/lib/expense'
-import type { Rates, RatesSource } from '@/balance/ratesApi'
-import { OWNERS, type Entry, type EntriesSource } from '@/money/entries'
+import { OWNERS, type Entry } from '@/money/entries'
 import { strings } from '@/strings'
-import type { Caps, CapsSource } from './capsApi'
+import type { Caps } from './capsApi'
 import { HomeScreen } from './HomeScreen'
 
 const s = strings.home
@@ -47,10 +46,6 @@ const fixedComplete: FixedData = {
 // One income this month for every owner.
 const incomesComplete: Entry[] = OWNERS.map((owner, i) => ({ id: `i${i}`, amount: 1000, currency: 'ARS', date: '2026-11-01', owner }))
 
-const incomesSource = (entries: Entry[]): EntriesSource => ({ subscribe: (onData) => (onData(entries), () => {}) })
-const capsSource = (caps: Caps): CapsSource => ({ subscribe: (onData) => (onData(caps), () => {}) })
-const ratesSource = (rates: Rates = {}): RatesSource => ({ subscribe: (onData) => (onData(rates), () => {}) })
-
 function renderHome(over: Partial<Parameters<typeof HomeScreen>[0]> = {}, incomes: Entry[] = incomesComplete, caps: Caps = { '2026-11': 1000 }) {
   const onNavigate = vi.fn()
   render(
@@ -59,9 +54,11 @@ function renderHome(over: Partial<Parameters<typeof HomeScreen>[0]> = {}, income
       cards={cards}
       fixed={fixedComplete}
       categories={categories}
-      incomesSource={incomesSource(incomes)}
-      capsSource={capsSource(caps)}
-      ratesSource={ratesSource()}
+      incomes={incomes}
+      caps={caps}
+      rates={{}}
+      uncategorizedCount={0}
+      newCards={[]}
       onCategoryChange={vi.fn()}
       onNavigate={onNavigate}
       {...over}
@@ -156,20 +153,20 @@ describe('HomeScreen', () => {
     })
 
     it('uncategorized purchases are a medium alert that goes to "toCategorize"', async () => {
-      const onNavigate = renderHome({ expenses: [expense({ categoryId: null }), expense({ categoryId: 'deleted' }), expense()] })
+      const onNavigate = renderHome({ uncategorizedCount: 2 })
       const a = alert('Hay 2 compras sin categorizar.')
       expect(a).toHaveAttribute('data-level', 'medium')
       await userEvent.click(within(a).getByRole('button', { name: s.goCategorize }))
       expect(onNavigate).toHaveBeenCalledExactlyOnceWith('toCategorize')
     })
 
-    it('rejected purchases do not count as uncategorized', () => {
-      renderHome({ expenses: [expense({ categoryId: null, status: 'rejected' })] })
+    it('no uncategorized alert when the count is zero', () => {
+      renderHome({ expenses: [expense({ categoryId: null })] })
       expect(screen.queryByText(/sin categorizar/)).not.toBeInTheDocument()
     })
 
     it('a new card without account is a low alert that goes to "cards"', async () => {
-      const onNavigate = renderHome({ expenses: [expense(), expense({ cardLast4: '4321' })] })
+      const onNavigate = renderHome({ newCards: [{ last4: '4321', type: 'credit', holder: 'JUAN' }] })
       const a = alert(/tarjeta nueva sin cuenta asignada/)
       expect(a).toHaveAttribute('data-level', 'low')
       expect(a).toHaveTextContent('····4321')
@@ -180,30 +177,13 @@ describe('HomeScreen', () => {
     it('shows the four alerts together, most urgent first', () => {
       renderHome({
         fixed: { types: [{ id: 't1', name: 'Alquiler', disabled: false }], entries: [] },
-        expenses: [expense({ categoryId: null }), expense({ cardLast4: '4321' })],
+        uncategorizedCount: 1,
+        newCards: [{ last4: '4321', type: 'credit', holder: 'JUAN' }],
       }, [])
       const levels = within(screen.getByLabelText(s.alertsAria))
         .getAllByRole('alert')
         .map((a) => a.getAttribute('data-level'))
       expect(levels).toEqual(['high', 'high', 'medium', 'low'])
-    })
-  })
-
-  describe('loading and errors', () => {
-    it('shows the error when the incomes cannot be read', () => {
-      renderHome({ incomesSource: { subscribe: (_onData, onError) => (onError(new Error('x')), () => {}) } })
-      expect(screen.getByRole('alert')).toHaveTextContent(strings.money.error)
-    })
-
-    it('shows the error when the caps cannot be read', () => {
-      renderHome({ capsSource: { subscribe: (_onData, onError) => (onError(new Error('x')), () => {}) } })
-      expect(screen.getByRole('alert')).toHaveTextContent(s.error)
-    })
-
-    it('shows neither periods nor alerts while loading', () => {
-      renderHome({ incomesSource: { subscribe: () => () => {} } })
-      expect(screen.queryByRole('region', { name: s.currentTitle })).not.toBeInTheDocument()
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
   })
 })
@@ -221,7 +201,8 @@ describe('HomeScreen alerts on a phone', () => {
     renderHome(
       {
         fixed: { types: [{ id: 't1', name: 'Alquiler', disabled: false }], entries: [] },
-        expenses: [expense({ categoryId: null }), expense({ cardLast4: '4321' })],
+        uncategorizedCount: 1,
+        newCards: [{ last4: '4321', type: 'credit', holder: 'JUAN' }],
       },
       [],
     )
@@ -249,14 +230,14 @@ describe('HomeScreen total with dollars', () => {
   const dollars = [expense({ amount: 400 }), expense({ amount: 10, currency: 'USD' })]
 
   it('adds the dollar purchases at the rate of the month', () => {
-    renderHome({ expenses: dollars, ratesSource: ratesSource({ '2026-11': 1500 }) })
+    renderHome({ expenses: dollars, rates: { '2026-11': 1500 } })
     // 400 + 10 USD x 1500
     expect(screen.getByTestId('home-total')).toHaveTextContent('15.400,00')
     expect(screen.getByText(/Incluye .*10,00 a .*1\.500,00 \(TC de Noviembre 2026\)\./)).toBeInTheDocument()
   })
 
   it('without a rate for the month it uses the latest earlier one and says so', () => {
-    renderHome({ expenses: dollars, ratesSource: ratesSource({ '2026-09': 1000 }) })
+    renderHome({ expenses: dollars, rates: { '2026-09': 1000 } })
     expect(screen.getByTestId('home-total')).toHaveTextContent('10.400,00')
     expect(screen.getByText(/TC de Septiembre 2026, el último cargado/)).toBeInTheDocument()
   })

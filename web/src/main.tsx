@@ -11,6 +11,7 @@ import { createFirestoreRatesApi, createFirestoreRatesSource } from '@/balance/f
 import { createFirestoreFixedApi, createFirestoreFixedSource } from '@/fixed/firestoreFixed'
 import { createFirestoreMerchantsApi, createFirestoreMerchantsSource } from '@/merchants/firestoreMerchants'
 import { createFirestoreExpensesSource } from '@/expenses/expensesSource'
+import { createFirestoreBackend } from '@/data/firestoreBackend'
 import { auth, db } from '@/lib/firebase'
 import { syncSystemTheme } from '@/lib/theme'
 
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App
       authApi={createFirebaseAuthApi(auth)}
+      createBackend={() => createFirestoreBackend(db)}
       createExpensesSource={() => createFirestoreExpensesSource(db)}
       createCardsSource={() => createFirestoreCardsSource(db)}
       createCardsApi={() => createFirestoreCardsApi(db)}

@@ -17,7 +17,7 @@ export function ToCategorize({
 }: {
   expenses: Expense[]
   categories: Category[]
-  onCategorize: (expenseId: string, categoryId: string | null) => void
+  onCategorize: (expense: Expense, categoryId: string | null) => void
 }) {
   const pending = expenses.filter((e) => needsCategory(e, categories)).sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime())
   return (
