@@ -42,11 +42,6 @@ export const strings = {
     invalidAmount: 'Ingresá un tope mayor a cero, por ejemplo 2.500.000.',
     save: 'Guardar',
     inherited: 'Heredado del mes anterior, sin confirmar.',
-    delete: 'Eliminar',
-    cancel: 'Cancelar',
-    deleteAria: (month: string) => `Eliminar el tope de ${month}`,
-    deleteTitle: (month: string) => `¿Eliminar el tope de ${month}?`,
-    deleteText: 'Ese mes queda sin tope. Podés volver a cargarlo.',
   },
   home: {
     error: 'No se pudo cargar el inicio.',

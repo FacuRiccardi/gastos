@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BudgetTab } from '@/budget/BudgetTab'
@@ -56,14 +56,7 @@ describe('CapsScreen', () => {
     expect(screen.getByLabelText(s.amountLabel)).toHaveValue('1000')
     expect(screen.queryByText(/rige/)).not.toBeInTheDocument()
     expect(screen.queryByText(s.inherited)).not.toBeInTheDocument()
-  })
-
-  it('removes the cap of the chosen month after confirming', async () => {
-    const caps = api()
-    render(<CapsScreen month="2026-11" onMonthChange={() => {}} cap={{ amount: 1000, inherited: false }} api={caps} />)
-    await userEvent.click(screen.getByRole('button', { name: s.deleteAria('Noviembre 2026') }))
-    await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: s.delete }))
-    await waitFor(() => expect(caps.remove).toHaveBeenCalledExactlyOnceWith('2026-11'))
+    expect(screen.queryByRole('button', { name: /Eliminar/ })).not.toBeInTheDocument()
   })
 })
 

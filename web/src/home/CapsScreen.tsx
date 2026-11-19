@@ -1,15 +1,5 @@
-import { ChevronLeftIcon, ChevronRightIcon, Trash2Icon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { ListSkeleton } from '@/components/LoadingSkeletons'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/Toast'
@@ -42,7 +32,6 @@ export function CapsScreen({
   const [invalid, setInvalid] = useState(false)
   const [failed, setFailed] = useState(false)
   const [pending, setPending] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const toast = useToast()
   const amount = cap?.amount ?? null
   useEffect(() => {
@@ -66,14 +55,6 @@ export function CapsScreen({
     } finally {
       setPending(false)
     }
-  }
-
-  function remove() {
-    setFailed(false)
-    void api
-      .remove(month)
-      .then(() => toast(strings.deleted))
-      .catch(() => setFailed(true))
   }
 
   return (
@@ -114,31 +95,12 @@ export function CapsScreen({
                 {s.invalidAmount}
               </p>
             )}
-            <div className="flex items-center gap-2">
-              <Button type="submit" disabled={pending}>
-                {s.save}
-              </Button>
-              {cap.amount !== null && (
-                <Button type="button" variant="outline" size="icon" aria-label={s.deleteAria(monthLabel(month))} title={s.delete} onClick={() => setDeleting(true)}>
-                  <Trash2Icon />
-                </Button>
-              )}
-            </div>
+            <Button type="submit" className="justify-self-start" disabled={pending}>
+              {s.save}
+            </Button>
           </form>
         )}
       </section>
-      <AlertDialog open={deleting} onOpenChange={setDeleting}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{s.deleteTitle(monthLabel(month))}</AlertDialogTitle>
-            <AlertDialogDescription>{s.deleteText}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{s.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={remove}>{s.delete}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
