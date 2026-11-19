@@ -30,7 +30,7 @@ async function processMessage({ gmail, store, logger }, id) {
     const expense = parsePurchaseApproved(message.html);
     // A merchant the household already categorized gets that category; a new one stays uncategorized.
     const categoryId = await store.getMerchantCategory(merchantKey(expense.merchant));
-    return await store.saveExpense(id, { ...expense, receivedAt: message.receivedAt, ...(categoryId ? { categoryId } : {}) });
+    return await store.savePurchase(id, { ...expense, receivedAt: message.receivedAt }, categoryId ?? null);
   } catch (e) {
     if (e.code === 404 || e.status === 404) {
       logger.info({ message: 'Message no longer exists (deleted), skipping', id });

@@ -18,7 +18,7 @@ function fakeStore() {
   let historyId = null;
   return {
     expenses,
-    saveExpense: vi.fn(async (id, e) => {
+    savePurchase: vi.fn(async (id, e) => {
       if (expenses.has(id)) return false;
       expenses.set(id, e);
       return true;
@@ -157,7 +157,7 @@ describe('permanent errors do not block progress', () => {
 describe('reconcile', () => {
   it('saves missing emails and does not duplicate existing ones', async () => {
     const gmail = fakeGmail({ m1: msg('m1'), m2: msg('m2') });
-    await store.saveExpense('m1', { merchant: 'previous' });
+    await store.savePurchase('m1', { merchant: 'previous' }, null);
     const r = await reconcile(deps(gmail));
     expect(r.saved).toBe(1);
     expect(store.expenses.get('m1').merchant).toBe('previous');

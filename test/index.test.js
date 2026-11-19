@@ -17,7 +17,7 @@ function deps(gmailOverrides = {}) {
     store: {
       getHistoryId: async () => historyId,
       setHistoryId: async (id) => { historyId = String(id); },
-      saveExpense: async () => true,
+      savePurchase: async () => true,
     },
     gmail: {
       listHistory: async () => ({ messageIds: [], historyId: '500' }),

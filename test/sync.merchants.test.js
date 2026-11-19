@@ -16,9 +16,9 @@ function fakeStore(dictionary = {}) {
   let historyId = null;
   return {
     expenses,
-    saveExpense: vi.fn(async (id, e) => {
+    savePurchase: vi.fn(async (id, p) => {
       if (expenses.has(id)) return false;
-      expenses.set(id, e);
+      expenses.set(id, p);
       return true;
     }),
     getMerchantCategory: vi.fn(async (key) => dictionary[key] ?? null),
@@ -48,29 +48,19 @@ beforeEach(() => {
 });
 
 describe('processNotification with the merchant dictionary', () => {
-  it('sets the categoryId of a new purchase when the merchant is in the dictionary', async () => {
-    store = fakeStore({ 'recargas-ejemplo': 'cat-recargas' });
+  it('passes the dictionary category (or null) to savePurchase', async () => {
+    store = fakeStore({ 'recargas-ejemplo': 'comida' });
     await store.setHistoryId('400');
     const r = await processNotification(deps(fakeGmail({ m1: msg('m1') })), notification);
     expect(r.saved).toBe(1);
     expect(store.getMerchantCategory).toHaveBeenCalledWith('recargas-ejemplo');
-    expect(store.expenses.get('m1')).toMatchObject({ merchant: 'RECARGAS EJEMPLO', categoryId: 'cat-recargas' });
-  });
+    expect(store.savePurchase).toHaveBeenCalledWith('m1', expect.objectContaining({ merchant: 'RECARGAS EJEMPLO' }), 'comida');
 
-  it('leaves the purchase without categoryId when the dictionary returns null', async () => {
     store = fakeStore();
     await store.setHistoryId('400');
     await processNotification(deps(fakeGmail({ m1: msg('m1') })), notification);
     expect(store.getMerchantCategory).toHaveBeenCalledTimes(1);
-    expect(store.expenses.get('m1')).toBeDefined();
-    expect(store.expenses.get('m1')).not.toHaveProperty('categoryId');
-  });
-
-  it('does not set a categoryId for an empty category', async () => {
-    store = fakeStore({ 'recargas-ejemplo': '' });
-    await store.setHistoryId('400');
-    await processNotification(deps(fakeGmail({ m1: msg('m1') })), notification);
-    expect(store.expenses.get('m1')).not.toHaveProperty('categoryId');
+    expect(store.savePurchase).toHaveBeenCalledWith('m1', expect.any(Object), null);
   });
 
   it('keeps the rest of the purchase data when it adds the category', async () => {
@@ -87,13 +77,12 @@ describe('reconcile with the merchant dictionary', () => {
     store = fakeStore({ 'recargas-ejemplo': 'cat-recargas' });
     const r = await reconcile(deps(fakeGmail({ m1: msg('m1') })));
     expect(r.saved).toBe(1);
-    expect(store.expenses.get('m1')).toMatchObject({ categoryId: 'cat-recargas' });
+    expect(store.savePurchase).toHaveBeenCalledWith('m1', expect.any(Object), 'cat-recargas');
   });
 
   it('does not set a categoryId when the dictionary returns null', async () => {
     store = fakeStore();
     await reconcile(deps(fakeGmail({ m1: msg('m1') })));
-    expect(store.expenses.get('m1')).toBeDefined();
-    expect(store.expenses.get('m1')).not.toHaveProperty('categoryId');
+    expect(store.savePurchase).toHaveBeenCalledWith('m1', expect.any(Object), null);
   });
 });
