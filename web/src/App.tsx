@@ -17,7 +17,8 @@ import type { MerchantsApi, MerchantsSource } from '@/merchants/merchantsApi'
 import type { EntriesApi, EntriesSource, EntryKind } from '@/money/entries'
 import { BalanceScreen } from '@/balance/BalanceScreen'
 import type { RatesApi, RatesSource } from '@/balance/ratesApi'
-import { BudgetScreen, type BudgetSection } from '@/budget/BudgetScreen'
+import type { BudgetSection } from '@/budget/BudgetScreen'
+import { BudgetTab } from '@/budget/BudgetTab'
 import type { CapsApi, CapsSource } from '@/home/capsApi'
 import { HomeTab } from '@/home/HomeTab'
 import { HistoryScreen } from '@/history/HistoryScreen'
@@ -60,13 +61,9 @@ export default function App({
   createExpensesSource,
   createCardsSource,
   createEntriesSource,
-  createEntriesApi,
   createFixedSource,
-  createFixedApi,
   createRatesSource,
   createRatesApi,
-  createCapsSource,
-  createCapsApi,
 }: AppProps) {
   return (
     <AuthProvider api={authApi}>
@@ -76,13 +73,9 @@ export default function App({
         createExpensesSource={createExpensesSource}
         createCardsSource={createCardsSource}
         createEntriesSource={createEntriesSource}
-        createEntriesApi={createEntriesApi}
         createFixedSource={createFixedSource}
-        createFixedApi={createFixedApi}
         createRatesSource={createRatesSource}
         createRatesApi={createRatesApi}
-        createCapsSource={createCapsSource}
-        createCapsApi={createCapsApi}
       />
       </ToastProvider>
     </AuthProvider>
@@ -94,26 +87,18 @@ function Screens({
   createExpensesSource,
   createCardsSource,
   createEntriesSource,
-  createEntriesApi,
   createFixedSource,
-  createFixedApi,
   createRatesSource,
   createRatesApi,
-  createCapsSource,
-  createCapsApi,
 }: Pick<
   AppProps,
   | 'createBackend'
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createEntriesSource'
-  | 'createEntriesApi'
   | 'createFixedSource'
-  | 'createFixedApi'
   | 'createRatesSource'
   | 'createRatesApi'
-  | 'createCapsSource'
-  | 'createCapsApi'
 >) {
   const { state, error, signIn, signOut, recheck } = useAuth()
 
@@ -137,13 +122,9 @@ function Screens({
           createExpensesSource={createExpensesSource}
           createCardsSource={createCardsSource}
           createEntriesSource={createEntriesSource}
-          createEntriesApi={createEntriesApi}
           createFixedSource={createFixedSource}
-          createFixedApi={createFixedApi}
           createRatesSource={createRatesSource}
           createRatesApi={createRatesApi}
-          createCapsSource={createCapsSource}
-          createCapsApi={createCapsApi}
           onSignOut={() => void signOut()}
         />
       )
@@ -156,13 +137,9 @@ function Authorized({
   createExpensesSource,
   createCardsSource,
   createEntriesSource,
-  createEntriesApi,
   createFixedSource,
-  createFixedApi,
   createRatesSource,
   createRatesApi,
-  createCapsSource,
-  createCapsApi,
   onSignOut,
 }: Pick<
   AppProps,
@@ -170,13 +147,9 @@ function Authorized({
   | 'createExpensesSource'
   | 'createCardsSource'
   | 'createEntriesSource'
-  | 'createEntriesApi'
   | 'createFixedSource'
-  | 'createFixedApi'
   | 'createRatesSource'
   | 'createRatesApi'
-  | 'createCapsSource'
-  | 'createCapsApi'
 > & {
   user: AuthUser
   onSignOut: () => void
@@ -191,18 +164,13 @@ function Authorized({
   const [cardsSource] = useState(createCardsSource)
   const { status, expenses, error } = useExpenses(source)
   const cards = useCards(cardsSource)
-  // The four sources/apis of incomes and savings are created once, so switching tabs never recreates them.
+  // The sources of incomes and savings are created once, so switching tabs never recreates them.
   const [incomesSource] = useState(() => createEntriesSource('incomes'))
-  const [incomesApi] = useState(() => createEntriesApi('incomes'))
   const [savingsSource] = useState(() => createEntriesSource('savings'))
-  const [savingsApi] = useState(() => createEntriesApi('savings'))
   const [fixedSource] = useState(createFixedSource)
-  const [fixedApi] = useState(createFixedApi)
   const fixed = useFixed(fixedSource)
   const [ratesSource] = useState(createRatesSource)
   const [ratesApi] = useState(createRatesApi)
-  const [capsSource] = useState(createCapsSource)
-  const [capsApi] = useState(createCapsApi)
   // The tab is controlled so the alerts of the home view can take you to the right one.
   const [tab, setTab] = useState<string>('home')
   // The card to open when an alert of the home view takes you to another tab (cleared when you change tab by hand).
@@ -287,17 +255,7 @@ function Authorized({
           <CategoriesTab onCategorize={categorize} initialOpen={openSection === 'toCategorize' ? 'toCategorize' : null} />
         </TabsContent>
         <TabsContent value="budget">
-          <BudgetScreen
-            fixed={fixed}
-            fixedApi={fixedApi}
-            incomesSource={incomesSource}
-            incomesApi={incomesApi}
-            savingsSource={savingsSource}
-            savingsApi={savingsApi}
-            capsSource={capsSource}
-            capsApi={capsApi}
-            initialOpen={(openSection as BudgetSection | null) ?? null}
-          />
+          <BudgetTab initialOpen={(openSection as BudgetSection | null) ?? null} />
         </TabsContent>
         <TabsContent value="balance">
           {status === 'error' || cards.status === 'error' || fixed.status === 'error' ? (

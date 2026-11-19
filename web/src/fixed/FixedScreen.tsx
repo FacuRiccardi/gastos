@@ -10,8 +10,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { ListSkeleton } from '@/components/LoadingSkeletons'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/Toast'
+import type { MonthId } from '@/data/types'
 import { Input } from '@/components/ui/input'
 import { InfoTip } from '@/components/ui/tooltip'
 import { buenosAiresDay } from '@/lib/dates'
@@ -247,8 +249,26 @@ function MonthRow({ type, month, entry, api, onError }: { type: FixedType; month
   )
 }
 
-function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onError: () => void }) {
+function MonthCard({
+  data,
+  api,
+  isMonthLoaded,
+  onMonthChange,
+  onError,
+}: {
+  data: FixedData
+  api: FixedApi
+  isMonthLoaded: (month: MonthId) => boolean
+  onMonthChange: (month: MonthId) => void
+  onError: () => void
+}) {
   const [month, setMonth] = useState(() => buenosAiresDay(new Date()).slice(0, 7))
+  const move = (delta: number) => {
+    const next = addMonths(month, delta)
+    setMonth(next)
+    onMonthChange(next)
+  }
+  const loaded = isMonthLoaded(month)
   const entries = data.entries.filter((e) => e.month === month && data.types.some((t) => t.id === e.typeId))
   const total = Math.round(entries.reduce((sum, e) => sum + e.amount, 0) * 100) / 100
   // Disabled types only show up where they already have an amount; nothing new can be loaded for them.
@@ -262,17 +282,17 @@ function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onE
         <h3 className="font-semibold">{s.monthTitle}</h3>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon-sm" aria-label={s.nextMonth} onClick={() => setMonth((m) => addMonths(m, 1))}>
+            <Button variant="outline" size="icon-sm" aria-label={s.nextMonth} onClick={() => move(1)}>
               <ChevronLeftIcon />
             </Button>
             <span className="min-w-36 text-center font-medium" aria-live="polite">
               {strings.gastos.monthLabel(month)}
             </span>
-            <Button variant="outline" size="icon-sm" aria-label={s.previousMonth} onClick={() => setMonth((m) => addMonths(m, -1))}>
+            <Button variant="outline" size="icon-sm" aria-label={s.previousMonth} onClick={() => move(-1)}>
               <ChevronRightIcon />
             </Button>
           </div>
-          {rows.length > 0 && (
+          {loaded && rows.length > 0 && (
             <span className="text-sm text-muted-foreground">
               {s.total}: <span className="font-medium tabular-nums text-foreground">{formatMoney(total, 'ARS')}</span>
             </span>
@@ -280,8 +300,10 @@ function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onE
         </div>
       </div>
       <div className="grid gap-2">
-        {pendingCount > 0 && <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{s.pendingCount(pendingCount)}</p>}
-        {rows.length === 0 ? (
+        {loaded && pendingCount > 0 && <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{s.pendingCount(pendingCount)}</p>}
+        {!loaded ? (
+          <ListSkeleton rows={3} />
+        ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{s.loadTypesFirst}</p>
         ) : (
           <ul className="grid gap-2 [&>*]:min-w-0">
@@ -296,7 +318,17 @@ function MonthCard({ data, api, onError }: { data: FixedData; api: FixedApi; onE
 }
 
 // "Gastos fijos": the kinds of fixed expenses, and what was paid for each of them every month.
-export function FixedScreen({ data, api }: { data: FixedData; api: FixedApi }) {
+export function FixedScreen({
+  data,
+  api,
+  isMonthLoaded,
+  onMonthChange,
+}: {
+  data: FixedData
+  api: FixedApi
+  isMonthLoaded: (month: MonthId) => boolean
+  onMonthChange: (month: MonthId) => void
+}) {
   const [failed, setFailed] = useState(false)
   const onError = () => setFailed(true)
   return (
@@ -306,7 +338,7 @@ export function FixedScreen({ data, api }: { data: FixedData; api: FixedApi }) {
           {s.apiError}
         </p>
       )}
-      <MonthCard data={data} api={api} onError={onError} />
+      <MonthCard data={data} api={api} isMonthLoaded={isMonthLoaded} onMonthChange={onMonthChange} onError={onError} />
       <TypesCard types={data.types} api={api} onError={onError} />
     </div>
   )

@@ -1,6 +1,11 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { BudgetTab } from '@/budget/BudgetTab'
+import { createFakeBackend } from '@/data/fakeBackend'
+import { DataProvider } from '@/data/DataProvider'
+import { DataStore } from '@/data/dataStore'
+import type { MonthData } from '@/data/types'
 import { formatMoney } from '@/lib/format'
 import { strings } from '@/strings'
 import { OWNERS, type Entry, type EntriesApi } from './entries'
@@ -182,5 +187,54 @@ describe('EntrySection date in words', () => {
     renderSection([])
     await userEvent.click(screen.getByRole('button', { name: labels.add }))
     expect(screen.getByText('Miércoles, 4 de noviembre de 2026')).toBeInTheDocument()
+  })
+})
+
+describe('EntrySection removal', () => {
+  it('removing an entry passes the entry', async () => {
+    const owned = entry('a', { owner: OWNERS[0], currency: 'USD', amount: 20 })
+    const api = renderSection([owned], fakeApi(), true)
+    await userEvent.click(screen.getByRole('checkbox', { name: s.selectAria('02/11/2026', formatMoney(20, 'USD')) }))
+    await userEvent.click(screen.getByRole('button', { name: s.deleteSelected(1) }))
+    await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: s.delete }))
+    await waitFor(() => expect(api.remove).toHaveBeenCalledExactlyOnceWith(owned))
+  })
+})
+
+describe('BudgetTab money card', () => {
+  const month = (id: string, over: Partial<MonthData> = {}): MonthData => ({
+    id,
+    expenses: [],
+    incomes: [],
+    savings: [],
+    fixed: {},
+    rate: null,
+    rateInherited: false,
+    cap: null,
+    capInherited: false,
+    ...over,
+  })
+
+  it('money: opening the card reads all months once', async () => {
+    const backend = createFakeBackend({
+      months: [month('2026-10', { incomes: [entry('i10', { date: '2026-10-02' })] }), month('2026-11', { savings: [entry('s11')] })],
+    })
+    render(
+      <DataProvider store={new DataStore(backend)}>
+        <BudgetTab />
+      </DataProvider>,
+    )
+    const toggle = await screen.findByRole('button', { name: strings.budget.money })
+    expect(backend.reads.filter((r) => r.startsWith('month:'))).toEqual([])
+
+    await userEvent.click(toggle)
+    const incomes = await screen.findByRole('region', { name: s.incomes.title })
+    expect(await within(incomes).findByText('02/10/2026')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: s.savings.title })).getByText('02/11/2026')).toBeInTheDocument()
+
+    await userEvent.click(toggle)
+    await userEvent.click(toggle)
+    expect(await screen.findByText('02/10/2026')).toBeInTheDocument()
+    expect(backend.reads.filter((r) => r.startsWith('month:')).sort()).toEqual(['month:2026-10', 'month:2026-11'])
   })
 })

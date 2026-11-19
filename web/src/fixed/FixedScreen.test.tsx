@@ -1,6 +1,11 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { BudgetTab } from '@/budget/BudgetTab'
+import { createFakeBackend } from '@/data/fakeBackend'
+import { DataProvider } from '@/data/DataProvider'
+import { DataStore } from '@/data/dataStore'
+import type { MonthData } from '@/data/types'
 import { strings } from '@/strings'
 import type { FixedApi, FixedData } from './fixedApi'
 import { FixedScreen } from './FixedScreen'
@@ -23,6 +28,20 @@ const data: FixedData = {
   ],
   entries: [{ typeId: 't2', month: '2026-11', amount: 85000 }],
 }
+const loaded = { isMonthLoaded: () => true, onMonthChange: () => {} }
+
+const month = (id: string, over: Partial<MonthData> = {}): MonthData => ({
+  id,
+  expenses: [],
+  incomes: [],
+  savings: [],
+  fixed: {},
+  rate: null,
+  rateInherited: false,
+  cap: null,
+  capInherited: false,
+  ...over,
+})
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -32,7 +51,7 @@ afterEach(() => vi.useRealTimers())
 
 describe('FixedScreen month', () => {
   it('keeps the rows in their order and marks and counts what is still missing', () => {
-    render(<FixedScreen data={data} api={fakeApi()} />)
+    render(<FixedScreen data={data} api={fakeApi()} {...loaded} />)
     const month = screen.getByRole('region', { name: s.monthTitle })
     const names = within(month)
       .getAllByRole('listitem')
@@ -45,8 +64,8 @@ describe('FixedScreen month', () => {
   })
 
   it('a row stays where it is when its amount is saved, and the count goes down', async () => {
-    const { rerender } = render(<FixedScreen data={data} api={fakeApi()} />)
-    rerender(<FixedScreen data={{ ...data, entries: [...data.entries, { typeId: 't1', month: '2026-11', amount: 1000 }] }} api={fakeApi()} />)
+    const { rerender } = render(<FixedScreen data={data} api={fakeApi()} {...loaded} />)
+    rerender(<FixedScreen data={{ ...data, entries: [...data.entries, { typeId: 't1', month: '2026-11', amount: 1000 }] }} api={fakeApi()} {...loaded} />)
     const month = screen.getByRole('region', { name: s.monthTitle })
     const first = within(month).getAllByRole('listitem')[0]
     expect(first).toHaveTextContent('Alquiler')
@@ -59,6 +78,7 @@ describe('FixedScreen month', () => {
       <FixedScreen
         data={{ ...data, entries: data.types.map((t) => ({ typeId: t.id, month: '2026-11', amount: 10 })) }}
         api={fakeApi()}
+        {...loaded}
       />,
     )
     expect(screen.queryByText(s.missingBadge)).not.toBeInTheDocument()
@@ -67,10 +87,32 @@ describe('FixedScreen month', () => {
 
   it('does not keep the text of an amount that was edited and then removed', async () => {
     const api = fakeApi()
-    const { rerender } = render(<FixedScreen data={data} api={api} />)
+    const { rerender } = render(<FixedScreen data={data} api={api} {...loaded} />)
     await userEvent.click(screen.getByRole('button', { name: s.editAria('Expensas') }))
     expect(screen.getByLabelText(s.amountAria('Expensas'))).toHaveValue('85000')
-    rerender(<FixedScreen data={{ ...data, entries: [] }} api={api} />)
+    rerender(<FixedScreen data={{ ...data, entries: [] }} api={api} {...loaded} />)
     expect(screen.getByLabelText(s.amountAria('Expensas'))).toHaveValue('')
+  })
+})
+
+describe('BudgetTab fixed card', () => {
+  it('fixed: moving to another month reads only that month', async () => {
+    const backend = createFakeBackend({
+      config: { fixedTypes: data.types },
+      months: [month('2026-09'), month('2026-10', { fixed: { t1: 1000 } }), month('2026-11', { fixed: { t2: 85000 } })],
+    })
+    render(
+      <DataProvider store={new DataStore(backend)}>
+        <BudgetTab initialOpen="fixed" />
+      </DataProvider>,
+    )
+    const region = await screen.findByRole('region', { name: s.monthTitle })
+    expect(await within(region).findByText(s.pendingCount(2))).toBeInTheDocument()
+    expect(backend.reads.filter((r) => r.startsWith('month:'))).toEqual(['month:2026-11'])
+
+    await userEvent.click(within(region).getByRole('button', { name: s.previousMonth }))
+    await waitFor(() => expect(within(region).getByText('Octubre 2026')).toBeInTheDocument())
+    expect(await within(region).findByLabelText(s.editAria('Alquiler'))).toBeInTheDocument()
+    expect(backend.reads.filter((r) => r.startsWith('month:'))).toEqual(['month:2026-11', 'month:2026-10'])
   })
 })

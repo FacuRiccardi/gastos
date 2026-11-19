@@ -152,7 +152,7 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
   const onError = () => setFailed(true)
 
   const shown = entries.slice(0, visible)
-  // Only entries that still exist count as selected (live updates can remove some).
+  // Only entries that still exist count as selected (a deletion removes some).
   const chosen = selected.filter((id) => entries.some((e) => e.id === id))
   const allShownChosen = shown.length > 0 && shown.every((e) => chosen.includes(e.id))
   const toggle = (id: string) => setSelected(chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id])
