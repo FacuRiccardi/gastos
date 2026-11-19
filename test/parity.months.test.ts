@@ -78,7 +78,7 @@ function loadOld(dump: Dump) {
 
 // The migrated documents in the dump when it has them; otherwise the migration of its old collections.
 function loadNew(dump: Dump) {
-  if (dump.months && dump.config) {
+  if (dump.months?.length && dump.config?.length) {
     const config = Object.fromEntries(dump.config.map(({ id, data }) => [id, data]));
     return {
       months: Object.fromEntries(dump.months.map(({ id, data }) => [id, data])),

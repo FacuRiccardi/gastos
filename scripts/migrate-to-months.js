@@ -1,5 +1,6 @@
 // Converts the old collections into month documents (months/*, config/*, meta/uncategorized).
-// Re-runnable: every document is overwritten with the same result. The old collections are only read.
+// Re-runnable: every document is overwritten with the same result, so a failed run can simply be
+// run again. The old collections are only read.
 //
 // Usage (from the project root):
 //   emulator: FIRESTORE_EMULATOR_HOST=localhost:8080 npm run migrate
@@ -10,10 +11,16 @@ import { OLD_COLLECTIONS } from './lib/dumpFormat.js';
 import { migrate } from './lib/migration.js';
 
 const { GCP_PROJECT_ID, FIRESTORE_EMULATOR_HOST } = process.env;
+if (FIRESTORE_EMULATOR_HOST && GCP_PROJECT_ID) {
+  console.error('Both FIRESTORE_EMULATOR_HOST and GCP_PROJECT_ID are set: unset one to choose emulator or production.');
+  process.exit(1);
+}
 if (FIRESTORE_EMULATOR_HOST) {
-  initializeApp({ projectId: GCP_PROJECT_ID ?? 'demo-gastos' });
+  initializeApp({ projectId: 'demo-gastos' });
+  console.log(`Target: EMULATOR ${FIRESTORE_EMULATOR_HOST} (project demo-gastos)`);
 } else if (GCP_PROJECT_ID) {
   initializeApp({ credential: applicationDefault(), projectId: GCP_PROJECT_ID });
+  console.log(`Target: PRODUCTION project ${GCP_PROJECT_ID}`);
 } else {
   console.error('GCP_PROJECT_ID is missing from the environment (or set FIRESTORE_EMULATOR_HOST).');
   process.exit(1);
