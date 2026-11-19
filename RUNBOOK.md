@@ -171,15 +171,7 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
 
 ### Corte (producción)
 
-5. **Respaldo** con las colecciones viejas, y copia aparte (el volcado del paso 8 pisa estos archivos):
-   ```powershell
-   $env:GCP_PROJECT_ID = '<project-id>'
-   npm run dev:dump
-   New-Item -ItemType Directory -Force emulator-data/pre-corte
-   Copy-Item emulator-data/firestore.json, emulator-data/auth.json emulator-data/pre-corte/
-   ```
-   (`emulator-data/` está en `.gitignore`: contiene datos reales, no se sube.)
-6. **Frenar la ingesta y la app.** Cerrar la app y avisarle a la otra persona del hogar que no la use hasta que termine el paso 9: la app vieja sigue escribiendo en las colecciones viejas y esos cambios no llegarían a los documentos por mes. Anotar la hora. Esto convierte la suscripción push en pull (los avisos quedan retenidos en la suscripción, hasta 24 h: `message_retention_duration = 86400s`) y pausa el job diario. Ejecutarlo en **Git Bash**: PowerShell 5.1 descarta el argumento vacío `""`.
+5. **Frenar la ingesta y la app.** Cerrar la app y avisarle a la otra persona del hogar que no la use hasta que termine el paso 9: la app vieja sigue escribiendo en las colecciones viejas y esos cambios no llegarían a los documentos por mes. Anotar la hora. Esto convierte la suscripción push en pull (los avisos quedan retenidos en la suscripción, hasta 24 h: `message_retention_duration = 86400s`) y pausa el job diario. Ejecutarlo en **Git Bash**: PowerShell 5.1 descarta el argumento vacío `""`.
    ```bash
    gcloud pubsub subscriptions modify-push-config gmail-notifications-push --push-endpoint=""
    gcloud scheduler jobs pause renew-watch-daily --location=us-central1
@@ -190,12 +182,20 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
    gcloud scheduler jobs describe renew-watch-daily --location=us-central1 --format="value(state)"
    ```
    (`us-central1` es el default de `var.region`; si en `terraform.tfvars` hay otra región, usar esa.)
+6. **Respaldo** con las colecciones viejas, ya sin escrituras, y copia aparte (el volcado del paso 8 pisa estos archivos):
+   ```powershell
+   $env:GCP_PROJECT_ID = '<project-id>'
+   npm run dev:dump
+   New-Item -ItemType Directory -Force emulator-data/pre-corte
+   Copy-Item emulator-data/firestore.json, emulator-data/auth.json emulator-data/pre-corte/
+   ```
+   (`emulator-data/` está en `.gitignore`: contiene datos reales, no se sube.)
 7. **Migrar.** Debe decir `Target: PRODUCTION project <project-id>`:
    ```powershell
    $env:GCP_PROJECT_ID = '<project-id>'
    npm run migrate
    ```
-   Revisar el JSON de conteos: `purchases` debe ser igual al `expenses` del volcado, `incomes` y `savings` iguales a los del volcado, y `months` el número de meses con datos. Al final imprime `Wrote N documents.` Si algo no coincide, parar (la migración se puede volver a correr, **solo antes del paso 9**: sobrescribe los mismos documentos y las colecciones viejas no se tocan; una vez desplegada la web nueva o la ingesta nueva, lo que escriben vive solo en `months/*` y volver a migrar lo pisaría).
+   Revisar el JSON de conteos: `purchases` debe ser igual al `expenses` del volcado del paso 6, `incomes` y `savings` iguales a los del volcado, y `months` el número de meses con datos. Al final imprime `Wrote N documents.` Si algo no coincide, parar (la migración se puede volver a correr, **solo antes del paso 9**: sobrescribe los mismos documentos y las colecciones viejas no se tocan; una vez desplegada la web nueva o la ingesta nueva, lo que escriben vive solo en `months/*` y volver a migrar lo pisaría).
 8. **Paridad sobre la producción migrada.** El volcado ahora trae también `months`, `config` y `meta`, y el test usa esos documentos:
    ```powershell
    npm run dev:dump
@@ -217,7 +217,7 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
     ```powershell
     gcloud scheduler jobs resume renew-watch-daily --location=us-central1
     ```
-11. **Cubrir la ventana detenida.** `<N>` = días completos desde el paso 6, redondeado hacia arriba, más 1 (un corte de una hora: `--days 2`). No pisa compras existentes.
+11. **Cubrir la ventana detenida.** `<N>` = días completos desde el paso 5, redondeado hacia arriba, más 1 (un corte de una hora: `--days 2`). No pisa compras existentes.
     ```powershell
     $env:GCP_PROJECT_ID = '<project-id>'
     $env:GMAIL_USER = '<your-gmail-address>'
