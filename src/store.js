@@ -1,40 +1,87 @@
-import { Timestamp } from '@google-cloud/firestore';
+import { FieldPath, FieldValue, Timestamp } from '@google-cloud/firestore';
+import { inheritSource, monthOfDay } from './months.js';
 
-const EXPENSES = 'expenses';
 const STATE_DOC = 'state/sync';
-const MERCHANTS = 'merchantCategories';
+const MERCHANTS_DOC = 'config/merchants';
+const MONTHS_DOC = 'config/months';
+const CARDS_DOC = 'config/cards';
+const UNCATEGORIZED_DOC = 'meta/uncategorized';
+
+const cardKey = (last4, type) => `${last4}_${type}`;
 
 export function createStore(db) {
   return {
-    // Returns true if the expense was created, false if it already existed (never overwrites).
-    async saveExpense(id, expense) {
-      try {
-        await db.collection(EXPENSES).doc(id).create({
-          // Purchase dates are interpreted in Buenos Aires time (UTC-3, no DST)
-          purchaseDate: Timestamp.fromDate(new Date(`${expense.purchaseDate}T00:00:00-03:00`)),
-          receivedAt: Timestamp.fromDate(expense.receivedAt),
-          merchant: expense.merchant,
-          amount: expense.amount,
-          currency: expense.currency,
-          cardLast4: expense.cardLast4,
-          cardType: expense.cardType, // 'credit' | 'debit'
-          cardHolder: expense.cardHolder, // first name, as written by the bank
-          status: expense.status, // 'approved' | 'rejected'
-          // Only when the merchant is already in the dictionary; otherwise the purchase stays uncategorized.
-          ...(expense.categoryId ? { categoryId: expense.categoryId } : {}),
-        });
-        return true;
-      } catch (e) {
-        if (e.code === 6) return false; // ALREADY_EXISTS
-        throw e;
-      }
-    },
-
     // Category the household chose for this merchant key (see merchantKey), or null.
     async getMerchantCategory(key) {
       if (!key) return null;
-      const snap = await db.collection(MERCHANTS).doc(key).get();
-      return snap.exists ? (snap.data().categoryId ?? null) : null;
+      const snap = await db.doc(MERCHANTS_DOC).get();
+      return snap.exists ? (snap.data().items?.[key]?.categoryId ?? null) : null;
+    },
+
+    // Returns true if the purchase was saved, false if it already existed (never overwrites).
+    async savePurchase(id, purchase, categoryId) {
+      const month = monthOfDay(purchase.purchaseDate);
+      // Purchase dates are interpreted in Buenos Aires time (UTC-3, no DST)
+      const purchaseDate = Timestamp.fromDate(new Date(`${purchase.purchaseDate}T00:00:00-03:00`));
+      const stored = {
+        purchaseDate,
+        receivedAt: Timestamp.fromDate(purchase.receivedAt),
+        merchant: purchase.merchant,
+        amount: purchase.amount,
+        currency: purchase.currency,
+        cardLast4: purchase.cardLast4,
+        cardType: purchase.cardType, // 'credit' | 'debit'
+        cardHolder: purchase.cardHolder, // first name, as written by the bank
+        status: purchase.status, // 'approved' | 'rejected'
+      };
+
+      return db.runTransaction(async (tx) => {
+        const monthRef = db.doc(`months/${month}`);
+        const monthSnap = await tx.get(monthRef);
+        const purchases = monthSnap.exists ? (monthSnap.data().purchases ?? {}) : {};
+        if (purchases[id]) return false;
+
+        if (monthSnap.exists) {
+          const edit = categoryId ? [new FieldPath('edits', id, 'category'), categoryId] : [];
+          tx.update(monthRef, new FieldPath('purchases', id), stored, ...edit);
+        } else {
+          const monthsSnap = await tx.get(db.doc(MONTHS_DOC));
+          const source = inheritSource(monthsSnap.exists ? (monthsSnap.data().list ?? []) : [], month);
+          const sourceSnap = source ? await tx.get(db.doc(`months/${source}`)) : null;
+          const rate = sourceSnap?.exists ? (sourceSnap.data().rate ?? null) : null;
+          const cap = sourceSnap?.exists ? (sourceSnap.data().cap ?? null) : null;
+          tx.set(monthRef, {
+            purchases: { [id]: stored },
+            edits: categoryId ? { [id]: { category: categoryId } } : {},
+            incomes: {},
+            savings: {},
+            fixed: {},
+            rate,
+            rateInherited: rate !== null,
+            cap,
+            capInherited: cap !== null,
+          });
+          tx.set(db.doc(MONTHS_DOC), { list: FieldValue.arrayUnion(month) }, { merge: true });
+        }
+
+        if (!categoryId && purchase.status === 'approved') {
+          const { merchant, amount, currency, cardLast4, cardType, cardHolder } = stored;
+          tx.set(
+            db.doc(UNCATEGORIZED_DOC),
+            { items: { [id]: { month, merchant, amount, currency, purchaseDate, cardLast4, cardType, cardHolder } } },
+            { merge: true },
+          );
+        }
+
+        const cardSeen = Object.values(purchases).some(
+          (p) => p.cardLast4 === purchase.cardLast4 && p.cardType === purchase.cardType,
+        );
+        if (!cardSeen) {
+          const seen = { last4: purchase.cardLast4, type: purchase.cardType, holder: purchase.cardHolder, lastSeen: purchase.purchaseDate };
+          tx.set(db.doc(CARDS_DOC), { seenCards: { [cardKey(purchase.cardLast4, purchase.cardType)]: seen } }, { merge: true });
+        }
+        return true;
+      });
     },
 
     async getHistoryId() {
@@ -50,16 +97,6 @@ export function createStore(db) {
         const current = snap.exists ? BigInt(snap.data().historyId) : -1n;
         if (BigInt(historyId) > current) tx.set(ref, { historyId: String(historyId) });
       });
-    },
-
-    // Sums approved expenses (rejected ones are excluded; documents without status count as approved).
-    async sumByRange(from, to) {
-      const q = db
-        .collection(EXPENSES)
-        .where('purchaseDate', '>=', Timestamp.fromDate(from))
-        .where('purchaseDate', '<', Timestamp.fromDate(to));
-      const snap = await q.select('amount', 'status').get();
-      return snap.docs.reduce((total, d) => (d.data().status === 'rejected' ? total : total + d.data().amount), 0);
     },
   };
 }
