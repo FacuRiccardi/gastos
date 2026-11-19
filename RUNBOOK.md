@@ -179,7 +179,7 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
    Copy-Item emulator-data/firestore.json, emulator-data/auth.json emulator-data/pre-corte/
    ```
    (`emulator-data/` está en `.gitignore`: contiene datos reales, no se sube.)
-6. **Frenar la ingesta.** Anotar la hora. Esto convierte la suscripción push en pull (los avisos quedan retenidos en la suscripción, hasta 24 h: `message_retention_duration = 86400s`) y pausa el job diario. Ejecutarlo en **Git Bash**: PowerShell 5.1 descarta el argumento vacío `""`.
+6. **Frenar la ingesta y la app.** Cerrar la app y avisarle a la otra persona del hogar que no la use hasta que termine el paso 9: la app vieja sigue escribiendo en las colecciones viejas y esos cambios no llegarían a los documentos por mes. Anotar la hora. Esto convierte la suscripción push en pull (los avisos quedan retenidos en la suscripción, hasta 24 h: `message_retention_duration = 86400s`) y pausa el job diario. Ejecutarlo en **Git Bash**: PowerShell 5.1 descarta el argumento vacío `""`.
    ```bash
    gcloud pubsub subscriptions modify-push-config gmail-notifications-push --push-endpoint=""
    gcloud scheduler jobs pause renew-watch-daily --location=us-central1
@@ -195,14 +195,14 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
    $env:GCP_PROJECT_ID = '<project-id>'
    npm run migrate
    ```
-   Revisar el JSON de conteos: `purchases` debe ser igual al `expenses` del volcado, `incomes` y `savings` iguales a los del volcado, y `months` el número de meses con datos. Al final imprime `Wrote N documents.` Si algo no coincide, parar (la migración se puede volver a correr: sobrescribe los mismos documentos y las colecciones viejas no se tocan).
+   Revisar el JSON de conteos: `purchases` debe ser igual al `expenses` del volcado, `incomes` y `savings` iguales a los del volcado, y `months` el número de meses con datos. Al final imprime `Wrote N documents.` Si algo no coincide, parar (la migración se puede volver a correr, **solo antes del paso 9**: sobrescribe los mismos documentos y las colecciones viejas no se tocan; una vez desplegada la web nueva o la ingesta nueva, lo que escriben vive solo en `months/*` y volver a migrar lo pisaría).
 8. **Paridad sobre la producción migrada.** El volcado ahora trae también `months`, `config` y `meta`, y el test usa esos documentos:
    ```powershell
    npm run dev:dump
    npm test -- test/parity.months.test.ts
    ```
    Debe pasar sin tests omitidos (`skipped`). Si falla, parar y no desplegar.
-9. **Reglas y web nuevas** (las reglas nuevas niegan las colecciones viejas):
+9. **Reglas y web nuevas** (las reglas nuevas niegan las colecciones viejas). Antes de desplegar: si alguien usó la app después del paso 7, volver a correr `npm run migrate` y el paso 8 (paridad), y recién entonces desplegar.
    ```powershell
    npm run web:deploy -- --project <project-id>
    ```
@@ -234,7 +234,7 @@ Se hace una sola vez y a mano, con la ingesta detenida un rato. Hacerlo desde la
 
 ### Vuelta atrás
 
-Solo es limpia **antes del paso 11**: las colecciones viejas siguen intactas y nada las modificó. Después de `reprocess`, las compras nuevas viven solo en `months/*`.
+Solo es limpia **antes del paso 11**: las colecciones viejas siguen intactas y nada las modificó. Después de `reprocess`, las compras nuevas viven solo en `months/*`. Lo que se haya hecho en la app nueva después del corte (categorías, ingresos, ahorros, ediciones, etc.) vive solo en `months/*`, `config/*` y `meta/*` y no aparecerá al volver atrás: hay que rehacerlo a mano.
 
 ```powershell
 git switch main
