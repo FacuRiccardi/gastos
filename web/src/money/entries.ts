@@ -18,7 +18,7 @@ export interface EntriesSource {
 
 export interface EntriesApi {
   add(entry: NewEntry): Promise<string>
-  remove(id: string): Promise<void>
+  remove(entry: Entry): Promise<void>
 }
 
 /**

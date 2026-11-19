@@ -96,7 +96,7 @@ describe('EntrySection selection and deletion', () => {
     const dialog = await screen.findByRole('alertdialog')
     await userEvent.click(within(dialog).getByRole('button', { name: s.delete }))
     await waitFor(() => expect(api.remove).toHaveBeenCalledTimes(2))
-    expect(api.remove.mock.calls.map((c) => c[0]).sort()).toEqual(['a', 'c'])
+    expect(api.remove.mock.calls.map((c) => c[0].id).sort()).toEqual(['a', 'c'])
   })
 
   it('shows an error when deleting fails', async () => {

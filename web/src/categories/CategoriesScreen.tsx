@@ -92,7 +92,7 @@ function CategoryRow({ category, api, onError }: { category: Category; api: Cate
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{s.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void api.remove(category.id).then(() => toast(strings.deleted)).catch(onError)}>{s.delete}</AlertDialogAction>
+            <AlertDialogAction onClick={() => void api.setArchived(category.id, true).then(() => toast(strings.deleted)).catch(onError)}>{s.delete}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

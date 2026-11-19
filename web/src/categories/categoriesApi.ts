@@ -1,4 +1,5 @@
 // Interfaces of the Categories data layer. Components receive them through props so tests can use fakes.
+import type { Expense } from '../lib/expense'
 import type { Category } from './types'
 
 export interface CategoriesSource {
@@ -8,7 +9,8 @@ export interface CategoriesSource {
 export interface CategoriesApi {
   create(input: { name: string; color: string }): Promise<string>
   update(id: string, input: { name: string; color: string }): Promise<void>
-  remove(id: string): Promise<void>
+  // Categories are never deleted: they are archived.
+  setArchived(id: string, archived: boolean): Promise<void>
   // null = uncategorized
-  setExpenseCategory(expenseId: string, categoryId: string | null): Promise<void>
+  setExpenseCategory(expense: Expense, categoryId: string | null): Promise<void>
 }

@@ -1,5 +1,5 @@
 // Firestore implementation of the Categories data layer. Access is enforced by the Firestore rules.
-import { addDoc, collection, deleteDoc, deleteField, doc, onSnapshot, updateDoc, type Firestore } from 'firebase/firestore'
+import { addDoc, collection, deleteField, doc, onSnapshot, updateDoc, type Firestore } from 'firebase/firestore'
 import type { CategoriesApi, CategoriesSource } from './categoriesApi'
 import type { Category } from './types'
 
@@ -29,12 +29,11 @@ export function createFirestoreCategoriesApi(db: Firestore): CategoriesApi {
     async update(id, input) {
       await updateDoc(doc(db, 'categories', id), { name: input.name, color: input.color })
     },
-    async remove(id) {
-      // Expenses keep the id; one pointing at a missing category is shown as uncategorized.
-      await deleteDoc(doc(db, 'categories', id))
+    async setArchived(id, archived) {
+      await updateDoc(doc(db, 'categories', id), { archived })
     },
-    async setExpenseCategory(expenseId, categoryId) {
-      await updateDoc(doc(db, 'expenses', expenseId), { categoryId: categoryId ?? deleteField() })
+    async setExpenseCategory(expense, categoryId) {
+      await updateDoc(doc(db, 'expenses', expense.id), { categoryId: categoryId ?? deleteField() })
     },
   }
 }

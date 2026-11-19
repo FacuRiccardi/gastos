@@ -25,8 +25,8 @@ export function createFirestoreEntriesApi(db: Firestore, kind: EntryKind): Entri
       const ref = await addDoc(collection(db, kind), { amount: entry.amount, currency: entry.currency, date: entry.date, ...(entry.owner ? { owner: entry.owner } : {}) })
       return ref.id
     },
-    async remove(id) {
-      await deleteDoc(doc(db, kind, id))
+    async remove(entry) {
+      await deleteDoc(doc(db, kind, entry.id))
     },
   }
 }

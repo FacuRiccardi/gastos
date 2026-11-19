@@ -162,7 +162,7 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
     setFailed(false)
     setPending(true)
     try {
-      await Promise.all(chosen.map((id) => api.remove(id)))
+      await Promise.all(entries.filter((e) => chosen.includes(e.id)).map((e) => api.remove(e)))
       setSelected([])
       toast(strings.deleted)
     } catch {

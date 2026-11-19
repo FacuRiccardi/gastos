@@ -261,17 +261,19 @@ function Authorized({
     const key = merchantKey(expense.merchant)
     const same = expenses.filter((e) => e.id !== expenseId && key !== '' && merchantKey(e.merchant) === key && needsCategory(e, categories.categories))
     Promise.all([
-      categoriesApi.setExpenseCategory(expenseId, categoryId),
+      categoriesApi.setExpenseCategory(expense, categoryId),
       merchantsApi.remember(expense.merchant, categoryId),
-      ...same.map((e) => categoriesApi.setExpenseCategory(e.id, categoryId)),
+      ...same.map((e) => categoriesApi.setExpenseCategory(e, categoryId)),
     ])
       .then(() => toast(strings.saved))
       .catch(() => setCategorySaveFailed(true))
   }
   const changeCategory = (expenseId: string, categoryId: string | null) => {
+    const expense = expenses.find((e) => e.id === expenseId)
+    if (!expense) return
     setCategorySaveFailed(false)
     categoriesApi
-      .setExpenseCategory(expenseId, categoryId)
+      .setExpenseCategory(expense, categoryId)
       .then(() => toast(strings.saved))
       .catch(() => setCategorySaveFailed(true))
   }
