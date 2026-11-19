@@ -1,10 +1,5 @@
-// Converts the old collections into month documents (months/*, config/*, meta/uncategorized).
-// Re-runnable: every document is overwritten with the same result, so a failed run can simply be
-// run again. The old collections are only read.
-//
-// Usage (from the project root):
-//   emulator: FIRESTORE_EMULATOR_HOST=localhost:8080 npm run migrate
-//   production (gcloud application default credentials): GCP_PROJECT_ID=<project-id> npm run migrate
+// Old collections -> month documents; re-runnable (overwrites the same result, only reads the old ones).
+// Usage: FIRESTORE_EMULATOR_HOST=localhost:8080 npm run migrate  |  GCP_PROJECT_ID=<project-id> npm run migrate
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { OLD_COLLECTIONS } from './lib/dumpFormat.js';

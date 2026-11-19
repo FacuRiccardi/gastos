@@ -60,10 +60,8 @@ function collect(existing: MonthId[], ranges: Range[], rateMonths: MonthId[]): M
   return [...months].sort()
 }
 
-/**
- * Months the home view reads: the current group, the closed group while it is shown, and for each of them the
- * group of the month before (the comparison). 'all' when an account has no closings (it takes the whole history).
- */
+// Home reads the current group, the closed group while shown, and the group before each (the comparison).
+// 'all' when an account has no closings (it takes the whole history).
 export function homeMonths(cards: CardsData, existing: MonthId[], today: string): MonthId[] | 'all' {
   const accounts = accountsOf(cards)
   if (accounts.some((a) => a.closings.length === 0)) return 'all'

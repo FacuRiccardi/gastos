@@ -1,4 +1,4 @@
-// Key of the merchant -> category dictionary (Firestore collection `merchantCategories`).
+// Key of the merchant -> category dictionary (Firestore document `config/merchants`).
 // It must stay identical to web/src/merchants/merchantKey.ts.
 //
 // Lower case, without accents, split on anything that is not a letter or a digit. Words that contain

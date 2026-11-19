@@ -192,11 +192,11 @@ describe('DataStore', () => {
     const id = await store.entriesApi('incomes').add({ amount: 5, currency: 'USD', date: '2026-10-05', owner: 'Ana' })
     await store.entriesApi('incomes').add({ amount: 7, currency: 'ARS', date: '2026-10-20' })
     await store.ratesApi.save('2026-10', 1200)
-    await store.capsApi.remove('2026-10')
+    await store.capsApi.save('2026-10', 300)
     const october = monthOf(store, '2026-10')
     expect(october?.incomes.map((e) => e.date)).toEqual(['2026-10-20', '2026-10-05'])
     expect(october?.incomes[1]).toEqual({ id, amount: 5, currency: 'USD', date: '2026-10-05', owner: 'Ana' })
-    expect(october).toMatchObject({ rate: 1200, rateInherited: false, cap: null, capInherited: false })
+    expect(october).toMatchObject({ rate: 1200, rateInherited: false, cap: 300, capInherited: false })
 
     await store.entriesApi('incomes').remove(october!.incomes[1])
     expect(monthOf(store, '2026-10')?.incomes).toHaveLength(1)

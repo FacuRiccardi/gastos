@@ -43,7 +43,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 describe('CapsScreen', () => {
-  const api = (): CapsApi => ({ save: vi.fn(async () => {}), remove: vi.fn(async () => {}) })
+  const api = (): CapsApi => ({ save: vi.fn(async () => {}) })
 
   it('shows a skeleton while the cap of the month is loading', () => {
     render(<CapsScreen month="2026-11" onMonthChange={() => {}} cap={null} api={api()} />)

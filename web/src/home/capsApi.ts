@@ -1,8 +1,7 @@
 // The spending cap ("Tope de gasto"): the most that should be spent on the cards in a month, in pesos.
-// A month without its own cap uses the latest one defined before it.
+// Each month has its own cap; a new month starts with a copy of the latest earlier one.
 export type Caps = Record<string, number> // 'YYYY-MM' -> pesos
 
 export interface CapsApi {
   save(month: string, amount: number): Promise<void>
-  remove(month: string): Promise<void>
 }

@@ -162,10 +162,6 @@ export class DataStore {
         await backend.setCap(month, amount)
         this.patchMonth(month, (m) => ({ ...m, cap: amount, capInherited: false }))
       },
-      remove: async (month) => {
-        await backend.setCap(month, null)
-        this.patchMonth(month, (m) => ({ ...m, cap: null, capInherited: false }))
-      },
     }
   }
 
