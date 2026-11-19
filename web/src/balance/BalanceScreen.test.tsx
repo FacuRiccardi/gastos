@@ -26,13 +26,15 @@ const month = (id: string, over: Partial<MonthData> = {}): MonthData => ({
 
 const usd = (id: string, date: string) => ({ id, amount: 10, currency: 'USD' as const, date, owner: 'Ana' })
 
-function renderTab() {
+const defaultMonths = () => [
+  month('2026-10', { rate: 900, incomes: [usd('i10', '2026-10-02')], fixed: { t1: 1000 } }),
+  month('2026-11', { rate: 900, rateInherited: true, incomes: [usd('i11', '2026-11-02')], fixed: { t1: 2000 } }),
+]
+
+function renderTab(months = defaultMonths()) {
   const backend = createFakeBackend({
     config: { fixedTypes: [{ id: 't1', name: 'Alquiler', disabled: false }] },
-    months: [
-      month('2026-10', { rate: 900, incomes: [usd('i10', '2026-10-02')], fixed: { t1: 1000 } }),
-      month('2026-11', { rate: 900, rateInherited: true, incomes: [usd('i11', '2026-11-02')], fixed: { t1: 2000 } }),
-    ],
+    months,
   })
   render(
     <DataProvider store={new DataStore(backend)}>
@@ -65,6 +67,12 @@ describe('BalanceTab', () => {
     expect(await screen.findByText(strings.gastos.monthLabel('2026-10'), { selector: '[aria-live]' })).toBeInTheDocument()
     expect(within(incomesBlock()).getAllByText(ars(9000))).not.toHaveLength(0)
     expect(monthReads(backend)).toEqual(['month:2026-10', 'month:2026-11'])
+  })
+
+  it('an inherited rate without dollar incomes shows no note', async () => {
+    renderTab([month('2026-10', { rate: 900 }), month('2026-11', { rate: 900, rateInherited: true })])
+    await screen.findByRole('region', { name: s.title })
+    expect(within(incomesBlock()).queryByText(strings.history.inheritedRate)).not.toBeInTheDocument()
   })
 
   it('saving the rate clears the inherited note', async () => {

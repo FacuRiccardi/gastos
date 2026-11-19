@@ -205,6 +205,20 @@ describe('App home with month documents', () => {
     await app.signInAs(person)
     expect(await screen.findByText(strings.loadError)).toBeInTheDocument()
   })
+
+  it('home still shows when the uncategorized list cannot be read, without its alert', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-06T15:00:00Z') })
+    const backend = seeded()
+    backend.readUncategorized = async () => {
+      throw new Error('permission-denied')
+    }
+    const app = setup({ claim: true, backend })
+    await app.signInAs(person)
+    expect(await screen.findByRole('region', { name: strings.home.closedTitle })).toBeInTheDocument()
+    expect(screen.queryByText(strings.loadError)).not.toBeInTheDocument()
+    expect(screen.queryByText(strings.home.uncategorized(1))).not.toBeInTheDocument()
+  })
+
   it('the Gastos tab shows the period card of the month documents with the month selector and the total', async () => {
     const { backend } = await openHome()
     await userEvent.click(screen.getByRole('tab', { name: strings.tabs.expenses }))

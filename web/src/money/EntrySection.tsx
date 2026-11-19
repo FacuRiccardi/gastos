@@ -162,7 +162,8 @@ export function EntrySection({ labels, entries, api, withOwner = false }: { labe
     setFailed(false)
     setPending(true)
     try {
-      await Promise.all(entries.filter((e) => chosen.includes(e.id)).map((e) => api.remove(e)))
+      // One at a time: each removal is a transaction on the month document, and parallel ones contend.
+      for (const e of entries.filter((x) => chosen.includes(x.id))) await api.remove(e)
       setSelected([])
       toast(strings.deleted)
     } catch {

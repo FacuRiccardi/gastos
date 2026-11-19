@@ -134,6 +134,15 @@ describe('monthDoc', () => {
     })
   })
 
+  it('toAppConfig gives a nameless category or fixed type an empty name', () => {
+    const config = toAppConfig({
+      categories: { items: { c1: { color: '#fff' }, c2: { name: 'Super', color: '#000' } } },
+      fixedTypes: { items: { f1: {}, f2: { name: 'Alquiler' } } },
+    })
+    expect(config.categories.map((c) => c.name)).toEqual(['', 'Super'])
+    expect(config.fixedTypes.map((t) => t.name)).toEqual(['', 'Alquiler'])
+  })
+
   it('uncategorizedToExpense and expenseToUncategorized round-trip the shared fields', () => {
     const item = {
       id: 'p1',

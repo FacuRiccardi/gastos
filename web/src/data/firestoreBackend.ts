@@ -26,12 +26,12 @@ const DELETE = Symbol('delete')
 
 const isMap = (value: unknown): value is Patch => typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype
 
-// Empty maps are dropped: in a merge they would replace the whole map instead of changing nothing.
-function toFirestore(patch: Patch): Patch {
+// Maps left empty are dropped (after converting their contents): in a merge they would replace the whole map.
+export function toFirestore(patch: Patch): Patch {
   return Object.fromEntries(
     Object.entries(patch)
-      .filter(([, value]) => !isMap(value) || Object.keys(value).length > 0)
-      .map(([key, value]) => [key, value === DELETE ? deleteField() : isMap(value) ? toFirestore(value) : value]),
+      .map(([key, value]) => [key, value === DELETE ? deleteField() : isMap(value) ? toFirestore(value) : value])
+      .filter(([, value]) => !isMap(value) || Object.keys(value).length > 0),
   )
 }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { DataStore, Load, StoreState } from './dataStore'
 import type { AppConfig, MonthData, MonthId, UncategorizedItem } from './types'
 
@@ -54,7 +54,7 @@ export function useMonths(ids: MonthId[] | 'all' | null): Load<MonthData[]> {
     if (request !== null) void store.ensureMonths(request === 'all' ? 'all' : request.split(','))
   }, [store, request])
 
-  return useMemo((): Load<MonthData[]> => {
+  const load = useMemo((): Load<MonthData[]> => {
     if (idsKey === 'all' && state.config.status === 'error') return { status: 'error', data: null, error: state.config.error }
     if (wanted === null) return LOADING
     const loads = wanted.map((id) => state.months.get(id))
@@ -63,4 +63,9 @@ export function useMonths(ids: MonthId[] | 'all' | null): Load<MonthData[]> {
     if (failed) return { status: 'error', data: null, error: failed.error }
     return { status: 'ready', data: loads.flatMap((l) => (l?.data ? [l.data] : [])), error: null }
   }, [idsKey, wanted, state.config, state.months])
+
+  // For the same ids, a month that a write adds is read without going back to loading (no skeleton flash).
+  const [lastReady, setLastReady] = useState<{ key: string | null; load: Load<MonthData[]> } | null>(null)
+  if (load.status === 'ready' && lastReady?.load !== load) setLastReady({ key: idsKey, load })
+  return load.status === 'loading' && lastReady?.key === idsKey ? lastReady.load : load
 }

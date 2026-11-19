@@ -126,7 +126,7 @@ function Incomes({ b, api, onError }: { b: Balance; api: RatesApi; onError: () =
           )}
         </>
       )}
-      {b.rateInherited && (
+      {b.rateInherited && b.usdIncome > 0 && (
         <p role="status" className="text-amber-700 dark:text-amber-400">
           {strings.history.inheritedRate}
         </p>

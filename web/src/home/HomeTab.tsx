@@ -35,9 +35,10 @@ export function HomeTab({
     }
   }, [config.data, months.data])
 
-  const error = [config, uncategorized, months].find((l) => l.status === 'error')
+  const error = [config, months].find((l) => l.status === 'error')
   if (error) return <ScreenError>{error.error}</ScreenError>
-  if (!config.data || !uncategorized.data || !data) return <HomeSkeleton />
+  // A failed uncategorized read only hides its alert.
+  if (!config.data || uncategorized.status === 'loading' || !data) return <HomeSkeleton />
 
   return (
     <HomeScreen
@@ -48,7 +49,7 @@ export function HomeTab({
       incomes={data.incomes}
       caps={data.caps}
       rates={data.rates}
-      uncategorizedCount={uncategorized.data.length}
+      uncategorizedCount={uncategorized.data?.length ?? 0}
       newCards={data.newCards}
       onCategoryChange={onCategoryChange}
       onNavigate={onNavigate}

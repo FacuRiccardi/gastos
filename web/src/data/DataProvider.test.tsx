@@ -45,6 +45,24 @@ describe('useMonths', () => {
     await waitFor(() => expect(result.current.data?.map((m) => m.id)).toEqual(['2026-09', '2026-10', '2026-11']))
   })
 
+  it("'all' keeps the previous data while a month added by a write is read", async () => {
+    const { store, wrapper } = setup()
+    const statuses: string[] = []
+    const { result } = renderHook(
+      () => {
+        const load = useMonths('all')
+        statuses.push(load.status)
+        return load
+      },
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    const readyAt = statuses.length
+    await act(() => store.ratesApi.save('2026-11', 1000))
+    await waitFor(() => expect(result.current.data?.map((m) => m.id)).toEqual(['2026-09', '2026-10', '2026-11']))
+    expect(statuses.slice(readyAt - 1).every((s) => s === 'ready')).toBe(true)
+  })
+
   it('stays loading while the ids are not known', () => {
     const { backend, wrapper } = setup()
     const { result } = renderHook(() => useMonths(null), { wrapper })

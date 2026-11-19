@@ -104,6 +104,25 @@ describe('EntrySection selection and deletion', () => {
     expect(api.remove.mock.calls.map((c) => c[0].id).sort()).toEqual(['a', 'c'])
   })
 
+  it('removes the selected entries one at a time', async () => {
+    const api = fakeApi()
+    let running = 0
+    let peak = 0
+    api.remove.mockImplementation(async () => {
+      peak = Math.max(peak, ++running)
+      await new Promise((r) => setTimeout(r, 5))
+      running--
+    })
+    const many = Array.from({ length: 6 }, (_, i) => entry(`e${i}`, { date: `2026-11-0${i + 1}` }))
+    renderSection(many, api)
+    await userEvent.click(screen.getByRole('checkbox', { name: s.selectAll }))
+    await userEvent.click(deleteButton(6))
+    await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: s.delete }))
+    await waitFor(() => expect(api.remove).toHaveBeenCalledTimes(6))
+    await waitFor(() => expect(running).toBe(0))
+    expect(peak).toBe(1)
+  })
+
   it('shows an error when deleting fails', async () => {
     const api = fakeApi()
     api.remove.mockRejectedValue(new Error('boom'))

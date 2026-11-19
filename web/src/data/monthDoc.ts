@@ -79,10 +79,10 @@ export function toAppConfig(raw: RawConfig): AppConfig {
     ([, d]): SeenCard => ({ last4: d.last4 as string, type: d.type as SeenCard['type'], holder: d.holder as string, lastSeen: d.lastSeen as string }),
   )
   const categories = byKey(mapOf(raw.categories?.items))
-    .map(([id, d]): Category => ({ id, name: d.name as string, color: d.color as string, archived: d.archived === true }))
+    .map(([id, d]): Category => ({ id, name: (d.name as string | undefined) ?? '', color: d.color as string, archived: d.archived === true }))
     .sort(byName)
   const fixedTypes = byKey(mapOf(raw.fixedTypes?.items))
-    .map(([id, d]): FixedType => ({ id, name: d.name as string, disabled: d.disabled === true }))
+    .map(([id, d]): FixedType => ({ id, name: (d.name as string | undefined) ?? '', disabled: d.disabled === true }))
     .sort(byName)
   const merchants = byKey(mapOf(raw.merchants?.items))
     .map(([key, d]): MerchantEntry => ({ key, merchant: d.merchant as string, categoryId: d.categoryId as string }))
