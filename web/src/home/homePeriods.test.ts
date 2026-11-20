@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CardsData } from '@/cards/cardsApi'
-import { buildAccountViews } from '@/expenses/statements'
+import { buildAccountViews, currentGroupMonth } from '@/expenses/statements'
 import type { Expense } from '@/lib/expense'
 import { buildHomePeriods, capFor, capLevel, groupForMonth, previousMonthTotal } from './homePeriods'
 
@@ -124,6 +124,62 @@ describe('buildHomePeriods', () => {
     expect(build('2026-12-01').current).toBeNull()
     const open = [expense({ amount: 40, purchaseDate: new Date('2026-11-25T15:00:00Z') })]
     expect(build('2026-12-01', data(), open).current?.total).toBe(40)
+  })
+
+  it('groups by closing month: after one account closed its month the current group is still that month', () => {
+    // Nov 7: a1 closed November on Nov 5, a2 closes November on Nov 10. A purchase of a1 after its closing
+    // belongs to December and stays out.
+    const list = [...purchases, expense({ amount: 999, purchaseDate: new Date('2026-11-06T15:00:00Z') })]
+    const { current, closed } = build('2026-11-07', data(), list)
+    expect(current?.month).toBe('2026-11')
+    expect(current?.accounts.map((a) => a.tab.period)).toEqual([
+      { start: '2026-10-11', end: '2026-11-10' },
+      { start: '2026-10-06', end: '2026-11-05' },
+    ])
+    expect(current?.total).toBe(370)
+    // October (due Oct 15 and Oct 20) is long due: no closed group, and never a mix of October and November
+    expect(closed).toBeNull()
+  })
+
+  it('after every account closed the month, the current group is the next month and the closed one the month just closed', () => {
+    const open = [expense({ amount: 40, purchaseDate: new Date('2026-11-11T15:00:00Z') })]
+    const { current, closed } = build('2026-11-12', data(), open)
+    expect(current?.month).toBe('2026-12')
+    expect(current?.accounts.map((a) => a.tab.kind)).toEqual(['open'])
+    expect(current?.total).toBe(40)
+    expect(closed?.month).toBe('2026-11')
+    expect(closed?.accounts.map((a) => a.tab.period?.end).sort()).toEqual(['2026-11-05', '2026-11-10'])
+  })
+
+  it('an account without the closing of the current month yet contributes its open tab', () => {
+    // a1 already has its December closing, a2 not: on Nov 15 the current month is December
+    const d = data({ cycles: [...cycles, { accountId: 'a1', closingDate: '2026-12-05', dueDate: '2026-12-15' }] })
+    const list = [expense({ amount: 10, purchaseDate: new Date('2026-11-14T15:00:00Z') }), expense({ amount: 20, cardLast4: '5678', purchaseDate: new Date('2026-11-14T15:00:00Z') })]
+    const { current, closed } = build('2026-11-15', d, list)
+    expect(current?.month).toBe('2026-12')
+    expect(current?.accounts.map((a) => [a.account.id, a.tab.period?.end ?? a.tab.kind])).toEqual([
+      ['a2', 'open'],
+      ['a1', '2026-12-05'],
+    ])
+    expect(current?.total).toBe(30)
+    expect(closed?.month).toBe('2026-11')
+  })
+})
+
+describe('currentGroupMonth', () => {
+  it('is the earliest closing month among the next closing of each account', () => {
+    // the real case of Nov 20: one account closed Nov 19, the other closes Nov 26
+    expect(currentGroupMonth([['2026-10-22', '2026-11-19'], ['2026-10-29', '2026-11-26']], '2026-11-20')).toBe('2026-11')
+    expect(currentGroupMonth([['2026-11-19', '2026-12-17'], ['2026-11-26', '2026-12-24']], '2026-11-27')).toBe('2026-12')
+  })
+
+  it('counts a closing on today as still ahead', () => {
+    expect(currentGroupMonth([['2026-10-22', '2026-11-19']], '2026-11-19')).toBe('2026-11')
+  })
+
+  it('is the month after the latest closing when every closing is behind, and today’s month without closings', () => {
+    expect(currentGroupMonth([['2026-10-22', '2026-11-19'], ['2026-11-26']], '2026-11-27')).toBe('2026-12')
+    expect(currentGroupMonth([[], []], '2026-11-27')).toBe('2026-11')
   })
 })
 

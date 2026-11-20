@@ -1,5 +1,6 @@
 import type { CardsData } from '@/cards/cardsApi'
 import { cardKey, type Account, type Card } from '@/cards/types'
+import { addMonths } from '@/fixed/fixedApi'
 import { addDays, buenosAiresDay } from '@/lib/dates'
 import type { Expense } from '@/lib/expense'
 
@@ -20,6 +21,19 @@ export function buildPeriods(closingDates: string[]): Period[] {
     periods.push({ start: addDays(dates[i - 1], 1), end: dates[i] })
   }
   return periods.reverse()
+}
+
+/**
+ * The month of the group the home view shows as current, given the closing dates of each account. Periods are
+ * grouped by the month they close in (as in Gastos), so it is the earliest month among the next closing (today or
+ * later) of each account: an account that already closed the month waits for the others. With every closing
+ * behind, the month after the latest one; without closings, today's month.
+ */
+export function currentGroupMonth(closingsByAccount: string[][], today: string): string {
+  const next = closingsByAccount.flatMap((dates) => sortedUnique(dates).find((d) => d >= today) ?? [])
+  if (next.length > 0) return next.sort()[0].slice(0, 7)
+  const latest = closingsByAccount.flat().sort().pop()
+  return latest ? addMonths(latest.slice(0, 7), 1) : today.slice(0, 7)
 }
 
 export function periodTabId(period: Period): string {

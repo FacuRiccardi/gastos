@@ -32,6 +32,15 @@ describe('monthsFor', () => {
     expect(months).not.toContain('2026-08')
   })
 
+  it('homeMonths after every closing reads the month just closed and the one before it', () => {
+    // Nov 27: A closed on Nov 19 and B on Nov 26, no December closing yet. The current group is December
+    // (open tabs), the closed one November (due Dec 3 and Dec 10), compared with October.
+    const cards = cardsWith({ A: ['2026-09-24', '2026-10-22', '2026-11-19'], B: ['2026-10-01', '2026-10-29', '2026-11-26'] })
+    const existing = ['2026-08', '2026-09', '2026-10', '2026-11']
+    expect(homeMonths(cards, existing, '2026-11-27')).toEqual(['2026-09', '2026-10', '2026-11'])
+    expect(offeredMonths(cards, existing, '2026-11-27')[0]).toBe('2026-12')
+  })
+
   it('homeMonths returns all for an account without closings', () => {
     expect(homeMonths(cardsWith({ ...base, C: [] }), ['2026-10', '2026-11'], '2026-11-06')).toBe('all')
   })

@@ -1,7 +1,7 @@
 // Which month documents each screen needs so the period calculations give the same result as with every purchase.
 import { dueDateOf } from '../balance/balance'
 import type { CardsData } from '../cards/cardsApi'
-import { buildPeriods, type Period } from '../expenses/statements'
+import { buildPeriods, currentGroupMonth, type Period } from '../expenses/statements'
 import { addMonths } from '../fixed/fixedApi'
 import { addDays } from '../lib/dates'
 import { inheritSource, monthOfDay } from './months'
@@ -24,22 +24,21 @@ function monthsOfRange({ start, end }: Range): MonthId[] {
   return months
 }
 
-const latestMonth = (ends: string[], fallback: string) => ([...ends].sort().pop() ?? fallback).slice(0, 7)
-
-// The same choice as `buildHomePeriods`: the period that contains today, else the open one after the last closing.
+// The same choice as `buildHomePeriods`: per account, the period closing in the current group month, else the open
+// one after its last closing when that closing is before the month.
 function currentGroup(accounts: AccountPeriods[], today: string): { ranges: Range[]; month: MonthId } {
+  const month = currentGroupMonth(
+    accounts.map((a) => a.closings),
+    today,
+  )
   const ranges: Range[] = []
-  const ends: string[] = []
   for (const { closings, periods } of accounts) {
-    const now = periods.find((p) => p.start <= today && today <= p.end)
-    if (now) {
-      ranges.push(now)
-      ends.push(now.end)
-    } else if (closings.length > 0 && today > closings[closings.length - 1]) {
-      ranges.push({ start: addDays(closings[closings.length - 1], 1), end: today })
-    }
+    const period = periods.find((p) => p.end.startsWith(month))
+    const last = closings[closings.length - 1]
+    if (period) ranges.push(period)
+    else if (last && monthOfDay(last) < month && today > last) ranges.push({ start: addDays(last, 1), end: today })
   }
-  return { ranges, month: latestMonth(ends, today) }
+  return { ranges, month }
 }
 
 /** Per account, the latest period that closes in `month` (as `groupForMonth` picks it). */
@@ -70,13 +69,15 @@ export function homeMonths(cards: CardsData, existing: MonthId[], today: string)
   const ranges: Range[] = [...current.ranges]
   const shown: MonthId[] = [current.month]
 
+  // The closed group is the month before, while it has not fallen due.
+  const closedMonth = addMonths(current.month, -1)
   const closed = accounts.flatMap(({ id, periods }) => {
-    const last = periods.find((p) => p.end < today)
-    return last ? [{ period: last, due: dueDateOf(last.end, cards.cycles.find((c) => c.accountId === id && c.closingDate === last.end)?.dueDate ?? null) }] : []
+    const period = periods.find((p) => p.end.startsWith(closedMonth))
+    return period ? [{ period, due: dueDateOf(period.end, cards.cycles.find((c) => c.accountId === id && c.closingDate === period.end)?.dueDate ?? null) }] : []
   })
-  if (closed.length > 0 && closed.map((c) => c.due).sort().pop()! >= today) {
+  if (closed.length > 0 && closed.every((c) => c.period.end < today) && closed.map((c) => c.due).sort().pop()! >= today) {
     ranges.push(...closed.map((c) => c.period))
-    shown.push(latestMonth(closed.map((c) => c.period.end), today))
+    shown.push(closedMonth)
   }
 
   const previous = shown.map((month) => addMonths(month, -1))
